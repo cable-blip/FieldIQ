@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ML
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.onnx
+
+# Large datasets
+data/raw/*
+data/processed/*
+data/features/*
+
+# Logs
+*.log
+
+# Node
+node_modules/
+.next/
+dist/
+
+# Build
+build/
+
+# Obsidian workspace cache
+docs/.obsidian/workspace.json
+docs/.obsidian/workspace-mobile.json
+
+# Environment variables
+.env
+.env.*
+!.env.example
