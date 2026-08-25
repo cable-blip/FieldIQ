@@ -1,8 +1,8 @@
 # Active Task
 
-The current active task is [[INTEG-002 - Deterministic Matchup Engine and 3D Field Integration]].
+No coordinated task is currently in Ready or In Progress.
 
-- **Task ID:** INTEG-002
-- **Status:** ready
-- **Backend Owner:** Cursor
-- **Frontend Owner:** Antigravity
+The last completed assignment is [[INTEG-002 - Deterministic Matchup Engine and 3D Field Integration]].
+
+Open the next unique task ID on the [[Task Board]] before starting Cursor or
+Antigravity in parallel worktrees.

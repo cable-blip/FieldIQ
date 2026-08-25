@@ -6,7 +6,7 @@
 
 ## In Progress
 
-- [[INTEG-002 - Deterministic Matchup Engine and 3D Field Integration]]
+
 
 ## Backend Review
 
@@ -18,6 +18,7 @@
 
 - [[DATA-004 - Frontend Dataset Mapping UI]]
 - [[UI-001 - 3D Cricket Field Prototype]]
+- [[INTEG-002 - Deterministic Matchup Engine and 3D Field Integration]]
 
 ## Blocked
 

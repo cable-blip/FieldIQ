@@ -1,6 +1,6 @@
 ---
 task_id: INTEG-002
-status: in-progress
+status: completed
 backend_owner: Cursor
 frontend_owner: Antigravity
 ---
