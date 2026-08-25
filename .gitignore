@@ -41,8 +41,8 @@ dist/
 build/
 
 # Obsidian workspace cache
-docs/.obsidian/workspace.json
-docs/.obsidian/workspace-mobile.json
+Docs/FieldIQ/.obsidian/workspace.json
+Docs/FieldIQ/.obsidian/workspace-mobile.json
 
 # Environment variables
 .env

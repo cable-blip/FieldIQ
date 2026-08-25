@@ -1,0 +1,9 @@
+---
+alwaysApply: true
+---
+
+# FieldIQ architecture guardrail
+
+Before proposing or changing implementation, read and follow `AGENTS.md` at the project root.
+
+Preserve the documented separation between data, backend, ML, rules, simulation, security, frontend, and tests. Keep modules small, explicit, testable, and honest about missing or uncertain cricket data. Do not invent data, model outputs, integrations, or completed work.
