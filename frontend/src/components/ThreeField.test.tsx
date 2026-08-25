@@ -63,7 +63,8 @@ describe('TacticalPanel Component', () => {
 
     // Verify metrics are displayed
     expect(screen.getByText('Expected Wicket')).toBeInTheDocument();
-    expect(screen.getByText('Expected Boundary')).toBeInTheDocument();
+    expect(screen.getByText('Runs Saved (ERS)')).toBeInTheDocument();
+    expect(screen.getByText('Defensive Score (CDS)')).toBeInTheDocument();
 
     // Verify coordinate table shows the fielders
     expect(screen.getByText('1st Slip')).toBeInTheDocument();

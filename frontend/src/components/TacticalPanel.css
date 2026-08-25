@@ -184,3 +184,46 @@
   color: #c9d1d9;
   border: 1px solid #30363d;
 }
+
+.legality-banner {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 16px;
+  border: 1px solid transparent;
+}
+
+.legality-banner.legal {
+  background-color: rgba(46, 160, 67, 0.15);
+  color: #3fb950;
+  border-color: rgba(46, 160, 67, 0.4);
+}
+
+.legality-banner.illegal {
+  background-color: rgba(248, 81, 73, 0.15);
+  color: #f85149;
+  border-color: rgba(248, 81, 73, 0.4);
+}
+
+.violations-box {
+  background-color: #2a1b1d;
+  border: 1px solid #f85149;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 0.8rem;
+  color: #ff7b72;
+}
+
+.violations-box h5 {
+  margin: 0 0 6px 0;
+  font-size: 0.85rem;
+}
+
+.violations-box ul {
+  margin: 0;
+  padding-left: 16px;
+}
+

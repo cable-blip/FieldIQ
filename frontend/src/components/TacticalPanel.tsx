@@ -12,53 +12,98 @@ interface TacticalPanelProps {
   fielders: FielderPosition[];
   onReset: () => void;
   objective: string;
+  metrics?: {
+    ers: number;
+    ewo: number;
+    cds: number;
+    explanations: string[];
+    is_legal: boolean;
+    violations: string[];
+  } | null;
 }
 
-export const TacticalPanel: React.FC<TacticalPanelProps> = ({ fielders, onReset, objective }) => {
-  // Mocked/synthetic values aligned with tactical objectives
-  const getMetrics = () => {
+export const TacticalPanel: React.FC<TacticalPanelProps> = ({ fielders, onReset, objective, metrics }) => {
+  // Local fallback metrics when API has not run yet
+  const getFallbackMetrics = () => {
     switch (objective) {
       case 'prevent_boundary':
-        return { wicket: '6.4%', boundary: '3.1%', runs: '3.21', confidence: '88%' };
+        return { wicket: '6.4%', ers: '1.20', cds: '0.85', confidence: '88%', explanations: [
+          '5 fielders placed on the boundary rope (ODI / T20 maximum cap).',
+          'Deep Midwicket, Long On, and Long Off cover straight boundaries.'
+        ], is_legal: true, violations: [] };
       case 'build_pressure':
-        return { wicket: '10.2%', boundary: '5.8%', runs: '4.10', confidence: '82%' };
+        return { wicket: '10.2%', ers: '1.45', cds: '0.90', confidence: '82%', explanations: [
+          'Inner circle fielders are placed tight to restrict singles.',
+          'Focus on maintaining a low run rate.'
+        ], is_legal: true, violations: [] };
       case 'stop_singles':
-        return { wicket: '8.1%', boundary: '9.4%', runs: '3.80', confidence: '80%' };
+        return { wicket: '8.1%', ers: '1.10', cds: '0.80', confidence: '80%', explanations: [
+          'Maximum players inside the circle to prevent strike rotation.'
+        ], is_legal: true, violations: [] };
       case 'attack_wicket':
       default:
-        return { wicket: '18.7%', boundary: '11.2%', runs: '0.91', confidence: '85%' };
+        return { wicket: '18.7%', ers: '0.91', cds: '1.05', confidence: '85%', explanations: [
+          '1st Slip and Gully are reserved to capture outside edges.',
+          'Silly Mid Off captures close drives.'
+        ], is_legal: true, violations: [] };
     }
   };
 
-  const metrics = getMetrics();
+  const current = metrics
+    ? {
+        wicket: `${(metrics.ewo * 100).toFixed(1)}%`,
+        ers: metrics.ers.toFixed(2),
+        cds: metrics.cds.toFixed(2),
+        confidence: '91%',
+        explanations: metrics.explanations,
+        is_legal: metrics.is_legal,
+        violations: metrics.violations,
+      }
+    : getFallbackMetrics();
 
   return (
     <div className="tactical-panel">
       <h3>Tactical Intelligence</h3>
       
+      {/* Legality Status Indicator */}
+      <div className={`legality-banner ${current.is_legal ? 'legal' : 'illegal'}`}>
+        {current.is_legal ? '✅ Field Legality: LEGAL' : '⚠️ Field Legality: ILLEGAL'}
+      </div>
+
+      {current.violations.length > 0 && (
+        <div className="violations-box">
+          <h5>ICC Violations Detected:</h5>
+          <ul>
+            {current.violations.map((v, idx) => (
+              <li key={idx}>{v}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Metrics Section */}
       <div className="metrics-grid">
         <div className="metric-box">
-          <span className="metric-val">{metrics.wicket}</span>
+          <span className="metric-val">{current.wicket}</span>
           <span className="metric-label">Expected Wicket</span>
         </div>
         <div className="metric-box">
-          <span className="metric-val">{metrics.boundary}</span>
-          <span className="metric-label">Expected Boundary</span>
+          <span className="metric-val">{current.ers}</span>
+          <span className="metric-label">Runs Saved (ERS)</span>
         </div>
         <div className="metric-box">
-          <span className="metric-val">{metrics.runs}</span>
-          <span className="metric-label">Expected Runs / Ball</span>
+          <span className="metric-val">{current.cds}</span>
+          <span className="metric-label">Defensive Score (CDS)</span>
         </div>
       </div>
 
       <div className="confidence-section">
         <div className="confidence-header">
           <span>Recommendation Confidence</span>
-          <span>{metrics.confidence}</span>
+          <span>{current.confidence}</span>
         </div>
         <div className="confidence-bar-bg">
-          <div className="confidence-bar-fill" style={{ width: metrics.confidence }} />
+          <div className="confidence-bar-fill" style={{ width: current.confidence }} />
         </div>
       </div>
 
@@ -66,24 +111,9 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({ fielders, onReset,
       <div className="explanation-box">
         <h4>Why this field?</h4>
         <ul>
-          {objective === 'attack_wicket' ? (
-            <>
-              <li>1st Slip and Gully are reserved to capture outside edges.</li>
-              <li>Silly Mid Off captures close drives.</li>
-              <li>Inner circle fielders are placed at saving zones to build pressure.</li>
-            </>
-          ) : objective === 'prevent_boundary' ? (
-            <>
-              <li>5 fielders are placed on the boundary rope (ODI / T20 maximum cap).</li>
-              <li>Deep Midwicket, Long On, and Long Off cover straight boundaries.</li>
-              <li>No close-catching fielders are reserved.</li>
-            </>
-          ) : (
-            <>
-              <li>Balanced field layout focusing on minimizing run rates.</li>
-              <li>Fielder capabilities matched to expected shot densities.</li>
-            </>
-          )}
+          {current.explanations.map((exp, idx) => (
+            <li key={idx}>{exp}</li>
+          ))}
         </ul>
       </div>
 
