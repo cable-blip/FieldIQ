@@ -6,7 +6,7 @@
 
 ## In Progress
 
-- [[UI-001 - 3D Cricket Field Prototype]]
+
 
 ## Backend Review
 
@@ -17,6 +17,7 @@
 ## Completed
 
 - [[DATA-004 - Frontend Dataset Mapping UI]]
+- [[UI-001 - 3D Cricket Field Prototype]]
 
 ## Blocked
 
