@@ -23,6 +23,7 @@ function App() {
   const [objective, setObjective] = useState<string>('attack_wicket');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [metrics, setMetrics] = useState<any>(null);
 
   // Drag handler updating positions in real-time
   const handleUpdateFielder = (name: string, x: number, y: number) => {
@@ -33,6 +34,7 @@ function App() {
 
   const handleResetPositions = () => {
     setFielders(DEFAULT_FIELDERS);
+    setMetrics(null);
   };
 
   const handleMatchSubmit = async (matchState: MatchState) => {
@@ -53,8 +55,27 @@ function App() {
         throw new Error(`Server returned HTTP ${response.status}`);
       }
 
-      // Read response schemas to verify API integration
-      await response.json();
+      const data = await response.json();
+      
+      if (data.placements && data.placements.length > 0) {
+        const mappedFielders = data.placements.map((p: any) => ({
+          name: p.position_name,
+          x: p.x,
+          y: p.y,
+          role: p.role,
+        }));
+        setFielders(mappedFielders);
+      }
+
+      setMetrics({
+        ers: data.ers,
+        ewo: data.ewo,
+        cds: data.cds,
+        explanations: data.tactical_explanations,
+        is_legal: data.is_legal,
+        violations: data.violations,
+      });
+
     } catch (err: any) {
       setError(err.message || 'Failed to fetch tactical analysis.');
     } finally {
@@ -96,6 +117,7 @@ function App() {
               fielders={fielders}
               onReset={handleResetPositions}
               objective={objective}
+              metrics={metrics}
             />
           </div>
         </div>
