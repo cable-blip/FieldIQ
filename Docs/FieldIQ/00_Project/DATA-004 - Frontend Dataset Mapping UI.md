@@ -1,6 +1,6 @@
 ---
 task_id: DATA-004
-status: ready
+status: completed
 backend_owner: Cursor
 frontend_owner: Antigravity
 ---

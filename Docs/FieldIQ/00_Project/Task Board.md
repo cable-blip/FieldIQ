@@ -2,17 +2,23 @@
 
 ## Ready
 
-- [[DATA-004 - Frontend Dataset Mapping UI]]
+
 
 ## In Progress
 
+
+
 ## Backend Review
+
+
 
 ## Frontend Review
 
 ## Integration Review
 
 ## Completed
+
+- [[DATA-004 - Frontend Dataset Mapping UI]]
 
 ## Blocked
 
