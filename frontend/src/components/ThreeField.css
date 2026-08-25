@@ -1,0 +1,37 @@
+.three-field-container {
+  position: relative;
+  width: 100%;
+  height: 550px;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #111;
+}
+
+.view-presets {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-preset-ui {
+  background-color: rgba(22, 27, 34, 0.85);
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background-color 0.2s;
+}
+
+.btn-preset-ui:hover {
+  background-color: #1f6feb;
+  color: #ffffff;
+  border-color: #388bfd;
+}
