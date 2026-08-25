@@ -2,11 +2,11 @@
 
 ## Ready
 
-- [[INTEG-002 - Deterministic Matchup Engine and 3D Field Integration]]
+
 
 ## In Progress
 
-
+- [[INTEG-002 - Deterministic Matchup Engine and 3D Field Integration]]
 
 ## Backend Review
 
