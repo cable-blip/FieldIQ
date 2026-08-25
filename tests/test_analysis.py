@@ -22,8 +22,11 @@ def test_accepts_analysis_request() -> None:
 
     assert response.status_code == 202
     body = response.json()
-    assert body["status"] == "unavailable"
+    assert body["status"] == "available"
     assert body["data_driven"] is False
+    assert len(body["placements"]) == 11
+    assert "ers" in body
+    assert "ewo" in body
     assert body["accepted_request"]["batter_name"] == "Virat Kohli"
 
 
