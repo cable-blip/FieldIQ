@@ -20,7 +20,7 @@ mappings into the FieldIQ canonical delivery CSV contract.
 
 Also read:
 
-- C:\Projects\cricket-tactical-intelligence\AGENTS.md
+- `C:\Projects\cricket-tactical-intelligence\AGENTS.md`
 
 ## Backend owner
 
@@ -44,6 +44,7 @@ Docs/FieldIQ/03_Data/
 ## Frontend owner
 
 Antigravity owns:
+
 - mapping form
 - source-header display
 - required-field indicators
@@ -61,9 +62,11 @@ frontend/
 ## API contract
 
 Endpoint:
+
 `POST /api/v1/datasets/column-mappings/validate`
 
 The frontend must send:
+
 ```json
 {
   "source_headers": [],
@@ -71,7 +74,12 @@ The frontend must send:
 }
 ```
 
+That is the request shape. Empty arrays or objects are request-schema errors
+(`422`). A mapping report requires at least one source header and at least one
+mapping entry. Full field rules are frozen in [[Backend API Contract]].
+
 The frontend must display:
+
 - valid or invalid mapping status
 - mapped fields
 - unmapped source columns
@@ -99,3 +107,6 @@ The frontend must display:
 ## Status history
 
 - 2026-08-25: Task created
+- 2026-08-25: Baseline commit `19d8b3f` — CSV validation and source mapping preflight
+- 2026-08-25: Frontend commit `2d85235` — dataset mapping UI
+- 2026-08-25: Merged to `main` (`60ffdb4`); status set to completed
