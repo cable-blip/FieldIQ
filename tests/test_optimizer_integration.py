@@ -52,3 +52,13 @@ def test_optimizer_integration_prevent_boundary() -> None:
     # Check that ERS is computed and matches expected properties
     assert body["ers"] > 0
     assert body["cds"] > 0
+
+def test_get_players_list() -> None:
+    response = client.get("/api/v1/players")
+    assert response.status_code == 200
+    body = response.json()
+    assert "batters" in body
+    assert "bowlers" in body
+    assert "Virat Kohli" in body["batters"]
+    assert "AB de Villiers" in body["batters"]
+    assert "Left-Arm Fast" in body["bowlers"]

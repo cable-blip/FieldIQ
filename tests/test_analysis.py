@@ -23,7 +23,7 @@ def test_accepts_analysis_request() -> None:
     assert response.status_code == 202
     body = response.json()
     assert body["status"] == "available"
-    assert body["data_driven"] is False
+    assert body["data_driven"] is True
     assert len(body["placements"]) == 11
     assert "ers" in body
     assert "ewo" in body
