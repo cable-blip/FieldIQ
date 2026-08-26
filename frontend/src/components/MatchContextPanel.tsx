@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './MatchContextPanel.css';
 
 export interface MatchState {
@@ -23,9 +23,42 @@ export const MatchContextPanel: React.FC<MatchContextPanelProps> = ({ onSubmit, 
   const [over, setOver] = useState<number>(1);
   const [runs, setRuns] = useState<number>(0);
   const [wickets, setWickets] = useState<number>(0);
+  
+  const [batters, setBatters] = useState<string[]>(['Virat Kohli', 'AB de Villiers', 'Brendon McCullum', 'David Warner']);
+  const [bowlers, setBowlers] = useState<string[]>(['Mitchell Starc', 'Jasprit Bumrah', 'Left-Arm Fast', 'Leg-Spinner']);
+  
   const [batterName, setBatterName] = useState<string>('Virat Kohli');
   const [bowlerName, setBowlerName] = useState<string>('Mitchell Starc');
   const [objective, setObjective] = useState<'attack_wicket' | 'prevent_boundary' | 'build_pressure' | 'stop_singles'>('attack_wicket');
+
+  useEffect(() => {
+    let active = true;
+    const fetchPlayers = async () => {
+      try {
+        const response = await fetch('/api/v1/players');
+        if (response.ok) {
+          const data = await response.json();
+          if (active) {
+            if (data.batters && data.batters.length > 0) {
+              setBatters(data.batters);
+              setBatterName((prev) => data.batters.includes(prev) ? prev : data.batters[0]);
+            }
+            if (data.bowlers && data.bowlers.length > 0) {
+              setBowlers(data.bowlers);
+              setBowlerName((prev) => data.bowlers.includes(prev) ? prev : data.bowlers[0]);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch player lists from API', err);
+      }
+    };
+
+    fetchPlayers();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,27 +150,35 @@ export const MatchContextPanel: React.FC<MatchContextPanelProps> = ({ onSubmit, 
         </div>
 
         <div className="form-group">
-          <label htmlFor="batter-input">Batter Name</label>
-          <input
-            id="batter-input"
-            type="text"
+          <label htmlFor="batter-select">Batter Name</label>
+          <select
+            id="batter-select"
             value={batterName}
             onChange={(e) => setBatterName(e.target.value)}
-            className="input-text"
-            placeholder="e.g. Virat Kohli"
-          />
+            className="input-select"
+          >
+            {batters.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="form-group">
-          <label htmlFor="bowler-input">Bowler Name</label>
-          <input
-            id="bowler-input"
-            type="text"
+          <label htmlFor="bowler-select">Bowler Name</label>
+          <select
+            id="bowler-select"
             value={bowlerName}
             onChange={(e) => setBowlerName(e.target.value)}
-            className="input-text"
-            placeholder="e.g. Mitchell Starc"
-          />
+            className="input-select"
+          >
+            {bowlers.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="form-group">

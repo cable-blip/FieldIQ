@@ -5,6 +5,18 @@ import { MatchContextPanel } from './MatchContextPanel';
 import { TacticalPanel, FielderPosition } from './TacticalPanel';
 
 describe('MatchContextPanel Component', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn().mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          batters: ['Virat Kohli', 'AB de Villiers', 'Brendon McCullum', 'David Warner'],
+          bowlers: ['Mitchell Starc', 'Jasprit Bumrah', 'Left-Arm Fast', 'Leg-Spinner']
+        })
+      })
+    );
+  });
+
   it('renders form inputs and handles form submission', async () => {
     const user = userEvent.setup();
     const mockSubmit = vi.fn();
@@ -13,15 +25,16 @@ describe('MatchContextPanel Component', () => {
     // Check header
     expect(screen.getByText('Match Situation Setup')).toBeInTheDocument();
 
-    // Fill in Batter name
-    const batterInput = screen.getByLabelText(/batter name/i);
-    await user.clear(batterInput);
-    await user.type(batterInput, 'Sachin Tendulkar');
+    // Wait for players list to fetch and load
+    await screen.findByRole('option', { name: 'AB de Villiers' });
 
-    // Fill in Bowler name
-    const bowlerInput = screen.getByLabelText(/bowler name/i);
-    await user.clear(bowlerInput);
-    await user.type(bowlerInput, 'Shane Warne');
+    // Select Batter name
+    const batterSelect = screen.getByLabelText(/batter name/i);
+    fireEvent.change(batterSelect, { target: { value: 'AB de Villiers' } });
+
+    // Select Bowler name
+    const bowlerSelect = screen.getByLabelText(/bowler name/i);
+    fireEvent.change(bowlerSelect, { target: { value: 'Jasprit Bumrah' } });
 
     // Change tactical objective
     const objectiveSelect = screen.getByLabelText(/tactical objective/i);
@@ -37,8 +50,8 @@ describe('MatchContextPanel Component', () => {
       over: 1,
       runs: 0,
       wickets: 0,
-      batter_name: 'Sachin Tendulkar',
-      bowler_name: 'Shane Warne',
+      batter_name: 'AB de Villiers',
+      bowler_name: 'Jasprit Bumrah',
       tactical_objective: 'prevent_boundary',
     });
   });
