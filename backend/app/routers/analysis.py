@@ -1,4 +1,5 @@
 from fastapi import APIRouter, status
+import pandas as pd
 from backend.app.schemas.analysis import (
     AnalysisRequest,
     AnalysisResponse,
@@ -14,13 +15,36 @@ from backend.app.services.profiles import (
     MatchFormat as ServiceMatchFormat
 )
 from backend.app.services.optimizer import recommend_field
+from backend.app.services.real_data_loader import (
+    get_available_batters_from_df,
+    load_all_batters_from_df,
+    DATA_DIR
+)
+
+# Cache deliveries dataset on module load
+try:
+    deliveries_df = pd.read_csv(DATA_DIR / 'real_batters_deliveries.csv')
+    AVAILABLE_REAL_BATTERS = get_available_batters_from_df(deliveries_df)
+except Exception:
+    deliveries_df = None
+    AVAILABLE_REAL_BATTERS = []
 
 router = APIRouter(prefix="/api/v1", tags=["analysis"])
+
+@router.get("/players", status_code=status.HTTP_200_OK)
+def get_players_list():
+    # Return list of real batters from CSV and sample bowlers
+    sample_bowlers = [b.name for b in get_sample_bowlers()]
+    batters_list = AVAILABLE_REAL_BATTERS if AVAILABLE_REAL_BATTERS else [b.name for b in get_sample_batters()]
+    return {
+        "batters": batters_list,
+        "bowlers": sample_bowlers
+    }
 
 @router.post(
     "/analysis",
     response_model=AnalysisResponse,
-    status_code=status.HTTP_202_ACCEPTED,  # Change to 222 Accepted since the recommendation is generated synchronously
+    status_code=status.HTTP_202_ACCEPTED,
 )
 def create_analysis_request(
     request: AnalysisRequest,
@@ -28,10 +52,21 @@ def create_analysis_request(
     # Resolve match format
     fmt = ServiceMatchFormat.T20 if request.match_format == MatchFormat.T20 else ServiceMatchFormat.ODI
 
-    # Resolve profiles
-    batters = get_sample_batters()
-    batter = next((b for b in batters if b.name.lower() == request.batter_name.lower()), batters[0])
+    # Resolve batter profile (dynamic from CSV dataset if present)
+    batter = None
+    if deliveries_df is not None and request.batter_name in AVAILABLE_REAL_BATTERS:
+        try:
+            real_profiles = load_all_batters_from_df(deliveries_df)
+            batter = next((b for b in real_profiles if b.name.lower() == request.batter_name.lower()), None)
+        except Exception:
+            pass
 
+    if batter is None:
+        # Fallback to sample batters
+        batters = get_sample_batters()
+        batter = next((b for b in batters if b.name.lower() == request.batter_name.lower()), batters[0])
+
+    # Resolve bowler
     bowlers = get_sample_bowlers()
     bowler = next((b for b in bowlers if b.name.lower() == request.bowler_name.lower()), bowlers[0])
 
@@ -71,8 +106,8 @@ def create_analysis_request(
 
     return AnalysisResponse(
         status="available",
-        data_driven=False,
-        reason="Deterministic expert recommendation rules engine.",
+        data_driven=True if request.batter_name in AVAILABLE_REAL_BATTERS else False,
+        reason="Real-data profile matchup optimized." if request.batter_name in AVAILABLE_REAL_BATTERS else "Deterministic expert recommendation rules engine.",
         placements=placements_schema,
         ers=result.ers,
         ewo=result.ewo,
