@@ -2,7 +2,7 @@
 
 ## Ready
 
-- [[DATA-005 - Real Dataset Loading and Player Lists]]
+
 
 ## In Progress
 
@@ -19,6 +19,7 @@
 - [[DATA-004 - Frontend Dataset Mapping UI]]
 - [[UI-001 - 3D Cricket Field Prototype]]
 - [[INTEG-002 - Deterministic Matchup Engine and 3D Field Integration]]
+- [[DATA-005 - Real Dataset Loading and Player Lists]]
 
 ## Blocked
 
