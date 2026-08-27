@@ -1,8 +1,8 @@
 # Active Task
 
-The current active task is [[INTEG-003 - Historical Matchup Statistics and Statistical Matchup Engine]].
+No coordinated task is currently in Ready or In Progress.
 
-- **Task ID:** INTEG-003
-- **Status:** ready
-- **Backend Owner:** Cursor
-- **Frontend Owner:** Antigravity
+The last completed assignment is [[INTEG-003 - Historical Matchup Statistics and Statistical Matchup Engine]].
+
+Open the next unique task ID on the [[Task Board]] before starting Cursor or
+Antigravity in parallel worktrees.
