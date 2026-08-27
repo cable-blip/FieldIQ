@@ -104,6 +104,10 @@ def create_analysis_request(
         for p in result.placements
     ]
 
+    # Query head-to-head matchup statistics
+    from backend.app.services.matchup_stats import get_matchup_stats
+    h2h_stats = get_matchup_stats(request.batter_name, request.bowler_name)
+
     return AnalysisResponse(
         status="available",
         data_driven=True if request.batter_name in AVAILABLE_REAL_BATTERS else False,
@@ -115,5 +119,6 @@ def create_analysis_request(
         tactical_explanations=result.tactical_explanations,
         is_legal=result.is_legal,
         violations=result.violations,
+        matchup_stats=h2h_stats,
         accepted_request=request
     )

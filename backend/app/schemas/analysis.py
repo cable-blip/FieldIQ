@@ -40,6 +40,15 @@ class FieldPlacementSchema(BaseModel):
     role: str
     reason: str
 
+class MatchupStatsSchema(BaseModel):
+    has_history: bool
+    balls_faced: int
+    runs_scored: int
+    dismissals: int
+    strike_rate: float
+    dot_ball_pct: float
+    boundary_pct: float
+
 class AnalysisResponse(BaseModel):
     analysis_id: UUID = Field(default_factory=uuid4)
     status: str = "available"
@@ -52,4 +61,5 @@ class AnalysisResponse(BaseModel):
     tactical_explanations: list[str]
     is_legal: bool
     violations: list[str]
+    matchup_stats: MatchupStatsSchema
     accepted_request: AnalysisRequest
