@@ -194,6 +194,16 @@ def analyze_matchup(
             add_or_update('Long Off', val * 0.65, "Aerial drive risk over off side", 'caught_lofted')
             add_or_update('Deep Extra Cover', val * 0.55, "Lofted cover drive landing", 'caught_lofted')
 
+    # Apply Head-to-Head Stats Scaling
+    from backend.app.services.matchup_stats import get_matchup_stats
+    stats = get_matchup_stats(batter.name, bowler.name)
+    if stats["has_history"] and stats["balls_faced"] >= 6 and stats["dismissals"] > 0:
+        dismissal_rate = stats["dismissals"] / stats["balls_faced"]
+        multiplier = 1.0 + dismissal_rate * 10
+        for rec in recommendations_map.values():
+            rec.priority *= multiplier
+            rec.reason += f" [H2H scales priority by {multiplier:.2f}x]"
+
     # Apply Phase Multipliers
     recs = list(recommendations_map.values())
     for rec in recs:
