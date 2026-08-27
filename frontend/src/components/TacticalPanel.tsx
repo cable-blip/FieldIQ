@@ -19,6 +19,15 @@ interface TacticalPanelProps {
     explanations: string[];
     is_legal: boolean;
     violations: string[];
+    matchup_stats?: {
+      has_history: boolean;
+      balls_faced: number;
+      runs_scored: number;
+      dismissals: number;
+      strike_rate: number;
+      dot_ball_pct: number;
+      boundary_pct: number;
+    } | null;
   } | null;
 }
 
@@ -115,6 +124,40 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({ fielders, onReset,
             <li key={idx}>{exp}</li>
           ))}
         </ul>
+      </div>
+
+      {/* Head-to-Head Matchup Statistics Section */}
+      <div className="matchup-stats-box">
+        <h4>Head-to-Head Record</h4>
+        {metrics?.matchup_stats?.has_history ? (
+          <div className="matchup-grid">
+            <div className="matchup-header-stats">
+              <span>{metrics.matchup_stats.balls_faced} balls faced</span>
+              <span> | </span>
+              <span>{metrics.matchup_stats.runs_scored} runs scored</span>
+              <span> | </span>
+              <span>{metrics.matchup_stats.dismissals} dismissals</span>
+            </div>
+            <div className="matchup-metrics-grid">
+              <div className="matchup-metric">
+                <span className="matchup-val">{metrics.matchup_stats.strike_rate.toFixed(1)}</span>
+                <span className="matchup-label">Strike Rate</span>
+              </div>
+              <div className="matchup-metric">
+                <span className="matchup-val">{metrics.matchup_stats.dot_ball_pct.toFixed(0)}%</span>
+                <span className="matchup-label">Dot Balls</span>
+              </div>
+              <div className="matchup-metric">
+                <span className="matchup-val">{metrics.matchup_stats.boundary_pct.toFixed(0)}%</span>
+                <span className="matchup-label">Boundaries</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="no-matchup-history">
+            ℹ️ No head-to-head history found. Falls back to expert rule priors.
+          </div>
+        )}
       </div>
 
       {/* Coordinates Table */}
