@@ -2,7 +2,7 @@
 
 ## Ready
 
-
+- [[INTEG-003 - Historical Matchup Statistics and Statistical Matchup Engine]]
 
 ## In Progress
 
