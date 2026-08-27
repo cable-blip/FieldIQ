@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import * as THREE from 'three';
-import { ThreeEvent } from '@react-three/fiber';
+import type { ThreeEvent } from '@react-three/fiber';
 
 interface FielderMarkerProps {
   name: string;

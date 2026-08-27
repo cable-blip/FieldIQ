@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { MatchContextPanel, MatchState } from './components/MatchContextPanel';
-import { TacticalPanel, FielderPosition } from './components/TacticalPanel';
+import { MatchContextPanel } from './components/MatchContextPanel';
+import type { MatchState } from './components/MatchContextPanel';
+import { TacticalPanel } from './components/TacticalPanel';
+import type { FielderPosition } from './components/TacticalPanel';
 import { ThreeField } from './components/ThreeField';
 import './App.css';
 

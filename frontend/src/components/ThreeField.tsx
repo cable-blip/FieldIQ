@@ -2,7 +2,8 @@ import React, { useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { FielderMarker, FielderPosition } from './FielderMarker';
+import { FielderMarker } from './FielderMarker';
+import type { FielderPosition } from './TacticalPanel';
 import './ThreeField.css';
 
 interface ThreeFieldProps {
