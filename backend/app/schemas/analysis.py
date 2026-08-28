@@ -74,3 +74,17 @@ class AnalysisResponse(BaseModel):
     alternative_fields: list[AlternativeFieldSchema] = []
     zone_chart: dict[str, float] = {}
     accepted_request: AnalysisRequest
+
+class EvaluateFieldRequest(BaseModel):
+    batter_name: str
+    bowler_name: str
+    match_format: MatchFormat
+    over: int
+    placements: list[FieldPlacementSchema]
+
+class EvaluateFieldResponse(BaseModel):
+    ers: float
+    ewo: float
+    cds: float
+    is_legal: bool
+    violations: list[str]

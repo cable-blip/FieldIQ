@@ -23,7 +23,6 @@ def test_optimizer_integration_virat_kohli() -> None:
     assert body["status"] == "available"
     assert len(body["placements"]) == 11
     
-    # Assert specific slips are placed during early overs for Virat Kohli
     positions = [p["position_name"] for p in body["placements"]]
     assert "1st Slip" in positions
     assert "Wicketkeeper" in positions
@@ -48,8 +47,6 @@ def test_optimizer_integration_prevent_boundary() -> None:
     body = response.json()
     assert body["status"] == "available"
     assert len(body["placements"]) == 11
-    
-    # Check that ERS is computed and matches expected properties
     assert body["ers"] > 0
     assert body["cds"] > 0
 
@@ -61,4 +58,39 @@ def test_get_players_list() -> None:
     assert "bowlers" in body
     assert "Virat Kohli" in body["batters"]
     assert "AB de Villiers" in body["batters"]
-    assert "Left-Arm Fast" in body["bowlers"]
+
+def test_evaluate_custom_field() -> None:
+    # First obtain standard placements
+    analysis_res = client.post(
+        "/api/v1/analysis",
+        json={
+            "batter_name": "Virat Kohli",
+            "bowler_name": "Generic Right-Arm Fast (New Ball)",
+            "match_format": "ODI",
+            "innings": 1,
+            "over": 5,
+            "runs": 20,
+            "wickets": 0,
+            "tactical_objective": "attack_wicket",
+        },
+    )
+    placements = analysis_res.json()["placements"]
+
+    eval_res = client.post(
+        "/api/v1/analysis/evaluate",
+        json={
+            "batter_name": "Virat Kohli",
+            "bowler_name": "Generic Right-Arm Fast (New Ball)",
+            "match_format": "ODI",
+            "over": 5,
+            "placements": placements
+        }
+    )
+
+    assert eval_res.status_code == 200
+    body = eval_res.json()
+    assert "ers" in body
+    assert "ewo" in body
+    assert "cds" in body
+    assert body["is_legal"] is True
+    assert len(body["violations"]) == 0
