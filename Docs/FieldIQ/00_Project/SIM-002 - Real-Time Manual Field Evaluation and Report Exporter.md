@@ -1,6 +1,6 @@
 ---
 task_id: SIM-002
-status: ready
+status: completed
 backend_owner: Cursor
 frontend_owner: Antigravity
 ---

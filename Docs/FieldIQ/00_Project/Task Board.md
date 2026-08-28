@@ -2,7 +2,7 @@
 
 ## Ready
 
-- [[SIM-002 - Real-Time Manual Field Evaluation and Report Exporter]]
+
 
 ## In Progress
 
@@ -23,6 +23,7 @@
 - [[INTEG-003 - Historical Matchup Statistics and Statistical Matchup Engine]]
 - [[SIM-001 - Candidate Field Alternatives, Monte Carlo Evaluator and Strategy Selector]]
 - [[UI-002 - 3D Zone Risk Visualizations and Fielder Coverage Indicators]]
+- [[SIM-002 - Real-Time Manual Field Evaluation and Report Exporter]]
 
 ## Blocked
 

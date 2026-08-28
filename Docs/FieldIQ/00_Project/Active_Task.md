@@ -1,8 +1,8 @@
 # Active Task
 
-The current active task is [[SIM-002 - Real-Time Manual Field Evaluation and Report Exporter]].
+No coordinated task is currently in Ready or In Progress.
 
-- **Task ID:** SIM-002
-- **Status:** ready
-- **Backend Owner:** Cursor
-- **Frontend Owner:** Antigravity
+The last completed assignment is [[SIM-002 - Real-Time Manual Field Evaluation and Report Exporter]].
+
+Open the next unique task ID on the [[Task Board]] before starting Cursor or
+Antigravity in parallel worktrees.
