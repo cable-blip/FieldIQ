@@ -6,17 +6,24 @@ from backend.app.schemas.analysis import (
     MatchFormat,
     FieldPlacementSchema,
     FielderProfileSchema,
-    AlternativeFieldSchema
+    AlternativeFieldSchema,
+    EvaluateFieldRequest,
+    EvaluateFieldResponse
 )
 from backend.app.services.profiles import (
     get_sample_batters,
     get_sample_bowlers,
     get_sample_fielders,
     get_keeper,
-    MatchFormat as ServiceMatchFormat
+    MatchFormat as ServiceMatchFormat,
+    FieldPlacement as ServicePlacement,
+    FielderProfile,
+    get_phase_from_over
 )
 from backend.app.services.optimizer import recommend_field
 from backend.app.services.simulator import generate_candidate_fields
+from backend.app.services.rules_engine import validate_field
+from backend.app.services.metrics import compute_ers, compute_ewo, compute_cds
 from backend.app.services.real_data_loader import (
     get_available_batters_from_df,
     load_all_batters_from_df,
@@ -168,4 +175,65 @@ def create_analysis_request(
         alternative_fields=alt_schemas,
         zone_chart=batter.zone_chart if (batter and getattr(batter, 'zone_chart', None)) else {},
         accepted_request=request
+    )
+
+@router.post(
+    "/analysis/evaluate",
+    response_model=EvaluateFieldResponse,
+    status_code=status.HTTP_200_OK,
+)
+def evaluate_custom_field(
+    request: EvaluateFieldRequest,
+) -> EvaluateFieldResponse:
+    fmt = ServiceMatchFormat.T20 if request.match_format == MatchFormat.T20 else ServiceMatchFormat.ODI
+    phase = get_phase_from_over(request.over, fmt)
+
+    service_placements = []
+    for p in request.placements:
+        fp = FielderProfile(
+            name=p.fielder.name,
+            jump=p.fielder.jump,
+            catching=p.fielder.catching,
+            arm=p.fielder.arm,
+            close_in_skill=p.fielder.close_in_skill,
+            boundary_skill=p.fielder.boundary_skill,
+            preferred_positions=p.fielder.preferred_positions
+        )
+        service_placements.append(
+            ServicePlacement(
+                position_name=p.position_name,
+                fielder=fp,
+                x=p.x,
+                y=p.y,
+                role=p.role,
+                reason=p.reason
+            )
+        )
+
+    batter = None
+    if deliveries_df is not None and request.batter_name in AVAILABLE_REAL_BATTERS:
+        try:
+            real_profiles = load_all_batters_from_df(deliveries_df)
+            batter = next((b for b in real_profiles if b.name.lower() == request.batter_name.lower()), None)
+        except Exception:
+            pass
+
+    if batter is None:
+        batters = get_sample_batters()
+        batter = next((b for b in batters if b.name.lower() == request.batter_name.lower()), batters[0])
+
+    bowlers = get_sample_bowlers()
+    bowler = next((b for b in bowlers if b.name.lower() == request.bowler_name.lower()), bowlers[0])
+
+    is_legal, violations = validate_field(service_placements, phase, fmt)
+    ers = compute_ers(service_placements, batter)
+    ewo = compute_ewo(service_placements, [], batter, bowler)
+    cds = compute_cds(ers, ewo, phase)
+
+    return EvaluateFieldResponse(
+        ers=round(ers, 2),
+        ewo=round(ewo, 2),
+        cds=round(cds, 2),
+        is_legal=is_legal,
+        violations=violations
     )
