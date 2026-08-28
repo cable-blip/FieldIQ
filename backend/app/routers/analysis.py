@@ -5,7 +5,8 @@ from backend.app.schemas.analysis import (
     AnalysisResponse,
     MatchFormat,
     FieldPlacementSchema,
-    FielderProfileSchema
+    FielderProfileSchema,
+    AlternativeFieldSchema
 )
 from backend.app.services.profiles import (
     get_sample_batters,
@@ -15,6 +16,7 @@ from backend.app.services.profiles import (
     MatchFormat as ServiceMatchFormat
 )
 from backend.app.services.optimizer import recommend_field
+from backend.app.services.simulator import generate_candidate_fields
 from backend.app.services.real_data_loader import (
     get_available_batters_from_df,
     load_all_batters_from_df,
@@ -73,7 +75,7 @@ def create_analysis_request(
     fielders = get_sample_fielders()
     keeper = get_keeper()
 
-    # Call optimizer
+    # Call optimizer for main recommended field
     result = recommend_field(
         batter=batter,
         bowler=bowler,
@@ -104,6 +106,49 @@ def create_analysis_request(
         for p in result.placements
     ]
 
+    # Generate alternative candidate fields
+    raw_alternatives = generate_candidate_fields(
+        batter=batter,
+        bowler=bowler,
+        fielder_pool=fielders,
+        current_over=request.over,
+        fmt=fmt,
+        keeper=keeper
+    )
+
+    alt_schemas = []
+    for alt in raw_alternatives:
+        alt_placements = [
+            FieldPlacementSchema(
+                position_name=p.position_name,
+                fielder=FielderProfileSchema(
+                    name=p.fielder.name,
+                    jump=p.fielder.jump,
+                    catching=p.fielder.catching,
+                    arm=p.fielder.arm,
+                    close_in_skill=p.fielder.close_in_skill,
+                    boundary_skill=p.fielder.boundary_skill,
+                    preferred_positions=p.fielder.preferred_positions
+                ),
+                x=p.x,
+                y=p.y,
+                role=p.role,
+                reason=p.reason
+            )
+            for p in alt["placements"]
+        ]
+        alt_schemas.append(
+            AlternativeFieldSchema(
+                strategy_id=alt["strategy_id"],
+                strategy_name=alt["strategy_name"],
+                description=alt["description"],
+                placements=alt_placements,
+                ers=alt["ers"],
+                ewo=alt["ewo"],
+                cds=alt["cds"]
+            )
+        )
+
     # Query head-to-head matchup statistics
     from backend.app.services.matchup_stats import get_matchup_stats
     h2h_stats = get_matchup_stats(request.batter_name, request.bowler_name)
@@ -120,5 +165,6 @@ def create_analysis_request(
         is_legal=result.is_legal,
         violations=result.violations,
         matchup_stats=h2h_stats,
+        alternative_fields=alt_schemas,
         accepted_request=request
     )
