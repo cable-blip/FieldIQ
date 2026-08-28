@@ -72,4 +72,5 @@ class AnalysisResponse(BaseModel):
     violations: list[str]
     matchup_stats: MatchupStatsSchema
     alternative_fields: list[AlternativeFieldSchema] = []
+    zone_chart: dict[str, float] = {}
     accepted_request: AnalysisRequest
