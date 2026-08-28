@@ -166,5 +166,6 @@ def create_analysis_request(
         violations=result.violations,
         matchup_stats=h2h_stats,
         alternative_fields=alt_schemas,
+        zone_chart=batter.zone_chart if (batter and getattr(batter, 'zone_chart', None)) else {},
         accepted_request=request
     )
