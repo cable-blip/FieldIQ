@@ -8,6 +8,16 @@ export interface FielderPosition {
   role: 'wicket_taking' | 'run_saving' | 'core';
 }
 
+export interface AlternativeField {
+  strategy_id: string;
+  strategy_name: string;
+  description: string;
+  placements: FielderPosition[];
+  ers: number;
+  ewo: number;
+  cds: number;
+}
+
 interface TacticalPanelProps {
   fielders: FielderPosition[];
   onReset: () => void;
@@ -29,9 +39,20 @@ interface TacticalPanelProps {
       boundary_pct: number;
     } | null;
   } | null;
+  alternatives?: AlternativeField[];
+  selectedStrategy?: string;
+  onSelectStrategy?: (strategyId: string) => void;
 }
 
-export const TacticalPanel: React.FC<TacticalPanelProps> = ({ fielders, onReset, objective, metrics }) => {
+export const TacticalPanel: React.FC<TacticalPanelProps> = ({
+  fielders,
+  onReset,
+  objective,
+  metrics,
+  alternatives,
+  selectedStrategy,
+  onSelectStrategy
+}) => {
   // Local fallback metrics when API has not run yet
   const getFallbackMetrics = () => {
     switch (objective) {
@@ -87,6 +108,30 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({ fielders, onReset,
               <li key={idx}>{v}</li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Strategy Selector Button Group */}
+      {alternatives && alternatives.length > 0 && (
+        <div className="strategy-selector-section">
+          <h4>Tactical Strategy Selector</h4>
+          <div className="strategy-buttons-grid">
+            {alternatives.map((alt) => (
+              <button
+                key={alt.strategy_id}
+                type="button"
+                className={`btn-strategy ${selectedStrategy === alt.strategy_id ? 'active' : ''}`}
+                onClick={() => onSelectStrategy && onSelectStrategy(alt.strategy_id)}
+              >
+                {alt.strategy_name}
+              </button>
+            ))}
+          </div>
+          {selectedStrategy && (
+            <p className="strategy-description">
+              {alternatives.find(a => a.strategy_id === selectedStrategy)?.description}
+            </p>
+          )}
         </div>
       )}
 
