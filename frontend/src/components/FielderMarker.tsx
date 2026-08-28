@@ -8,9 +8,17 @@ interface FielderMarkerProps {
   y: number;
   role: 'wicket_taking' | 'run_saving' | 'core';
   onUpdate: (x: number, y: number) => void;
+  showCoverage?: boolean;
 }
 
-export const FielderMarker: React.FC<FielderMarkerProps> = ({ name, x, y, role, onUpdate }) => {
+export const FielderMarker: React.FC<FielderMarkerProps> = ({
+  name,
+  x,
+  y,
+  role,
+  onUpdate,
+  showCoverage = true
+}) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState<boolean>(false);
   const [active, setActive] = useState<boolean>(false);
@@ -23,7 +31,15 @@ export const FielderMarker: React.FC<FielderMarkerProps> = ({ name, x, y, role, 
     return '#007aff'; // Blue
   };
 
+  const getCoverageRadius = () => {
+    if (name.includes('Slip') || name === 'Gully' || name === 'Short Leg' || name === 'Wicketkeeper') return 4.5;
+    if (role === 'wicket_taking') return 8.0;
+    if (name.startsWith('Deep') || name.startsWith('Long') || name === 'Third Man' || name === 'Fine Leg') return 22.0;
+    return 12.5;
+  };
+
   const color = getColor();
+  const coverageRadius = getCoverageRadius();
 
   // Drag handler using R3F pointer events
   const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
@@ -36,17 +52,13 @@ export const FielderMarker: React.FC<FielderMarkerProps> = ({ name, x, y, role, 
     if (!active) return;
     e.stopPropagation();
     
-    // Find intersection with the invisible ground plane
-    // We map 3D X -> field X, 3D Z -> field Y
     const newX = e.unprojectedPoint.x;
     const newY = e.unprojectedPoint.z;
 
-    // Clamp coordinates within the boundary boundary (65m radius)
     const dist = Math.sqrt(newX * newX + newY * newY);
     if (dist <= 65) {
       onUpdate(newX, newY);
     } else {
-      // Clamp to boundary rope edge
       const angle = Math.atan2(newY, newX);
       onUpdate(Math.cos(angle) * 65, Math.sin(angle) * 65);
     }
@@ -85,6 +97,14 @@ export const FielderMarker: React.FC<FielderMarkerProps> = ({ name, x, y, role, 
         <ringGeometry args={[0, 1.4]} />
         <meshBasicMaterial color="#000000" opacity={0.3} transparent />
       </mesh>
+
+      {/* Fielder Intercept Coverage Radius Ring */}
+      {showCoverage && (
+        <mesh position={[x, 0.02, y]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[coverageRadius - 0.25, coverageRadius, 32]} />
+          <meshBasicMaterial color={color} opacity={0.35} transparent side={THREE.DoubleSide} />
+        </mesh>
+      )}
     </group>
   );
 };

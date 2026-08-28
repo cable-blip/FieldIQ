@@ -12,13 +12,25 @@
   position: absolute;
   top: 16px;
   left: 16px;
+  right: 16px;
   z-index: 10;
   display: flex;
-  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
+  gap: 8px;
+  pointer-events: none;
 }
 
-.btn-preset-ui {
+.preset-group,
+.toggle-group {
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.btn-preset-ui,
+.btn-toggle-ui {
   background-color: rgba(22, 27, 34, 0.85);
   border: 1px solid #30363d;
   color: #c9d1d9;
@@ -27,11 +39,28 @@
   border-radius: 6px;
   cursor: pointer;
   backdrop-filter: blur(4px);
-  transition: background-color 0.2s;
+  transition: all 0.2s ease-in-out;
 }
 
 .btn-preset-ui:hover {
   background-color: #1f6feb;
   color: #ffffff;
   border-color: #388bfd;
+}
+
+.btn-toggle-ui {
+  background-color: rgba(22, 27, 34, 0.85);
+  color: #8b949e;
+  border-color: #30363d;
+}
+
+.btn-toggle-ui:hover {
+  background-color: #30363d;
+  color: #ffffff;
+}
+
+.btn-toggle-ui.active {
+  background-color: rgba(46, 160, 67, 0.2);
+  color: #3fb950;
+  border-color: #3fb950;
 }
