@@ -29,12 +29,63 @@ function App() {
   const [alternatives, setAlternatives] = useState<AlternativeField[]>([]);
   const [selectedStrategy, setSelectedStrategy] = useState<string>('balanced');
   const [zoneChart, setZoneChart] = useState<Record<string, number>>({});
+  const [lastMatchState, setLastMatchState] = useState<MatchState | null>(null);
+
+  // Live evaluation endpoint trigger for manual sphere drags
+  const handleEvaluateCustomLayout = async (updatedFielders: FielderPosition[]) => {
+    if (!lastMatchState) return;
+
+    const evalPayload = {
+      batter_name: lastMatchState.batter_name,
+      bowler_name: lastMatchState.bowler_name,
+      match_format: lastMatchState.match_format,
+      over: lastMatchState.over,
+      placements: updatedFielders.map((f) => ({
+        position_name: f.name,
+        fielder: {
+          name: f.name,
+          jump: 0.8,
+          catching: 0.8,
+          arm: 0.8,
+          close_in_skill: 0.8,
+          boundary_skill: 0.8,
+          preferred_positions: [],
+        },
+        x: f.x,
+        y: f.y,
+        role: f.role,
+        reason: 'Custom user position',
+      })),
+    };
+
+    try {
+      const res = await fetch('/api/v1/analysis/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(evalPayload),
+      });
+
+      if (res.ok) {
+        const evalData = await res.json();
+        setMetrics((prev: any) => ({
+          ...prev,
+          ers: evalData.ers,
+          ewo: evalData.ewo,
+          cds: evalData.cds,
+          is_legal: evalData.is_legal,
+          violations: evalData.violations,
+        }));
+      }
+    } catch {
+      // Ignore transient errors during drag
+    }
+  };
 
   // Drag handler updating positions in real-time
   const handleUpdateFielder = (name: string, x: number, y: number) => {
-    setFielders((prev) =>
-      prev.map((f) => (f.name === name ? { ...f, x, y } : f))
-    );
+    const updated = fielders.map((f) => (f.name === name ? { ...f, x, y } : f));
+    setFielders(updated);
+    handleEvaluateCustomLayout(updated);
   };
 
   const handleResetPositions = () => {
@@ -43,6 +94,7 @@ function App() {
     setAlternatives([]);
     setSelectedStrategy('balanced');
     setZoneChart({});
+    setLastMatchState(null);
   };
 
   const handleSelectStrategy = (strategyId: string) => {
@@ -57,6 +109,7 @@ function App() {
           role: p.role,
         }));
         setFielders(mappedFielders);
+        handleEvaluateCustomLayout(mappedFielders);
       }
       setMetrics((prev: any) => ({
         ...prev,
@@ -71,6 +124,7 @@ function App() {
     setLoading(true);
     setError(null);
     setObjective(matchState.tactical_objective);
+    setLastMatchState(matchState);
 
     try {
       const response = await fetch('/api/v1/analysis', {

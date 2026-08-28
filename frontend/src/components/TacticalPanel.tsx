@@ -91,6 +91,29 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({
       }
     : getFallbackMetrics();
 
+  const handleExportReport = () => {
+    const reportData = {
+      system: 'FieldIQ Cricket Tactical Field Intelligence',
+      generated_at: new Date().toISOString(),
+      objective,
+      metrics,
+      fielders: fielders.map((f) => ({
+        position: f.name,
+        x: Number(f.x.toFixed(1)),
+        y: Number(f.y.toFixed(1)),
+        role: f.role,
+      })),
+    };
+    const jsonStr = JSON.stringify(reportData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `FieldIQ_Tactical_Report_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="tactical-panel">
       <h3>Tactical Intelligence</h3>
@@ -209,9 +232,14 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({
       <div className="coordinates-section">
         <div className="coordinates-header">
           <h4>Fielder Coordinates</h4>
-          <button type="button" onClick={onReset} className="btn btn-reset">
-            🔄 Reset Positions
-          </button>
+          <div className="header-actions">
+            <button type="button" onClick={handleExportReport} className="btn btn-export">
+              📥 Export Report
+            </button>
+            <button type="button" onClick={onReset} className="btn btn-reset">
+              🔄 Reset Positions
+            </button>
+          </div>
         </div>
         <div className="table-wrapper">
           <table className="coords-table">
