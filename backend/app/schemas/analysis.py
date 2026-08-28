@@ -49,6 +49,15 @@ class MatchupStatsSchema(BaseModel):
     dot_ball_pct: float
     boundary_pct: float
 
+class AlternativeFieldSchema(BaseModel):
+    strategy_id: str
+    strategy_name: str
+    description: str
+    placements: list[FieldPlacementSchema]
+    ers: float
+    ewo: float
+    cds: float
+
 class AnalysisResponse(BaseModel):
     analysis_id: UUID = Field(default_factory=uuid4)
     status: str = "available"
@@ -62,4 +71,5 @@ class AnalysisResponse(BaseModel):
     is_legal: bool
     violations: list[str]
     matchup_stats: MatchupStatsSchema
+    alternative_fields: list[AlternativeFieldSchema] = []
     accepted_request: AnalysisRequest
