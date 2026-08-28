@@ -2,7 +2,7 @@
 
 ## Ready
 
-
+- [[UI-002 - 3D Zone Risk Visualizations and Fielder Coverage Indicators]]
 
 ## In Progress
 

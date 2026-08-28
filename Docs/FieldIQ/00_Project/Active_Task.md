@@ -1,8 +1,8 @@
 # Active Task
 
-No coordinated task is currently in Ready or In Progress.
+The current active task is [[UI-002 - 3D Zone Risk Visualizations and Fielder Coverage Indicators]].
 
-The last completed assignment is [[SIM-001 - Candidate Field Alternatives, Monte Carlo Evaluator and Strategy Selector]].
-
-Open the next unique task ID on the [[Task Board]] before starting Cursor or
-Antigravity in parallel worktrees.
+- **Task ID:** UI-002
+- **Status:** ready
+- **Backend Owner:** Cursor
+- **Frontend Owner:** Antigravity
