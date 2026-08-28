@@ -28,6 +28,7 @@ function App() {
   const [metrics, setMetrics] = useState<any>(null);
   const [alternatives, setAlternatives] = useState<AlternativeField[]>([]);
   const [selectedStrategy, setSelectedStrategy] = useState<string>('balanced');
+  const [zoneChart, setZoneChart] = useState<Record<string, number>>({});
 
   // Drag handler updating positions in real-time
   const handleUpdateFielder = (name: string, x: number, y: number) => {
@@ -41,6 +42,7 @@ function App() {
     setMetrics(null);
     setAlternatives([]);
     setSelectedStrategy('balanced');
+    setZoneChart({});
   };
 
   const handleSelectStrategy = (strategyId: string) => {
@@ -93,6 +95,10 @@ function App() {
           role: p.role,
         }));
         setFielders(mappedFielders);
+      }
+
+      if (data.zone_chart) {
+        setZoneChart(data.zone_chart);
       }
 
       setMetrics({
@@ -149,7 +155,11 @@ function App() {
         </aside>
 
         <section className="center-viewport">
-          <ThreeField fielders={fielders} onUpdateFielder={handleUpdateFielder} />
+          <ThreeField
+            fielders={fielders}
+            onUpdateFielder={handleUpdateFielder}
+            zoneChart={zoneChart}
+          />
         </section>
 
         <aside className="sidebar-right">
