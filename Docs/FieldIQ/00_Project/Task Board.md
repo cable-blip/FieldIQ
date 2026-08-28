@@ -2,7 +2,7 @@
 
 ## Ready
 
-- [[SIM-001 - Candidate Field Alternatives, Monte Carlo Evaluator and Strategy Selector]]
+
 
 ## In Progress
 
@@ -21,6 +21,7 @@
 - [[INTEG-002 - Deterministic Matchup Engine and 3D Field Integration]]
 - [[DATA-005 - Real Dataset Loading and Player Lists]]
 - [[INTEG-003 - Historical Matchup Statistics and Statistical Matchup Engine]]
+- [[SIM-001 - Candidate Field Alternatives, Monte Carlo Evaluator and Strategy Selector]]
 
 ## Blocked
 

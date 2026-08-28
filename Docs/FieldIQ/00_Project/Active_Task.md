@@ -1,8 +1,8 @@
 # Active Task
 
-The current active task is [[SIM-001 - Candidate Field Alternatives, Monte Carlo Evaluator and Strategy Selector]].
+No coordinated task is currently in Ready or In Progress.
 
-- **Task ID:** SIM-001
-- **Status:** ready
-- **Backend Owner:** Cursor
-- **Frontend Owner:** Antigravity
+The last completed assignment is [[SIM-001 - Candidate Field Alternatives, Monte Carlo Evaluator and Strategy Selector]].
+
+Open the next unique task ID on the [[Task Board]] before starting Cursor or
+Antigravity in parallel worktrees.
