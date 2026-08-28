@@ -2,7 +2,7 @@
 
 ## Ready
 
-
+- [[SIM-001 - Candidate Field Alternatives, Monte Carlo Evaluator and Strategy Selector]]
 
 ## In Progress
 
