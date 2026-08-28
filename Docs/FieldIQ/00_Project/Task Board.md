@@ -2,7 +2,7 @@
 
 ## Ready
 
-- [[UI-002 - 3D Zone Risk Visualizations and Fielder Coverage Indicators]]
+
 
 ## In Progress
 
@@ -22,6 +22,7 @@
 - [[DATA-005 - Real Dataset Loading and Player Lists]]
 - [[INTEG-003 - Historical Matchup Statistics and Statistical Matchup Engine]]
 - [[SIM-001 - Candidate Field Alternatives, Monte Carlo Evaluator and Strategy Selector]]
+- [[UI-002 - 3D Zone Risk Visualizations and Fielder Coverage Indicators]]
 
 ## Blocked
 
