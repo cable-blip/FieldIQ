@@ -1,8 +1,8 @@
 # Active Task
 
-No coordinated task is currently in Ready or In Progress.
+The current active task is [[SIM-002 - Real-Time Manual Field Evaluation and Report Exporter]].
 
-The last completed assignment is [[UI-002 - 3D Zone Risk Visualizations and Fielder Coverage Indicators]].
-
-Open the next unique task ID on the [[Task Board]] before starting Cursor or
-Antigravity in parallel worktrees.
+- **Task ID:** SIM-002
+- **Status:** ready
+- **Backend Owner:** Cursor
+- **Frontend Owner:** Antigravity
