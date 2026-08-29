@@ -371,5 +371,106 @@
   font-style: italic;
 }
 
+.ml-prediction-box {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 14px;
+  margin-bottom: 20px;
+}
+
+.ml-prediction-box h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: #c9d1d9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #21262d;
+  padding-bottom: 6px;
+}
+
+.ml-bars-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ml-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ml-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #8b949e;
+  font-weight: 500;
+}
+
+.ml-progress-bg {
+  width: 100%;
+  height: 6px;
+  background-color: #21262d;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.ml-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease-in-out;
+}
+
+.ml-progress-fill.dot {
+  background-color: #8b949e;
+}
+
+.ml-progress-fill.single {
+  background-color: #58a6ff;
+}
+
+.ml-progress-fill.boundary {
+  background-color: #f85149;
+}
+
+.ml-progress-fill.wicket {
+  background-color: #bc8cff;
+}
+
+.sim-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  text-align: center;
+  background-color: #0d1117;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #21262d;
+}
+
+.sim-stat-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.sim-stat-val {
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #58a6ff;
+  margin-bottom: 2px;
+}
+
+.sim-stat-label {
+  font-size: 0.65rem;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+
 
 

@@ -18,6 +18,29 @@ export interface AlternativeField {
   cds: number;
 }
 
+export interface MLOutcomeProbabilities {
+  dot_pct: number;
+  single_pct: number;
+  two_pct: number;
+  boundary_pct: number;
+  four_pct: number;
+  six_pct: number;
+  wicket_pct: number;
+  expected_runs_per_ball: number;
+  expected_wickets_per_ball: number;
+}
+
+export interface SimulationMetrics {
+  simulated_deliveries: number;
+  simulated_dot_pct: number;
+  simulated_boundary_pct: number;
+  simulated_wicket_pct: number;
+  expected_runs_per_over: number;
+  confidence_interval_90_min: number;
+  confidence_interval_90_max: number;
+  tactical_utility_score: number;
+}
+
 interface TacticalPanelProps {
   fielders: FielderPosition[];
   onReset: () => void;
@@ -38,6 +61,8 @@ interface TacticalPanelProps {
       dot_ball_pct: number;
       boundary_pct: number;
     } | null;
+    ml_probabilities?: MLOutcomeProbabilities | null;
+    simulation_metrics?: SimulationMetrics | null;
   } | null;
   alternatives?: AlternativeField[];
   selectedStrategy?: string;
@@ -114,6 +139,9 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const ml = metrics?.ml_probabilities;
+  const sim = metrics?.simulation_metrics;
+
   return (
     <div className="tactical-panel">
       <h3>Tactical Intelligence</h3>
@@ -154,6 +182,71 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({
             <p className="strategy-description">
               {alternatives.find(a => a.strategy_id === selectedStrategy)?.description}
             </p>
+          )}
+        </div>
+      )}
+
+      {/* ML Outcome Probability Predictions Section */}
+      {ml && (
+        <div className="ml-prediction-box">
+          <h4>🤖 ML Outcome Probability Engine</h4>
+          <div className="ml-bars-container">
+            <div className="ml-bar-row">
+              <div className="ml-bar-label">
+                <span>⚪ Dot Ball</span>
+                <span className="font-mono">{ml.dot_pct.toFixed(1)}%</span>
+              </div>
+              <div className="ml-progress-bg">
+                <div className="ml-progress-fill dot" style={{ width: `${ml.dot_pct}%` }} />
+              </div>
+            </div>
+
+            <div className="ml-bar-row">
+              <div className="ml-bar-label">
+                <span>🔵 Singles & 2s</span>
+                <span className="font-mono">{(ml.single_pct + ml.two_pct).toFixed(1)}%</span>
+              </div>
+              <div className="ml-progress-bg">
+                <div className="ml-progress-fill single" style={{ width: `${ml.single_pct + ml.two_pct}%` }} />
+              </div>
+            </div>
+
+            <div className="ml-bar-row">
+              <div className="ml-bar-label">
+                <span>🔴 Boundary Risk (4s/6s)</span>
+                <span className="font-mono">{ml.boundary_pct.toFixed(1)}%</span>
+              </div>
+              <div className="ml-progress-bg">
+                <div className="ml-progress-fill boundary" style={{ width: `${ml.boundary_pct}%` }} />
+              </div>
+            </div>
+
+            <div className="ml-bar-row">
+              <div className="ml-bar-label">
+                <span>🟣 Wicket Chance</span>
+                <span className="font-mono">{ml.wicket_pct.toFixed(1)}%</span>
+              </div>
+              <div className="ml-progress-bg">
+                <div className="ml-progress-fill wicket" style={{ width: `${ml.wicket_pct}%` }} />
+              </div>
+            </div>
+          </div>
+
+          {sim && (
+            <div className="sim-stats-grid">
+              <div className="sim-stat-card">
+                <span className="sim-stat-val font-mono">{sim.expected_runs_per_over.toFixed(1)}</span>
+                <span className="sim-stat-label">Exp. Runs / Over</span>
+              </div>
+              <div className="sim-stat-card">
+                <span className="sim-stat-val font-mono">{sim.confidence_interval_90_min} - {sim.confidence_interval_90_max}</span>
+                <span className="sim-stat-label">90% CI Over Runs</span>
+              </div>
+              <div className="sim-stat-card">
+                <span className="sim-stat-val font-mono">{sim.tactical_utility_score.toFixed(1)}</span>
+                <span className="sim-stat-label">Tactical Score</span>
+              </div>
+            </div>
           )}
         </div>
       )}

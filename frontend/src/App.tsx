@@ -74,6 +74,8 @@ function App() {
           cds: evalData.cds,
           is_legal: evalData.is_legal,
           violations: evalData.violations,
+          ml_probabilities: evalData.ml_probabilities || prev?.ml_probabilities,
+          simulation_metrics: evalData.simulation_metrics || prev?.simulation_metrics,
         }));
       }
     } catch {
@@ -163,6 +165,8 @@ function App() {
         is_legal: data.is_legal,
         violations: data.violations,
         matchup_stats: data.matchup_stats,
+        ml_probabilities: data.ml_probabilities,
+        simulation_metrics: data.simulation_metrics,
       });
 
       if (data.alternative_fields && data.alternative_fields.length > 0) {
