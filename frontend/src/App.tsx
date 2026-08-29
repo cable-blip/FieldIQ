@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { Navbar } from './components/Navbar';
 import { MatchContextPanel } from './components/MatchContextPanel';
 import type { MatchState } from './components/MatchContextPanel';
 import { TacticalPanel } from './components/TacticalPanel';
 import type { FielderPosition, AlternativeField } from './components/TacticalPanel';
 import { ThreeField } from './components/ThreeField';
+import { DatasetStudioModal } from './components/DatasetStudioModal';
 import './App.css';
 
 const DEFAULT_FIELDERS: FielderPosition[] = [
@@ -30,6 +32,7 @@ function App() {
   const [selectedStrategy, setSelectedStrategy] = useState<string>('balanced');
   const [zoneChart, setZoneChart] = useState<Record<string, number>>({});
   const [lastMatchState, setLastMatchState] = useState<MatchState | null>(null);
+  const [isDatasetStudioOpen, setIsDatasetStudioOpen] = useState<boolean>(false);
 
   // Live evaluation endpoint trigger for manual sphere drags
   const handleEvaluateCustomLayout = async (updatedFielders: FielderPosition[]) => {
@@ -197,9 +200,11 @@ function App() {
 
   return (
     <div className="app-layout">
-      <header className="app-header">
-        <h1>FieldIQ — Interactive 3D Tactical Field Optimizer</h1>
-      </header>
+      {/* Top Cybernetic Command Navbar */}
+      <Navbar
+        onOpenDatasetStudio={() => setIsDatasetStudioOpen(true)}
+        onResetLayout={handleResetPositions}
+      />
 
       {error && (
         <div className="app-error-banner">
@@ -208,30 +213,38 @@ function App() {
       )}
 
       <main className="app-main">
-        <aside className="sidebar-left">
-          <MatchContextPanel onSubmit={handleMatchSubmit} loading={loading} />
-        </aside>
+        <div className="app-grid-layout">
+          <aside className="sidebar-left">
+            <MatchContextPanel onSubmit={handleMatchSubmit} loading={loading} />
+          </aside>
 
-        <section className="center-viewport">
-          <ThreeField
-            fielders={fielders}
-            onUpdateFielder={handleUpdateFielder}
-            zoneChart={zoneChart}
-          />
-        </section>
+          <section className="center-viewport">
+            <ThreeField
+              fielders={fielders}
+              onUpdateFielder={handleUpdateFielder}
+              zoneChart={zoneChart}
+            />
+          </section>
 
-        <aside className="sidebar-right">
-          <TacticalPanel
-            fielders={fielders}
-            onReset={handleResetPositions}
-            objective={objective}
-            metrics={metrics}
-            alternatives={alternatives}
-            selectedStrategy={selectedStrategy}
-            onSelectStrategy={handleSelectStrategy}
-          />
-        </aside>
+          <aside className="sidebar-right">
+            <TacticalPanel
+              fielders={fielders}
+              onReset={handleResetPositions}
+              objective={objective}
+              metrics={metrics}
+              alternatives={alternatives}
+              selectedStrategy={selectedStrategy}
+              onSelectStrategy={handleSelectStrategy}
+            />
+          </aside>
+        </div>
       </main>
+
+      {/* Dataset Studio Modal */}
+      <DatasetStudioModal
+        isOpen={isDatasetStudioOpen}
+        onClose={() => setIsDatasetStudioOpen(false)}
+      />
     </div>
   );
 }
