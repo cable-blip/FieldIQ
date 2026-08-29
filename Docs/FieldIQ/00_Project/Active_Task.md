@@ -1,8 +1,8 @@
 # Active Task
 
-No coordinated task is currently in Ready or In Progress.
+The current active task is [[UI-003 - Dataset Studio Ingestion Hub and Next-Gen Cybernetic UIUX Overhaul]].
 
-The last completed assignment is [[ML-001 - Probabilistic Matchup Predictor and Spatial Field Simulation Engine]].
-
-Open the next unique task ID on the [[Task Board]] before starting Cursor or
-Antigravity in parallel worktrees.
+- **Task ID:** UI-003
+- **Status:** ready
+- **Backend Owner:** Cursor
+- **Frontend Owner:** Antigravity
