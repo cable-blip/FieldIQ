@@ -1,0 +1,257 @@
+.dataset-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(3, 7, 14, 0.82);
+  backdrop-filter: blur(12px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.dataset-modal-card {
+  background: linear-gradient(145deg, rgba(16, 22, 34, 0.95), rgba(9, 13, 20, 0.98));
+  border: 1px solid rgba(56, 139, 253, 0.25);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(56, 139, 253, 0.08);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 680px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalPop 0.25s ease-out;
+}
+
+@keyframes modalPop {
+  0% { transform: scale(0.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.dataset-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(48, 54, 61, 0.6);
+  background: rgba(22, 27, 34, 0.4);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hub-icon {
+  font-size: 1.8rem;
+  background: rgba(56, 139, 253, 0.12);
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 139, 253, 0.3);
+}
+
+.header-brand h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #f0f6fc;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.header-brand p {
+  margin: 4px 0 0 0;
+  font-size: 0.8rem;
+  color: #8b949e;
+}
+
+.btn-close-modal {
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dataset-alert-banner {
+  padding: 12px 20px;
+  margin: 16px 24px 0 24px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.dataset-alert-banner.success {
+  background: rgba(46, 160, 67, 0.15);
+  border: 1px solid rgba(46, 160, 67, 0.4);
+  color: #3fb950;
+}
+
+.dataset-alert-banner.error {
+  background: rgba(248, 81, 73, 0.15);
+  border: 1px solid rgba(248, 81, 73, 0.4);
+  color: #f85149;
+}
+
+.dataset-dropzone {
+  margin: 20px 24px;
+  border: 2px dashed rgba(56, 139, 253, 0.35);
+  border-radius: 12px;
+  padding: 36px 20px;
+  text-align: center;
+  background: rgba(13, 17, 23, 0.6);
+  cursor: pointer;
+  transition: all 0.25s ease-in-out;
+}
+
+.dataset-dropzone:hover,
+.dataset-dropzone.dragover {
+  border-color: #58a6ff;
+  background: rgba(56, 139, 253, 0.08);
+  box-shadow: 0 0 24px rgba(56, 139, 253, 0.15);
+}
+
+.dataset-dropzone.uploading {
+  border-color: #3fb950;
+  opacity: 0.75;
+}
+
+.upload-icon-pulse {
+  font-size: 2.4rem;
+  margin-bottom: 12px;
+  animation: floatIcon 2.5s ease-in-out infinite;
+}
+
+@keyframes floatIcon {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.dropzone-content h4 {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+  color: #f0f6fc;
+  font-weight: 600;
+}
+
+.dropzone-content p {
+  margin: 0 0 16px 0;
+  font-size: 0.8rem;
+  color: #8b949e;
+}
+
+.btn-browse {
+  background: linear-gradient(180deg, #238636, #1a6328);
+  border: 1px solid #2ea043;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(35, 134, 54, 0.3);
+  transition: all 0.2s;
+}
+
+.btn-browse:hover {
+  background: linear-gradient(180deg, #2ea043, #238636);
+  box-shadow: 0 4px 14px rgba(46, 160, 67, 0.4);
+}
+
+.dataset-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 0 24px 20px 24px;
+}
+
+.telemetry-card {
+  background: rgba(22, 27, 34, 0.6);
+  border: 1px solid rgba(48, 54, 61, 0.6);
+  border-radius: 10px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.telemetry-val {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #58a6ff;
+  margin-bottom: 4px;
+}
+
+.telemetry-label {
+  font-size: 0.68rem;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.dataset-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(48, 54, 61, 0.6);
+  background: rgba(13, 17, 23, 0.7);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.last-sync-time {
+  font-size: 0.75rem;
+  color: #8b949e;
+  font-style: italic;
+}
+
+.footer-btns {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-retrain {
+  background: rgba(56, 139, 253, 0.15);
+  border: 1px solid rgba(56, 139, 253, 0.4);
+  color: #58a6ff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-retrain:hover {
+  background: #1f6feb;
+  color: #ffffff;
+}
+
+.btn-done {
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-done:hover {
+  background: #30363d;
+  color: #ffffff;
+}
