@@ -1,8 +1,8 @@
 # Active Task
 
-The current active task is [[ML-001 - Probabilistic Matchup Predictor and Spatial Field Simulation Engine]].
+No coordinated task is currently in Ready or In Progress.
 
-- **Task ID:** ML-001
-- **Status:** ready
-- **Backend Owner:** Cursor
-- **Frontend Owner:** Antigravity
+The last completed assignment is [[ML-001 - Probabilistic Matchup Predictor and Spatial Field Simulation Engine]].
+
+Open the next unique task ID on the [[Task Board]] before starting Cursor or
+Antigravity in parallel worktrees.
