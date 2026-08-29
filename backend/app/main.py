@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from backend.app.routers.analysis import router as analysis_router
 from backend.app.routers.datasets import router as datasets_router
+from backend.app.routers.dataset import router as dataset_router
 
 app = FastAPI(
     title="FieldIQ Tactical Intelligence API",
@@ -10,6 +11,7 @@ app = FastAPI(
 
 app.include_router(analysis_router)
 app.include_router(datasets_router)
+app.include_router(dataset_router)
 
 
 @app.get("/health")
