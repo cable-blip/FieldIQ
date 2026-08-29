@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
@@ -58,11 +59,32 @@ class AlternativeFieldSchema(BaseModel):
     ewo: float
     cds: float
 
+class MLOutcomeProbabilitiesSchema(BaseModel):
+    dot_pct: float
+    single_pct: float
+    two_pct: float
+    boundary_pct: float
+    four_pct: float
+    six_pct: float
+    wicket_pct: float
+    expected_runs_per_ball: float
+    expected_wickets_per_ball: float
+
+class SimulationMetricsSchema(BaseModel):
+    simulated_deliveries: int
+    simulated_dot_pct: float
+    simulated_boundary_pct: float
+    simulated_wicket_pct: float
+    expected_runs_per_over: float
+    confidence_interval_90_min: float
+    confidence_interval_90_max: float
+    tactical_utility_score: float
+
 class AnalysisResponse(BaseModel):
     analysis_id: UUID = Field(default_factory=uuid4)
     status: str = "available"
     data_driven: bool = False
-    reason: str = "Deterministic expert recommendation rules engine."
+    reason: str = "Deterministic expert recommendation rules engine with Bayesian ML simulation."
     placements: list[FieldPlacementSchema]
     ers: float
     ewo: float
@@ -73,6 +95,8 @@ class AnalysisResponse(BaseModel):
     matchup_stats: MatchupStatsSchema
     alternative_fields: list[AlternativeFieldSchema] = []
     zone_chart: dict[str, float] = {}
+    ml_probabilities: Optional[MLOutcomeProbabilitiesSchema] = None
+    simulation_metrics: Optional[SimulationMetricsSchema] = None
     accepted_request: AnalysisRequest
 
 class EvaluateFieldRequest(BaseModel):
@@ -88,3 +112,5 @@ class EvaluateFieldResponse(BaseModel):
     cds: float
     is_legal: bool
     violations: list[str]
+    ml_probabilities: Optional[MLOutcomeProbabilitiesSchema] = None
+    simulation_metrics: Optional[SimulationMetricsSchema] = None
