@@ -2,7 +2,7 @@
 
 ## Ready
 
-- [[UI-003 - Dataset Studio Ingestion Hub and Next-Gen Cybernetic UIUX Overhaul]]
+
 
 ## In Progress
 
@@ -25,6 +25,7 @@
 - [[UI-002 - 3D Zone Risk Visualizations and Fielder Coverage Indicators]]
 - [[SIM-002 - Real-Time Manual Field Evaluation and Report Exporter]]
 - [[ML-001 - Probabilistic Matchup Predictor and Spatial Field Simulation Engine]]
+- [[UI-003 - Dataset Studio Ingestion Hub and Next-Gen Cybernetic UIUX Overhaul]]
 
 ## Blocked
 
