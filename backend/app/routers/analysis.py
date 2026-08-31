@@ -10,7 +10,8 @@ from backend.app.schemas.analysis import (
     EvaluateFieldRequest,
     EvaluateFieldResponse,
     MLOutcomeProbabilitiesSchema,
-    SimulationMetricsSchema
+    SimulationMetricsSchema,
+    BatterFormatRecordSchema
 )
 from backend.app.services.profiles import (
     get_sample_batters,
@@ -161,15 +162,35 @@ def create_analysis_request(
     from backend.app.services.matchup_stats import get_matchup_stats
     h2h_stats = get_matchup_stats(request.batter_name, request.bowler_name)
 
-    # Execute ML Bayesian & Monte Carlo Prediction Engine
+    # Execute ML Historical Data-Driven & Monte Carlo Prediction Engine
     ml_probs, sim_metrics = compute_ml_matchup_prediction(
         batter=batter,
         bowler=bowler,
         phase=phase,
         placements=result.placements,
-        h2h_stats=h2h_stats,
+        match_format=request.match_format.value,
         objective=request.tactical_objective.value
     )
+
+    fmt_rec_schema = None
+    if ml_probs.format_record:
+        rec = ml_probs.format_record
+        fmt_rec_schema = BatterFormatRecordSchema(
+            format_name=rec.format_name,
+            bowler_type_category=rec.bowler_type_category,
+            balls_faced=rec.balls_faced,
+            runs_scored=rec.runs_scored,
+            dismissals=rec.dismissals,
+            batting_average=rec.batting_average,
+            strike_rate=rec.strike_rate,
+            dot_ball_pct=rec.dot_ball_pct,
+            boundary_pct=rec.boundary_pct,
+            caught_behind_slips_pct=rec.caught_behind_slips_pct,
+            caught_infield_pct=rec.caught_infield_pct,
+            caught_deep_boundary_pct=rec.caught_deep_boundary_pct,
+            bowled_lbw_pct=rec.bowled_lbw_pct,
+            stumped_pct=rec.stumped_pct
+        )
 
     ml_probs_schema = MLOutcomeProbabilitiesSchema(
         dot_pct=ml_probs.dot_pct,
@@ -180,7 +201,8 @@ def create_analysis_request(
         six_pct=ml_probs.six_pct,
         wicket_pct=ml_probs.wicket_pct,
         expected_runs_per_ball=ml_probs.expected_runs_per_ball,
-        expected_wickets_per_ball=ml_probs.expected_wickets_per_ball
+        expected_wickets_per_ball=ml_probs.expected_wickets_per_ball,
+        format_record=fmt_rec_schema
     )
 
     sim_metrics_schema = SimulationMetricsSchema(
@@ -191,7 +213,8 @@ def create_analysis_request(
         expected_runs_per_over=sim_metrics.expected_runs_per_over,
         confidence_interval_90_min=sim_metrics.confidence_interval_90_min,
         confidence_interval_90_max=sim_metrics.confidence_interval_90_max,
-        tactical_utility_score=sim_metrics.tactical_utility_score
+        tactical_utility_score=sim_metrics.tactical_utility_score,
+        fielder_catch_efficiencies=sim_metrics.fielder_catch_efficiencies
     )
 
     return AnalysisResponse(
@@ -266,17 +289,34 @@ def evaluate_custom_field(
     ewo = compute_ewo(service_placements, [], batter, bowler)
     cds = compute_cds(ers, ewo, phase)
 
-    from backend.app.services.matchup_stats import get_matchup_stats
-    h2h_stats = get_matchup_stats(request.batter_name, request.bowler_name)
-
     ml_probs, sim_metrics = compute_ml_matchup_prediction(
         batter=batter,
         bowler=bowler,
         phase=phase,
         placements=service_placements,
-        h2h_stats=h2h_stats,
+        match_format=request.match_format.value,
         objective="attack_wicket"
     )
+
+    fmt_rec_schema = None
+    if ml_probs.format_record:
+        rec = ml_probs.format_record
+        fmt_rec_schema = BatterFormatRecordSchema(
+            format_name=rec.format_name,
+            bowler_type_category=rec.bowler_type_category,
+            balls_faced=rec.balls_faced,
+            runs_scored=rec.runs_scored,
+            dismissals=rec.dismissals,
+            batting_average=rec.batting_average,
+            strike_rate=rec.strike_rate,
+            dot_ball_pct=rec.dot_ball_pct,
+            boundary_pct=rec.boundary_pct,
+            caught_behind_slips_pct=rec.caught_behind_slips_pct,
+            caught_infield_pct=rec.caught_infield_pct,
+            caught_deep_boundary_pct=rec.caught_deep_boundary_pct,
+            bowled_lbw_pct=rec.bowled_lbw_pct,
+            stumped_pct=rec.stumped_pct
+        )
 
     ml_probs_schema = MLOutcomeProbabilitiesSchema(
         dot_pct=ml_probs.dot_pct,
@@ -287,7 +327,8 @@ def evaluate_custom_field(
         six_pct=ml_probs.six_pct,
         wicket_pct=ml_probs.wicket_pct,
         expected_runs_per_ball=ml_probs.expected_runs_per_ball,
-        expected_wickets_per_ball=ml_probs.expected_wickets_per_ball
+        expected_wickets_per_ball=ml_probs.expected_wickets_per_ball,
+        format_record=fmt_rec_schema
     )
 
     sim_metrics_schema = SimulationMetricsSchema(
@@ -298,7 +339,8 @@ def evaluate_custom_field(
         expected_runs_per_over=sim_metrics.expected_runs_per_over,
         confidence_interval_90_min=sim_metrics.confidence_interval_90_min,
         confidence_interval_90_max=sim_metrics.confidence_interval_90_max,
-        tactical_utility_score=sim_metrics.tactical_utility_score
+        tactical_utility_score=sim_metrics.tactical_utility_score,
+        fielder_catch_efficiencies=sim_metrics.fielder_catch_efficiencies
     )
 
     return EvaluateFieldResponse(

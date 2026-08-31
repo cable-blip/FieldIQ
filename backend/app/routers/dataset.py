@@ -1,16 +1,69 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import shutil
+import zipfile
+import io
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, UploadFile, File, HTTPException, status
 import pandas as pd
 
 from backend.app.services.real_data_loader import DATA_DIR, get_available_batters_from_df
-from backend.app.services.matchup_stats import initialize_matchup_stats, get_matchup_stats
+from backend.app.services.matchup_stats import initialize_matchup_stats
 from backend.app.services.profiles import get_sample_bowlers, get_sample_batters
 
 router = APIRouter(prefix="/api/v1/dataset", tags=["dataset"])
+
+
+def _extract_deliveries_from_cricsheet_json(match_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Extracts flat delivery rows from modern Cricsheet match JSON format.
+    """
+    deliveries_list = []
+    innings = match_data.get("innings", [])
+    info = match_data.get("info", {})
+    match_type = info.get("match_type", "ODI").upper()
+    venue = info.get("venue", "Standard Pitch")
+
+    for inn_idx, inn in enumerate(innings):
+        overs = inn.get("overs", [])
+        for over_obj in overs:
+            over_num = over_obj.get("over", 0) + 1
+            for ball_idx, deliv in enumerate(over_obj.get("deliveries", [])):
+                batter = deliv.get("batter", "Unknown")
+                bowler = deliv.get("bowler", "Unknown")
+                runs_info = deliv.get("runs", {})
+                runs_batter = runs_info.get("batter", 0)
+                runs_total = runs_info.get("total", runs_batter)
+                
+                wickets = deliv.get("wickets", [])
+                is_wicket = 1 if wickets else 0
+                wicket_kind = wickets[0].get("kind", "") if wickets else ""
+                player_out = wickets[0].get("player_out", "") if wickets else ""
+                
+                # Fielder involved in dismissal
+                fielders_involved = ""
+                if wickets and "fielders" in wickets[0]:
+                    f_list = [f.get("name", "") for f in wickets[0]["fielders"] if isinstance(f, dict)]
+                    fielders_involved = ", ".join(f_list)
+
+                deliveries_list.append({
+                    "match_type": match_type,
+                    "venue": venue,
+                    "innings": inn_idx + 1,
+                    "over": over_num,
+                    "ball": ball_idx + 1,
+                    "batter": batter,
+                    "bowler": bowler,
+                    "runs_batter": runs_batter,
+                    "runs_total": runs_total,
+                    "is_wicket": is_wicket,
+                    "wicket_kind": wicket_kind,
+                    "player_out": player_out,
+                    "fielders_involved": fielders_involved
+                })
+
+    return deliveries_list
 
 
 @router.get("/summary", status_code=status.HTTP_200_OK)
@@ -50,82 +103,159 @@ def get_dataset_summary() -> Dict[str, Any]:
         "unique_bowlers_count": len(sample_bowlers),
         "batters": unique_batters,
         "bowlers": sample_bowlers,
-        "last_updated": datetime.utcnow().isoformat() + "Z"
+        "last_updated": datetime.now(timezone.utc).isoformat()
     }
 
 
 @router.post("/upload", status_code=status.HTTP_200_OK)
-async def upload_dataset(file: UploadFile = File(...)) -> Dict[str, Any]:
-    filename = file.filename or ""
-    lower_name = filename.lower()
+async def upload_dataset(
+    files: Optional[List[UploadFile]] = File(None),
+    file: Optional[UploadFile] = File(None)
+) -> Dict[str, Any]:
+    """
+    Accepts single or multiple .csv, .json, and .zip files containing Cricsheet match datasets.
+    Supports entire folders of matches uploaded at once.
+    """
+    upload_list: List[UploadFile] = []
+    if files:
+        upload_list.extend([f for f in files if f.filename])
+    if file and file.filename:
+        upload_list.append(file)
 
-    if not (lower_name.endswith(".csv") or lower_name.endswith(".json")):
+    if not upload_list:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Unsupported file format. Please upload a .csv or .json match dataset."
+            detail="No files uploaded."
         )
+
+    # Check file extensions
+    for f in upload_list:
+        lower_name = (f.filename or "").lower()
+        if not (lower_name.endswith(".csv") or lower_name.endswith(".json") or lower_name.endswith(".zip")):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported file format for {f.filename}. Please upload .csv, .json, or .zip files."
+            )
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    temp_path = DATA_DIR / f"temp_{filename}"
+    all_deliveries: List[Dict[str, Any]] = []
+    all_matches_json: List[Dict[str, Any]] = []
+    processed_count = 0
 
-    try:
-        with open(temp_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+    # Load existing CSV deliveries if present
+    target_csv = DATA_DIR / "real_batters_deliveries.csv"
+    if target_csv.exists():
+        try:
+            existing_df = pd.read_csv(target_csv)
+            all_deliveries = existing_df.to_dict(orient="records")
+        except Exception:
+            all_deliveries = []
 
-        if lower_name.endswith(".csv"):
-            df = pd.read_csv(temp_path)
-            # Basic validation of essential columns
-            cols = [c.lower() for c in df.columns]
-            if "batter" not in cols and "batsman" not in cols:
+    for file_item in upload_list:
+        filename = file_item.filename or ""
+        lower_name = filename.lower()
+
+        # Handle .ZIP Archives
+        if lower_name.endswith(".zip"):
+            try:
+                zip_bytes = await file_item.read()
+                with zipfile.ZipFile(io.BytesIO(zip_bytes)) as z:
+                    for inner_filename in z.namelist():
+                        inner_lower = inner_filename.lower()
+                        if inner_lower.endswith(".json"):
+                            with z.open(inner_filename) as zf:
+                                match_data = json.load(zf)
+                                if isinstance(match_data, dict):
+                                    all_matches_json.append(match_data)
+                                    extracted = _extract_deliveries_from_cricsheet_json(match_data)
+                                    all_deliveries.extend(extracted)
+                                    processed_count += 1
+                        elif inner_lower.endswith(".csv"):
+                            with z.open(inner_filename) as zf:
+                                inner_df = pd.read_csv(zf)
+                                cols = [c.lower() for c in inner_df.columns]
+                                if "batter" in cols or "batsman" in cols:
+                                    all_deliveries.extend(inner_df.to_dict(orient="records"))
+                                    processed_count += 1
+            except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="CSV missing required 'batter' column."
+                    detail=f"Failed to extract zip archive {filename}: {str(e)}"
                 )
 
-            target_csv = DATA_DIR / "real_batters_deliveries.csv"
-            if target_csv.exists():
-                target_csv.unlink()
-            shutil.move(temp_path, target_csv)
+        # Handle .CSV Files
+        elif lower_name.endswith(".csv"):
+            try:
+                csv_bytes = await file_item.read()
+                df = pd.read_csv(io.BytesIO(csv_bytes))
+                cols = [c.lower() for c in df.columns]
+                if "batter" not in cols and "batsman" not in cols:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail=f"CSV {filename} missing required 'batter' column."
+                    )
+                all_deliveries.extend(df.to_dict(orient="records"))
+                processed_count += 1
+            except HTTPException:
+                raise
+            except Exception as e:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Failed to parse CSV {filename}: {str(e)}"
+                )
 
+        # Handle .JSON Files
         elif lower_name.endswith(".json"):
-            with open(temp_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-
-            if not isinstance(data, (list, dict)):
+            try:
+                json_bytes = await file_item.read()
+                match_data = json.loads(json_bytes.decode("utf-8"))
+                if isinstance(match_data, dict):
+                    all_matches_json.append(match_data)
+                    extracted = _extract_deliveries_from_cricsheet_json(match_data)
+                    all_deliveries.extend(extracted)
+                    processed_count += 1
+                elif isinstance(match_data, list):
+                    # List of match objects
+                    for item in match_data:
+                        if isinstance(item, dict):
+                            all_matches_json.append(item)
+                            extracted = _extract_deliveries_from_cricsheet_json(item)
+                            all_deliveries.extend(extracted)
+                    processed_count += len(match_data)
+            except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="Invalid Cricsheet JSON structure."
+                    detail=f"Failed to parse JSON {filename}: {str(e)}"
                 )
 
-            target_json = DATA_DIR / "real_match_dataset.json"
-            if target_json.exists():
-                target_json.unlink()
-            shutil.move(temp_path, target_json)
-
-            # Re-initialize head-to-head match stats from JSON
-            initialize_matchup_stats()
-
-        # Re-initialize matchup caches
-        initialize_matchup_stats()
-
-        # Retrieve new summary
-        summary = get_dataset_summary()
-        return {
-            "status": "success",
-            "message": f"Successfully ingested and indexed dataset: {filename}",
-            "summary": summary
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
+    if not all_deliveries:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to process dataset: {str(e)}"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No valid cricket deliveries could be parsed from uploaded files."
         )
-    finally:
-        if temp_path.exists():
-            temp_path.unlink()
+
+    # Save combined delivery dataset
+    combined_df = pd.DataFrame(all_deliveries)
+    combined_df.to_csv(target_csv, index=False)
+
+    # Save match JSONs if present
+    if all_matches_json:
+        target_json = DATA_DIR / "real_match_dataset.json"
+        with open(target_json, "w", encoding="utf-8") as f:
+            json.dump(all_matches_json, f, indent=2)
+
+    # Re-train and re-initialize statistical models
+    initialize_matchup_stats()
+
+    # Retrieve updated summary
+    summary = get_dataset_summary()
+
+    return {
+        "status": "success",
+        "message": f"Successfully ingested {processed_count} files/matches into the intelligence engine.",
+        "processed_files_count": processed_count,
+        "summary": summary
+    }
 
 
 @router.post("/retrain", status_code=status.HTTP_200_OK)

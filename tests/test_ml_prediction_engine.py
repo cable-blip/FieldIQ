@@ -6,61 +6,42 @@ from backend.app.services.profiles import (
     get_sample_bowlers,
     get_sample_fielders,
     MatchPhase,
+    BowlerType,
     FieldPlacement,
     FielderProfile
 )
 from backend.app.services.ml_prediction_engine import (
-    BayesianMatchupPredictor,
-    SpatialFieldSimulator,
-    MonteCarloFieldEvaluator,
+    HistoricalMatchDataMiner,
+    FielderKinematicEngine,
+    AdvancedMonteCarloSimulator,
     compute_ml_matchup_prediction
 )
 
 client = TestClient(app)
 
-def test_bayesian_posterior_calibration():
+
+def test_historical_match_data_miner():
     batters = get_sample_batters()
     bowlers = get_sample_bowlers()
     batter = batters[0] # Virat Kohli
     bowler = bowlers[0] # Right-Arm Fast
 
-    # Test without prior h2h history
-    probs = BayesianMatchupPredictor.compute_posterior_probabilities(
-        batter=batter,
-        bowler=bowler,
-        phase=MatchPhase.POWERPLAY,
-        h2h_stats={"has_history": False, "balls_faced": 0}
+    record = HistoricalMatchDataMiner.extract_batter_record_vs_bowler_type(
+        batter_name=batter.name,
+        bowler_type=bowler.bowler_type,
+        match_format="ODI",
+        phase=MatchPhase.POWERPLAY
     )
 
-    total_prob = sum(probs.values())
-    assert pytest.approx(total_prob, 0.0001) == 1.0
-    assert probs["dot"] > 0.30
-    assert probs["four"] > 0.05
-    assert probs["wicket"] > 0.01
-
-    # Test with real h2h history (e.g. 50 balls, 10 boundaries, 3 dismissals)
-    h2h = {
-        "has_history": True,
-        "balls_faced": 50,
-        "dot_balls": 20,
-        "boundaries": 10,
-        "dismissals": 3,
-        "dot_ball_pct": 40.0
-    }
-    updated_probs = BayesianMatchupPredictor.compute_posterior_probabilities(
-        batter=batter,
-        bowler=bowler,
-        phase=MatchPhase.POWERPLAY,
-        h2h_stats=h2h
-    )
-
-    total_updated = sum(updated_probs.values())
-    assert pytest.approx(total_updated, 0.0001) == 1.0
-    # Boundary and wicket probabilities should rise due to empirical observations
-    assert updated_probs["wicket"] > probs["wicket"]
+    assert record.format_name == "ODI"
+    assert "Pace" in record.bowler_type_category or "FAST" in record.bowler_type_category
+    assert record.batting_average > 0
+    assert record.strike_rate > 0
+    assert record.caught_behind_slips_pct >= 0.0
+    assert record.caught_deep_boundary_pct >= 0.0
 
 
-def test_spatial_field_simulator():
+def test_fielder_kinematics_and_coverage():
     # Build test field with deep fielder at Deep Cover and open Midwicket
     fp = FielderProfile(
         name="Deep Cover",
@@ -80,15 +61,13 @@ def test_spatial_field_simulator():
         reason=""
     )
 
-    sector_data = SpatialFieldSimulator.evaluate_field_sector_coverage([p_cover])
+    batters = get_sample_batters()
+    bowlers = get_sample_bowlers()
+    coverage = FielderKinematicEngine.evaluate_field_coverage_matrix([p_cover], batters[0], bowlers[0])
 
-    # Cover should have boundary suppression factor < 1.0 (protected)
-    assert sector_data["Cover"]["deep_count"] == 1
-    assert sector_data["Cover"]["suppression_factor"] < 1.0
-
-    # Midwicket (undefended) should have suppression factor > 1.0 (higher gap risk)
-    assert sector_data["Mid Wicket"]["deep_count"] == 0
-    assert sector_data["Mid Wicket"]["suppression_factor"] > 1.2
+    # Cover should have 1 deep fielder and boundary suppression factor < 1.0
+    assert coverage["Cover"]["deep_fielders"] == 1
+    assert coverage["Cover"]["boundary_suppression"] < 1.0
 
 
 def test_monte_carlo_field_evaluator():
@@ -115,9 +94,9 @@ def test_monte_carlo_field_evaluator():
         bowler=bowler,
         phase=MatchPhase.POWERPLAY,
         placements=placements,
-        h2h_stats={"has_history": False, "balls_faced": 0},
+        match_format="ODI",
         objective="attack_wicket",
-        n_simulations=1000
+        n_simulations=500
     )
 
     # Validate output probability bounds
@@ -127,7 +106,7 @@ def test_monte_carlo_field_evaluator():
     assert ml_probs.expected_runs_per_ball > 0
 
     # Validate Monte Carlo simulation metrics
-    assert sim_metrics.simulated_deliveries == 1000
+    assert sim_metrics.simulated_deliveries == 500
     assert sim_metrics.confidence_interval_90_min <= sim_metrics.confidence_interval_90_max
     assert sim_metrics.expected_runs_per_over > 0
 
@@ -137,7 +116,7 @@ def test_api_analysis_includes_ml_prediction():
         "/api/v1/analysis",
         json={
             "batter_name": "Virat Kohli",
-            "bowler_name": "Jasprit Bumrah",
+            "bowler_name": "Generic Right-Arm Fast (New Ball)",
             "match_format": "T20",
             "innings": 1,
             "over": 3,

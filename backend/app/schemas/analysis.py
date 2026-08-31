@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Optional, Dict
 from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
@@ -50,6 +50,22 @@ class MatchupStatsSchema(BaseModel):
     dot_ball_pct: float
     boundary_pct: float
 
+class BatterFormatRecordSchema(BaseModel):
+    format_name: str
+    bowler_type_category: str
+    balls_faced: int
+    runs_scored: int
+    dismissals: int
+    batting_average: float
+    strike_rate: float
+    dot_ball_pct: float
+    boundary_pct: float
+    caught_behind_slips_pct: float
+    caught_infield_pct: float
+    caught_deep_boundary_pct: float
+    bowled_lbw_pct: float
+    stumped_pct: float
+
 class AlternativeFieldSchema(BaseModel):
     strategy_id: str
     strategy_name: str
@@ -69,6 +85,7 @@ class MLOutcomeProbabilitiesSchema(BaseModel):
     wicket_pct: float
     expected_runs_per_ball: float
     expected_wickets_per_ball: float
+    format_record: Optional[BatterFormatRecordSchema] = None
 
 class SimulationMetricsSchema(BaseModel):
     simulated_deliveries: int
@@ -79,6 +96,7 @@ class SimulationMetricsSchema(BaseModel):
     confidence_interval_90_min: float
     confidence_interval_90_max: float
     tactical_utility_score: float
+    fielder_catch_efficiencies: Dict[str, float] = {}
 
 class AnalysisResponse(BaseModel):
     analysis_id: UUID = Field(default_factory=uuid4)
