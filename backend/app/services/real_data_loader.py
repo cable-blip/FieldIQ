@@ -273,6 +273,19 @@ def load_all_batters_from_df(df: pd.DataFrame, source_name: str = "Uploaded Data
     return profiles
 
 
+def load_batter_profile_from_real_data(batter_name: str) -> Optional[BatterProfile]:
+    """Loads a specific BatterProfile by name from the cached real deliveries CSV."""
+    csv_path = DATA_DIR / 'real_batters_deliveries.csv'
+    if not csv_path.exists():
+        return None
+    try:
+        df = pd.read_csv(csv_path)
+        profiles = load_all_batters_from_df(df)
+        return next((p for p in profiles if p.name.lower() == batter_name.strip().lower()), None)
+    except Exception:
+        return None
+
+
 def train_test_split_by_game(
     filepath: str | Path,
     batter_name: str,

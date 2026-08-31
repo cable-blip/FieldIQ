@@ -1,5 +1,7 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, HTTPException
 import pandas as pd
+from typing import List, Dict, Any, Optional
+
 from backend.app.schemas.analysis import (
     AnalysisRequest,
     AnalysisResponse,
@@ -11,7 +13,11 @@ from backend.app.schemas.analysis import (
     EvaluateFieldResponse,
     MLOutcomeProbabilitiesSchema,
     SimulationMetricsSchema,
-    BatterFormatRecordSchema
+    BatterFormatRecordSchema,
+    GroundDimensionPresetSchema,
+    GameplanRequestSchema,
+    GameplanResponseSchema,
+    OverPlanSchema
 )
 from backend.app.services.profiles import (
     get_sample_batters,
@@ -28,6 +34,17 @@ from backend.app.services.simulator import generate_candidate_fields
 from backend.app.services.rules_engine import validate_field
 from backend.app.services.metrics import compute_ers, compute_ewo, compute_cds
 from backend.app.services.ml_prediction_engine import compute_ml_matchup_prediction
+from backend.app.services.environmental_engine import (
+    EnvironmentalConditions,
+    PitchPhysicsEngine,
+    PitchType
+)
+from backend.app.services.ground_geometry import (
+    GroundGeometryEngine,
+    GroundDimensionPreset,
+    INTERNATIONAL_VENUE_PRESETS
+)
+from backend.app.services.gameplan_engine import GameplanSequencingEngine
 from backend.app.services.real_data_loader import (
     get_available_batters_from_df,
     load_all_batters_from_df,
@@ -44,6 +61,7 @@ except Exception:
 
 router = APIRouter(prefix="/api/v1", tags=["analysis"])
 
+
 @router.get("/players", status_code=status.HTTP_200_OK)
 def get_players_list():
     sample_bowlers = [b.name for b in get_sample_bowlers()]
@@ -52,6 +70,30 @@ def get_players_list():
         "batters": batters_list,
         "bowlers": sample_bowlers
     }
+
+
+@router.get("/grounds/presets", response_model=List[GroundDimensionPresetSchema], status_code=status.HTTP_200_OK)
+def get_ground_presets():
+    """
+    Returns list of pre-configured international cricket ground geometries and surface defaults.
+    """
+    presets = GroundGeometryEngine.get_all_presets()
+    return [
+        GroundDimensionPresetSchema(
+            id=p.id,
+            name=p.name,
+            city=p.city,
+            country=p.country,
+            straight_boundary_meters=p.straight_boundary_meters,
+            square_off_boundary_meters=p.square_off_boundary_meters,
+            square_leg_boundary_meters=p.square_leg_boundary_meters,
+            behind_square_meters=p.behind_square_meters,
+            typical_pitch_type=p.typical_pitch_type.value,
+            description=p.description
+        )
+        for p in presets
+    ]
+
 
 @router.post(
     "/analysis",
@@ -64,6 +106,11 @@ def create_analysis_request(
     # Resolve match format & phase
     fmt = ServiceMatchFormat.T20 if request.match_format == MatchFormat.T20 else ServiceMatchFormat.ODI
     phase = get_phase_from_over(request.over, fmt)
+
+    # Resolve environmental conditions & ground preset
+    env = EnvironmentalConditions.from_dict(request.environmental_conditions.model_dump() if request.environmental_conditions else {})
+    ground_id = request.ground_preset_id or "standard"
+    ground = GroundGeometryEngine.get_preset_by_id(ground_id)
 
     # Resolve batter profile (dynamic from CSV dataset if present)
     batter = None
@@ -93,6 +140,12 @@ def create_analysis_request(
         fmt=fmt,
         keeper=keeper
     )
+
+    # Snap boundary fielders according to ground geometry
+    for p in result.placements:
+        sx, sy = GroundGeometryEngine.snap_fielder_to_boundary(p.x, p.y, ground)
+        p.x = sx
+        p.y = sy
 
     # Convert placements list
     placements_schema = [
@@ -163,13 +216,18 @@ def create_analysis_request(
     h2h_stats = get_matchup_stats(request.batter_name, request.bowler_name)
 
     # Execute ML Historical Data-Driven & Monte Carlo Prediction Engine
+    is_pace = bowler.bowler_type.name in ["RIGHT_ARM_FAST", "LEFT_ARM_FAST", "RIGHT_ARM_MEDIUM"]
+    pitch_mults = PitchPhysicsEngine.compute_condition_multipliers(env, is_pace)
+
     ml_probs, sim_metrics = compute_ml_matchup_prediction(
         batter=batter,
         bowler=bowler,
         phase=phase,
         placements=result.placements,
         match_format=request.match_format.value,
-        objective=request.tactical_objective.value
+        objective=request.tactical_objective.value,
+        environmental_conditions=env,
+        ground_preset_id=ground.id
     )
 
     fmt_rec_schema = None
@@ -233,8 +291,11 @@ def create_analysis_request(
         zone_chart=batter.zone_chart if (batter and getattr(batter, 'zone_chart', None)) else {},
         ml_probabilities=ml_probs_schema,
         simulation_metrics=sim_metrics_schema,
+        pitch_multipliers=pitch_mults,
+        ground_preset=ground.to_dict(),
         accepted_request=request
     )
+
 
 @router.post(
     "/analysis/evaluate",
@@ -246,6 +307,9 @@ def evaluate_custom_field(
 ) -> EvaluateFieldResponse:
     fmt = ServiceMatchFormat.T20 if request.match_format == MatchFormat.T20 else ServiceMatchFormat.ODI
     phase = get_phase_from_over(request.over, fmt)
+    env = EnvironmentalConditions.from_dict(request.environmental_conditions.model_dump() if request.environmental_conditions else {})
+    ground_id = request.ground_preset_id or "standard"
+    ground = GroundGeometryEngine.get_preset_by_id(ground_id)
 
     service_placements = []
     for p in request.placements:
@@ -269,6 +333,7 @@ def evaluate_custom_field(
             )
         )
 
+    # Resolve batter & bowler
     batter = None
     if deliveries_df is not None and request.batter_name in AVAILABLE_REAL_BATTERS:
         try:
@@ -284,10 +349,19 @@ def evaluate_custom_field(
     bowlers = get_sample_bowlers()
     bowler = next((b for b in bowlers if b.name.lower() == request.bowler_name.lower()), bowlers[0])
 
+    # Validate legality
     is_legal, violations = validate_field(service_placements, phase, fmt)
+
+    # Compute metrics
     ers = compute_ers(service_placements, batter)
-    ewo = compute_ewo(service_placements, [], batter, bowler)
+    from backend.app.services.matchup_engine import analyze_matchup
+    recs = analyze_matchup(batter, bowler, phase)
+    ewo = compute_ewo(service_placements, recs, batter, bowler)
     cds = compute_cds(ers, ewo, phase)
+
+    # Execute ML outcome estimation
+    is_pace = bowler.bowler_type.name in ["RIGHT_ARM_FAST", "LEFT_ARM_FAST", "RIGHT_ARM_MEDIUM"]
+    pitch_mults = PitchPhysicsEngine.compute_condition_multipliers(env, is_pace)
 
     ml_probs, sim_metrics = compute_ml_matchup_prediction(
         batter=batter,
@@ -295,7 +369,9 @@ def evaluate_custom_field(
         phase=phase,
         placements=service_placements,
         match_format=request.match_format.value,
-        objective="attack_wicket"
+        objective="attack_wicket",
+        environmental_conditions=env,
+        ground_preset_id=ground.id
     )
 
     fmt_rec_schema = None
@@ -350,5 +426,63 @@ def evaluate_custom_field(
         is_legal=is_legal,
         violations=violations,
         ml_probabilities=ml_probs_schema,
-        simulation_metrics=sim_metrics_schema
+        simulation_metrics=sim_metrics_schema,
+        pitch_multipliers=pitch_mults
+    )
+
+
+@router.post(
+    "/analysis/gameplan",
+    response_model=GameplanResponseSchema,
+    status_code=status.HTTP_200_OK
+)
+def generate_gameplan(
+    request: GameplanRequestSchema
+) -> GameplanResponseSchema:
+    """
+    Generates a progressive multi-over tactical bowling and fielding gameplan
+    with delivery variation recommendations.
+    """
+    env = EnvironmentalConditions.from_dict(request.environmental_conditions.model_dump() if request.environmental_conditions else {})
+    res = GameplanSequencingEngine.generate_multi_over_gameplan(
+        batter_name=request.batter_name,
+        bowler_name=request.bowler_name,
+        match_format=request.match_format.value,
+        current_over=request.current_over,
+        runs=request.runs,
+        wickets=request.wickets,
+        planned_overs=request.planned_overs,
+        tactical_objective=request.tactical_objective.value,
+        environmental_conditions=env,
+        ground_preset_id=request.ground_preset_id or "standard"
+    )
+
+    return GameplanResponseSchema(
+        status=res["status"],
+        batter_name=res["batter_name"],
+        bowler_name=res["bowler_name"],
+        match_format=res["match_format"],
+        ground_preset=res["ground_preset"],
+        environmental_conditions=res["environmental_conditions"],
+        pitch_multipliers=res["pitch_multipliers"],
+        planned_overs_count=res["planned_overs_count"],
+        gameplan_sequence=[
+            OverPlanSchema(
+                over_number=op["over_number"],
+                phase=op["phase"],
+                tactical_objective=op["tactical_objective"],
+                bowler_recommended_channel=op["bowler_recommended_channel"],
+                bowler_recommended_length=op["bowler_recommended_length"],
+                suggested_variations=op["suggested_variations"],
+                tactical_directive=op["tactical_directive"],
+                ers=op["ers"],
+                ewo=op["ewo"],
+                cds=op["cds"],
+                is_legal=op["is_legal"],
+                placements=op["placements"],
+                outcome_probabilities=op["outcome_probabilities"] if isinstance(op.get("outcome_probabilities"), dict) else None,
+                simulation_telemetry=op["simulation_telemetry"] if isinstance(op.get("simulation_telemetry"), dict) else None
+            )
+            for op in res["gameplan_sequence"]
+        ]
     )

@@ -25,6 +25,15 @@ from backend.app.services.profiles import (
     Handedness
 )
 from backend.app.services.real_data_loader import DATA_DIR
+from backend.app.services.environmental_engine import (
+    EnvironmentalConditions,
+    PitchPhysicsEngine,
+    PitchType
+)
+from backend.app.services.ground_geometry import (
+    GroundGeometryEngine,
+    GroundDimensionPreset
+)
 
 
 @dataclass
@@ -322,9 +331,17 @@ class AdvancedMonteCarloSimulator:
         placements: List[FieldPlacement],
         format_record: BatterFormatRecord,
         objective: str = "attack_wicket",
-        n_simulations: int = 1000
+        n_simulations: int = 1000,
+        environmental_conditions: Optional[EnvironmentalConditions] = None,
+        ground_preset_id: str = "standard"
     ) -> Tuple[MLOutcomeProbabilities, SimulationMetrics]:
         np.random.seed(42)
+
+        env = environmental_conditions or EnvironmentalConditions()
+        ground = GroundGeometryEngine.get_preset_by_id(ground_preset_id)
+        is_pace = "Pace" in format_record.bowler_type_category
+
+        pitch_mults = PitchPhysicsEngine.compute_condition_multipliers(env, is_pace)
 
         coverage = FielderKinematicEngine.evaluate_field_coverage_matrix(placements, batter, bowler)
         sector_names = list(coverage.keys())
@@ -338,9 +355,9 @@ class AdvancedMonteCarloSimulator:
 
         zone_probs = np.array(zone_weights) / sum(zone_weights)
 
-        # Baseline probabilities conditioned on historical format record
+        # Baseline probabilities conditioned on historical format record & pitch exit velocity
         base_dot = format_record.dot_ball_pct / 100.0
-        base_boundary = format_record.boundary_pct / 100.0
+        base_boundary = (format_record.boundary_pct / 100.0) * pitch_mults["exit_velocity_multiplier"]
         base_wicket = (format_record.dismissals / max(1, format_record.balls_faced))
 
         # Adjust for match phase
@@ -367,12 +384,19 @@ class AdvancedMonteCarloSimulator:
             rand_event = np.random.rand()
 
             # 1. Edge & Mistimed Shot Catches (Wicket Trap Test)
-            edge_vulnerability = getattr(batter, 'edge_vs_pace', 0.5) if "Pace" in format_record.bowler_type_category else getattr(batter, 'sweep_risk_vs_spin', 0.4)
+            if is_pace:
+                base_edge = getattr(batter, 'edge_vs_pace', 0.5)
+                edge_vulnerability = base_edge * pitch_mults["seam_movement_multiplier"] * pitch_mults["aerodynamic_swing_factor"]
+            else:
+                base_spin_risk = getattr(batter, 'sweep_risk_vs_spin', 0.4)
+                edge_vulnerability = base_spin_risk * pitch_mults["spin_turn_multiplier"]
+
             is_mistimed = rand_event < (base_wicket * 2.2 * (0.8 + 0.4 * edge_vulnerability))
 
             if is_mistimed:
-                # Check if caught by close slips / gully / keeper
-                if sec_data["close_fielders"] > 0 and rand_event < (base_wicket * 1.3):
+                # Check if caught by close slips / gully / keeper (boosted by edge carry)
+                close_catch_threshold = base_wicket * 1.3 * pitch_mults["edge_carry_multiplier"]
+                if sec_data["close_fielders"] > 0 and rand_event < close_catch_threshold:
                     sim_outcomes.append(-1)
                     runs_per_sim.append(0)
                     for f_name in sec_data["fielders"]:
@@ -391,8 +415,19 @@ class AdvancedMonteCarloSimulator:
                     runs_per_sim.append(0)
                     continue
 
-            # 2. Boundary Shot Simulation (Suppressed by Deep Fielders)
-            is_boundary_attempt = (rand_event < (base_boundary * 1.2))
+            # 2. Boundary Shot Simulation (Suppressed by Deep Fielders & Asymmetric Boundary Size)
+            # Calculate sector boundary radius
+            sector_angle_rad = sec_idx * (2 * math.pi / len(sector_names))
+            sec_boundary_radius = GroundGeometryEngine.calculate_boundary_radius_at_angle(ground, sector_angle_rad)
+
+            # Shorter boundary (<62m) boosts boundary chance; longer boundary (>70m) decreases it
+            boundary_distance_factor = 1.0
+            if sec_boundary_radius < 62.0:
+                boundary_distance_factor += (62.0 - sec_boundary_radius) * 0.02
+            elif sec_boundary_radius > 70.0:
+                boundary_distance_factor = max(0.65, 1.0 - (sec_boundary_radius - 70.0) * 0.015)
+
+            is_boundary_attempt = (rand_event < (base_boundary * 1.2 * boundary_distance_factor))
             if is_boundary_attempt:
                 suppression = sec_data["boundary_suppression"]
                 if np.random.rand() > suppression:
@@ -496,16 +531,20 @@ def compute_ml_matchup_prediction(
     placements: List[FieldPlacement],
     match_format: str = "ODI",
     objective: str = "attack_wicket",
-    n_simulations: int = 1000
+    n_simulations: int = 1000,
+    format_name: Optional[str] = None,
+    environmental_conditions: Optional[EnvironmentalConditions] = None,
+    ground_preset_id: str = "standard"
 ) -> Tuple[MLOutcomeProbabilities, SimulationMetrics]:
     """
     Main entry point for computing historical data-driven ML matchup outcome probabilities
-    and 1,000-delivery Monte Carlo simulation metrics.
+    and 1,000-delivery Monte Carlo simulation metrics with pitch & ground physics.
     """
+    fmt = format_name or match_format
     format_record = HistoricalMatchDataMiner.extract_batter_record_vs_bowler_type(
         batter_name=batter.name,
         bowler_type=bowler.bowler_type,
-        match_format=match_format,
+        match_format=fmt,
         phase=phase
     )
 
@@ -516,5 +555,7 @@ def compute_ml_matchup_prediction(
         placements=placements,
         format_record=format_record,
         objective=objective,
-        n_simulations=n_simulations
+        n_simulations=n_simulations,
+        environmental_conditions=environmental_conditions,
+        ground_preset_id=ground_preset_id
     )
