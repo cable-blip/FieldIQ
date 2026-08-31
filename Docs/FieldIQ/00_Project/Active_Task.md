@@ -1,8 +1,8 @@
 # Active Task
 
-No coordinated task is currently in Ready or In Progress.
+The current active task is [[ML-002 - Advanced Trajectory-Physics ML Model and Multi-File Folder Dataset Ingestion Engine]].
 
-The last completed assignment is [[UI-003 - Dataset Studio Ingestion Hub and Next-Gen Cybernetic UIUX Overhaul]].
-
-Open the next unique task ID on the [[Task Board]] before starting Cursor or
-Antigravity in parallel worktrees.
+- **Task ID:** ML-002
+- **Status:** ready
+- **Backend Owner:** Cursor
+- **Frontend Owner:** Antigravity
