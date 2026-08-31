@@ -34,13 +34,13 @@ const ZoneSectors: React.FC<{ zoneChart?: Record<string, number>; visible: boole
         const keyInner = `${d.name}_Inner`;
         const val = ((zoneChart[keyDeep] || 1.0) + (zoneChart[keyMid] || 1.0) + (zoneChart[keyInner] || 1.0)) / 3;
 
-        let color = '#34c759'; // Green
+        let color = '#3fb950'; // Green (suppressed/safe)
         let opacity = 0.15;
         if (val > 1.35) {
-          color = '#ff3b30'; // Red
+          color = '#f85149'; // Red (hot danger zone)
           opacity = 0.35;
         } else if (val > 0.85) {
-          color = '#ffcc00'; // Yellow
+          color = '#e3b341'; // Yellow (moderate threat)
           opacity = 0.25;
         }
 
@@ -49,7 +49,7 @@ const ZoneSectors: React.FC<{ zoneChart?: Record<string, number>; visible: boole
 
         return (
           <mesh key={d.name} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[10, 65, 16, 1, startAngle, length]} />
+            <ringGeometry args={[10, 65, 32, 1, startAngle, length]} />
             <meshBasicMaterial color={color} opacity={opacity} transparent side={THREE.DoubleSide} />
           </mesh>
         );
@@ -92,14 +92,14 @@ export const ThreeField: React.FC<ThreeFieldProps> = ({ fielders, onUpdateFielde
 
   return (
     <div className="three-field-container">
-      {/* Viewport Toolbar (Presets + Feature Toggles) */}
+      {/* Top Floating HUD Toolbar */}
       <div className="view-presets">
         <div className="preset-group">
-          <button type="button" onClick={() => handleSetView('top')} className="btn btn-preset-ui">
-            🗺️ Top Down
-          </button>
           <button type="button" onClick={() => handleSetView('tactical')} className="btn btn-preset-ui">
             🛡️ Tactical View
+          </button>
+          <button type="button" onClick={() => handleSetView('top')} className="btn btn-preset-ui">
+            🗺️ Top Down
           </button>
           <button type="button" onClick={() => handleSetView('batter')} className="btn btn-preset-ui">
             👤 Batter POV
@@ -127,39 +127,56 @@ export const ThreeField: React.FC<ThreeFieldProps> = ({ fielders, onUpdateFielde
         </div>
       </div>
 
+      {/* Bottom Spatial HUD Banner */}
+      <div className="spatial-hud-footer">
+        <span className="hud-badge font-mono">🏟️ 3D SPATIAL ARENA · 27.4m INFIELD RING · 65m BOUNDARY ROPE</span>
+        <span className="hud-hint font-mono">💡 Drag fielder spheres to test live gap vulnerabilities</span>
+      </div>
+
       {/* 3D Canvas */}
       <Canvas
         camera={{ position: [0, 45, 60], fov: 50 }}
-        style={{ background: '#111' }}
+        style={{ background: '#090d14' }}
       >
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[10, 30, 20]} intensity={1.2} castShadow />
+        <ambientLight intensity={0.7} />
+        <directionalLight position={[10, 40, 20]} intensity={1.4} castShadow />
+        <directionalLight position={[-15, 20, -20]} intensity={0.5} />
 
-        {/* Outfield Grass */}
+        {/* Outfield Stadium Turf */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
           <circleGeometry args={[75, 64]} />
-          <meshStandardMaterial color="#1b4d22" roughness={0.9} />
+          <meshStandardMaterial color="#16381d" roughness={0.85} />
         </mesh>
 
         {/* 3D Wagon-Wheel Risk Heatmap Sectors */}
         <ZoneSectors zoneChart={zoneChart} visible={showHeatmap} />
 
-        {/* Pitch (brown rectangle: 3.05m wide, 20.12m long) */}
+        {/* Pitch Surface (3.05m x 20.12m) */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
           <planeGeometry args={[3.05, 20.12]} />
-          <meshStandardMaterial color="#c29a6a" roughness={0.6} />
+          <meshStandardMaterial color="#c29a6a" roughness={0.65} />
         </mesh>
 
-        {/* 30-yard circle (yellow ring: 27.4m radius) */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-          <ringGeometry args={[27.3, 27.5, 64]} />
-          <meshBasicMaterial color="#e3b341" opacity={0.6} transparent />
-        </mesh>
-
-        {/* Boundary Rope (white ring: 65m radius) */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-          <ringGeometry args={[64.8, 65.2, 128]} />
+        {/* Crease Markings */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, -8.9]}>
+          <planeGeometry args={[2.64, 0.08]} />
           <meshBasicMaterial color="#ffffff" opacity={0.8} transparent />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 8.9]}>
+          <planeGeometry args={[2.64, 0.08]} />
+          <meshBasicMaterial color="#ffffff" opacity={0.8} transparent />
+        </mesh>
+
+        {/* 30-Yard Infield Circle (27.4m radius) */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+          <ringGeometry args={[27.25, 27.55, 64]} />
+          <meshBasicMaterial color="#e3b341" opacity={0.75} transparent />
+        </mesh>
+
+        {/* Boundary Rope (65m radius) */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+          <ringGeometry args={[64.7, 65.3, 128]} />
+          <meshBasicMaterial color="#ffffff" opacity={0.85} transparent />
         </mesh>
 
         {/* Fielder Markers */}
@@ -181,7 +198,7 @@ export const ThreeField: React.FC<ThreeFieldProps> = ({ fielders, onUpdateFielde
           dampingFactor={0.05}
           maxPolarAngle={Math.PI / 2 - 0.05}
           minDistance={10}
-          maxDistance={120}
+          maxDistance={130}
         />
       </Canvas>
     </div>

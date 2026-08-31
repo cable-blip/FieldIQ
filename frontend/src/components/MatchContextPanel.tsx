@@ -20,15 +20,22 @@ interface MatchContextPanelProps {
 export const MatchContextPanel: React.FC<MatchContextPanelProps> = ({ onSubmit, loading }) => {
   const [format, setFormat] = useState<'ODI' | 'T20' | 'TEST'>('ODI');
   const [innings, setInnings] = useState<number>(1);
-  const [over, setOver] = useState<number>(1);
-  const [runs, setRuns] = useState<number>(0);
+  const [over, setOver] = useState<number>(4);
+  const [runs, setRuns] = useState<number>(18);
   const [wickets, setWickets] = useState<number>(0);
   
-  const [batters, setBatters] = useState<string[]>(['Virat Kohli', 'AB de Villiers', 'Brendon McCullum', 'David Warner']);
-  const [bowlers, setBowlers] = useState<string[]>(['Mitchell Starc', 'Jasprit Bumrah', 'Left-Arm Fast', 'Leg-Spinner']);
+  const [batters, setBatters] = useState<string[]>([
+    'Virat Kohli', 'Rohit Sharma', 'Babar Azam', 'AB de Villiers',
+    'Steve Smith', 'David Warner', 'Joe Root', 'Kane Williamson', 'Rishabh Pant'
+  ]);
+  const [bowlers, setBowlers] = useState<string[]>([
+    'Generic Right-Arm Fast (New Ball)', 'Generic Right-Arm Fast (Death)',
+    'Short-Ball Enforcer', 'Left-Arm Fast', 'Off-Spinner', 'Leg-Spinner',
+    'Left-Arm Orthodox', 'Right-Arm Medium'
+  ]);
   
   const [batterName, setBatterName] = useState<string>('Virat Kohli');
-  const [bowlerName, setBowlerName] = useState<string>('Mitchell Starc');
+  const [bowlerName, setBowlerName] = useState<string>('Generic Right-Arm Fast (New Ball)');
   const [objective, setObjective] = useState<'attack_wicket' | 'prevent_boundary' | 'build_pressure' | 'stop_singles'>('attack_wicket');
 
   useEffect(() => {
@@ -74,69 +81,89 @@ export const MatchContextPanel: React.FC<MatchContextPanelProps> = ({ onSubmit, 
     });
   };
 
+  const objectivesList: { id: 'attack_wicket' | 'prevent_boundary' | 'build_pressure' | 'stop_singles'; label: string; icon: string; desc: string }[] = [
+    { id: 'attack_wicket', label: 'Attack Wicket', icon: '🎯', desc: 'Packs close catchers & slip cordon' },
+    { id: 'prevent_boundary', label: 'Prevent Boundary', icon: '🛡️', desc: 'Deploys maximum deep boundary riders' },
+    { id: 'build_pressure', label: 'Build Pressure', icon: '⏳', desc: 'Restricts strike rotation & spikes dots' },
+    { id: 'stop_singles', label: 'Stop Singles', icon: '🛑', desc: 'Tightens inner circle ring' },
+  ];
+
   return (
     <div className="match-context-panel">
-      <h3>Match Situation Setup</h3>
-      <form onSubmit={handleSubmit}>
+      <div className="panel-header">
+        <span className="header-icon">🎮</span>
+        <div className="header-title-wrap">
+          <h3>TACTICAL CONTROL</h3>
+          <span className="header-subtitle font-mono">SCENARIO CONFIGURATION</span>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="context-form">
+        {/* Match Format Segmented Pills */}
         <div className="form-group">
-          <label htmlFor="format-select">Match Format</label>
-          <select
-            id="format-select"
-            value={format}
-            onChange={(e) => {
-              const val = e.target.value as 'ODI' | 'T20' | 'TEST';
-              setFormat(val);
-              if (val === 'T20' && over > 20) setOver(20);
-            }}
-            className="input-select"
-          >
-            <option value="ODI">ODI (50 Overs)</option>
-            <option value="T20">T20 (20 Overs)</option>
-            <option value="TEST">TEST</option>
-          </select>
+          <label className="field-label">Match Format</label>
+          <div className="format-pills">
+            <button
+              type="button"
+              className={`pill-btn ${format === 'ODI' ? 'active' : ''}`}
+              onClick={() => {
+                setFormat('ODI');
+              }}
+            >
+              ODI (50 Overs)
+            </button>
+            <button
+              type="button"
+              className={`pill-btn ${format === 'T20' ? 'active' : ''}`}
+              onClick={() => {
+                setFormat('T20');
+                if (over > 20) setOver(20);
+              }}
+            >
+              T20 (20 Overs)
+            </button>
+          </div>
         </div>
 
-        <div className="form-row">
+        {/* Live Match State Grid */}
+        <div className="form-row-grid">
           <div className="form-group">
-            <label htmlFor="innings-select">Innings</label>
+            <label className="field-label" htmlFor="innings-select">Innings</label>
             <select
               id="innings-select"
               value={innings}
               onChange={(e) => setInnings(parseInt(e.target.value))}
-              className="input-select"
+              className="input-select font-mono"
             >
               <option value={1}>1st Innings</option>
               <option value={2}>2nd Innings</option>
             </select>
           </div>
           <div className="form-group">
-            <label htmlFor="over-input">Over</label>
+            <label className="field-label" htmlFor="over-input">Over</label>
             <input
               id="over-input"
               type="number"
               min={1}
-              max={format === 'T20' ? 20 : format === 'ODI' ? 50 : 100}
+              max={format === 'T20' ? 20 : 50}
               value={over}
               onChange={(e) => setOver(parseInt(e.target.value) || 1)}
-              className="input-text"
+              className="input-text font-mono"
             />
           </div>
-        </div>
-
-        <div className="form-row">
           <div className="form-group">
-            <label htmlFor="runs-input">Runs</label>
+            <label className="field-label" htmlFor="runs-input">Runs</label>
             <input
               id="runs-input"
               type="number"
               min={0}
               value={runs}
               onChange={(e) => setRuns(parseInt(e.target.value) || 0)}
-              className="input-text"
+              className="input-text font-mono"
             />
           </div>
           <div className="form-group">
-            <label htmlFor="wickets-input">Wickets</label>
+            <label className="field-label" htmlFor="wickets-input">Wickets</label>
             <input
               id="wickets-input"
               type="number"
@@ -144,13 +171,17 @@ export const MatchContextPanel: React.FC<MatchContextPanelProps> = ({ onSubmit, 
               max={10}
               value={wickets}
               onChange={(e) => setWickets(parseInt(e.target.value) || 0)}
-              className="input-text"
+              className="input-text font-mono"
             />
           </div>
         </div>
 
+        {/* Batter Selector */}
         <div className="form-group">
-          <label htmlFor="batter-select">Batter Name</label>
+          <div className="label-with-badge">
+            <label className="field-label" htmlFor="batter-select">Active Batter</label>
+            <span className="profile-badge">RHB Specialist</span>
+          </div>
           <select
             id="batter-select"
             value={batterName}
@@ -165,8 +196,12 @@ export const MatchContextPanel: React.FC<MatchContextPanelProps> = ({ onSubmit, 
           </select>
         </div>
 
+        {/* Bowler Selector */}
         <div className="form-group">
-          <label htmlFor="bowler-select">Bowler Name</label>
+          <div className="label-with-badge">
+            <label className="field-label" htmlFor="bowler-select">Active Bowler</label>
+            <span className="profile-badge pace">PACE EXPRESS</span>
+          </div>
           <select
             id="bowler-select"
             value={bowlerName}
@@ -181,27 +216,34 @@ export const MatchContextPanel: React.FC<MatchContextPanelProps> = ({ onSubmit, 
           </select>
         </div>
 
+        {/* Tactical Objective Grid */}
         <div className="form-group">
-          <label htmlFor="objective-select">Tactical Objective</label>
-          <select
-            id="objective-select"
-            value={objective}
-            onChange={(e) => setObjective(e.target.value as any)}
-            className="input-select"
-          >
-            <option value="attack_wicket">Attack Wickets (Wicket focus)</option>
-            <option value="prevent_boundary">Prevent Boundaries (Deep protection)</option>
-            <option value="build_pressure">Build Pressure (Tight inner ring)</option>
-            <option value="stop_singles">Stop Singles (Run containment)</option>
-          </select>
+          <label className="field-label">Tactical Objective</label>
+          <div className="objectives-grid">
+            {objectivesList.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`objective-card ${objective === item.id ? 'active' : ''}`}
+                onClick={() => setObjective(item.id)}
+              >
+                <span className="obj-icon">{item.icon}</span>
+                <div className="obj-text">
+                  <span className="obj-name">{item.label}</span>
+                  <span className="obj-desc">{item.desc}</span>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
 
+        {/* Submit Action Button */}
         <button
           type="submit"
           disabled={loading}
-          className="btn btn-primary btn-submit"
+          className="btn-submit-glow"
         >
-          {loading ? 'Optimizing...' : '🎯 Recommend Tactical Field'}
+          {loading ? '⚡ RUNNING MONTE CARLO SIMS...' : '⚡ RECOMMEND TACTICAL FIELD'}
         </button>
       </form>
     </div>

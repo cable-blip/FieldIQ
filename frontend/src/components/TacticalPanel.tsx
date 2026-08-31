@@ -18,6 +18,23 @@ export interface AlternativeField {
   cds: number;
 }
 
+export interface BatterFormatRecord {
+  format_name: string;
+  bowler_type_category: string;
+  balls_faced: int;
+  runs_scored: int;
+  dismissals: int;
+  batting_average: number;
+  strike_rate: number;
+  dot_ball_pct: number;
+  boundary_pct: number;
+  caught_behind_slips_pct: number;
+  caught_infield_pct: number;
+  caught_deep_boundary_pct: number;
+  bowled_lbw_pct: number;
+  stumped_pct: number;
+}
+
 export interface MLOutcomeProbabilities {
   dot_pct: number;
   single_pct: number;
@@ -28,6 +45,7 @@ export interface MLOutcomeProbabilities {
   wicket_pct: number;
   expected_runs_per_ball: number;
   expected_wickets_per_ball: number;
+  format_record?: BatterFormatRecord | null;
 }
 
 export interface SimulationMetrics {
@@ -39,6 +57,7 @@ export interface SimulationMetrics {
   confidence_interval_90_min: number;
   confidence_interval_90_max: number;
   tactical_utility_score: number;
+  fielder_catch_efficiencies?: Record<string, number>;
 }
 
 interface TacticalPanelProps {
@@ -78,29 +97,60 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({
   selectedStrategy,
   onSelectStrategy
 }) => {
-  // Local fallback metrics when API has not run yet
   const getFallbackMetrics = () => {
     switch (objective) {
       case 'prevent_boundary':
-        return { wicket: '6.4%', ers: '1.20', cds: '0.85', confidence: '88%', explanations: [
-          '5 fielders placed on the boundary rope (ODI / T20 maximum cap).',
-          'Deep Midwicket, Long On, and Long Off cover straight boundaries.'
-        ], is_legal: true, violations: [] };
+        return {
+          wicket: '6.4%',
+          ers: '1.20',
+          cds: '0.85',
+          confidence: '88%',
+          explanations: [
+            '5 fielders placed on the boundary rope (ODI / T20 maximum cap).',
+            'Deep Midwicket, Long On, and Long Off cover straight boundaries.'
+          ],
+          is_legal: true,
+          violations: []
+        };
       case 'build_pressure':
-        return { wicket: '10.2%', ers: '1.45', cds: '0.90', confidence: '82%', explanations: [
-          'Inner circle fielders are placed tight to restrict singles.',
-          'Focus on maintaining a low run rate.'
-        ], is_legal: true, violations: [] };
+        return {
+          wicket: '10.2%',
+          ers: '1.45',
+          cds: '0.90',
+          confidence: '82%',
+          explanations: [
+            'Inner circle fielders are placed tight to restrict singles.',
+            'Focus on maintaining a low run rate.'
+          ],
+          is_legal: true,
+          violations: []
+        };
       case 'stop_singles':
-        return { wicket: '8.1%', ers: '1.10', cds: '0.80', confidence: '80%', explanations: [
-          'Maximum players inside the circle to prevent strike rotation.'
-        ], is_legal: true, violations: [] };
+        return {
+          wicket: '8.1%',
+          ers: '1.10',
+          cds: '0.80',
+          confidence: '80%',
+          explanations: [
+            'Maximum players inside the circle to prevent strike rotation.'
+          ],
+          is_legal: true,
+          violations: []
+        };
       case 'attack_wicket':
       default:
-        return { wicket: '18.7%', ers: '0.91', cds: '1.05', confidence: '85%', explanations: [
-          '1st Slip and Gully are reserved to capture outside edges.',
-          'Silly Mid Off captures close drives.'
-        ], is_legal: true, violations: [] };
+        return {
+          wicket: '18.7%',
+          ers: '0.91',
+          cds: '1.05',
+          confidence: '85%',
+          explanations: [
+            '1st Slip and Gully are reserved to capture outside edges.',
+            'Silly Mid Off captures close drives.'
+          ],
+          is_legal: true,
+          violations: []
+        };
     }
   };
 
@@ -141,19 +191,27 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({
 
   const ml = metrics?.ml_probabilities;
   const sim = metrics?.simulation_metrics;
+  const rec = ml?.format_record;
 
   return (
     <div className="tactical-panel">
-      <h3>Tactical Intelligence</h3>
-      
-      {/* Legality Status Indicator */}
-      <div className={`legality-banner ${current.is_legal ? 'legal' : 'illegal'}`}>
-        {current.is_legal ? '✅ Field Legality: LEGAL' : '⚠️ Field Legality: ILLEGAL'}
+      {/* Header with Legality Indicator */}
+      <div className="tactical-header">
+        <div className="tactical-title-wrap">
+          <span className="tactical-icon">📊</span>
+          <div>
+            <h3>TACTICAL INTELLIGENCE</h3>
+            <span className="tactical-sub font-mono">HISTORICAL DATA-DRIVEN ENGINE</span>
+          </div>
+        </div>
+        <div className={`legality-pill font-mono ${current.is_legal ? 'legal' : 'illegal'}`}>
+          {current.is_legal ? '✅ LEGAL' : '⚠️ ILLEGAL'}
+        </div>
       </div>
 
       {current.violations.length > 0 && (
-        <div className="violations-box">
-          <h5>ICC Violations Detected:</h5>
+        <div className="violations-alert">
+          <span className="viol-title">ICC RESTRICTION VIOLATIONS:</span>
           <ul>
             {current.violations.map((v, idx) => (
               <li key={idx}>{v}</li>
@@ -162,38 +220,93 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({
         </div>
       )}
 
-      {/* Strategy Selector Button Group */}
+      {/* Alternative Tactical Strategies */}
       {alternatives && alternatives.length > 0 && (
-        <div className="strategy-selector-section">
-          <h4>Tactical Strategy Selector</h4>
-          <div className="strategy-buttons-grid">
+        <div className="tactical-card strategy-deck">
+          <span className="card-tag font-mono">TACTICAL STRATEGY ALTERNATIVES</span>
+          <div className="strategy-pills-list">
             {alternatives.map((alt) => (
               <button
                 key={alt.strategy_id}
                 type="button"
-                className={`btn-strategy ${selectedStrategy === alt.strategy_id ? 'active' : ''}`}
+                className={`strategy-item-btn ${selectedStrategy === alt.strategy_id ? 'active' : ''}`}
                 onClick={() => onSelectStrategy && onSelectStrategy(alt.strategy_id)}
               >
-                {alt.strategy_name}
+                <div className="strat-top">
+                  <span className="strat-name">{alt.strategy_name}</span>
+                  <span className="strat-cds font-mono">CDS {alt.cds.toFixed(2)}</span>
+                </div>
+                <span className="strat-desc">{alt.description}</span>
               </button>
             ))}
           </div>
-          {selectedStrategy && (
-            <p className="strategy-description">
-              {alternatives.find(a => a.strategy_id === selectedStrategy)?.description}
-            </p>
-          )}
         </div>
       )}
 
-      {/* ML Outcome Probability Predictions Section */}
+      {/* Historical Batter Dismissal & Matchup Record */}
+      {rec && (
+        <div className="tactical-card historical-record-card">
+          <div className="card-header-flex">
+            <span className="card-tag font-mono">📖 HISTORICAL MATCH RECORD</span>
+            <span className="live-tag font-mono">{rec.format_name} · {rec.bowler_type_category}</span>
+          </div>
+
+          <div className="record-stat-grid">
+            <div className="rec-tile">
+              <span className="rec-val font-mono">{rec.batting_average.toFixed(1)}</span>
+              <span className="rec-lbl">Average</span>
+            </div>
+            <div className="rec-tile">
+              <span className="rec-val font-mono">{rec.strike_rate.toFixed(1)}</span>
+              <span className="rec-lbl">Strike Rate</span>
+            </div>
+            <div className="rec-tile">
+              <span className="rec-val font-mono">{rec.balls_faced}</span>
+              <span className="rec-lbl">Balls Faced</span>
+            </div>
+            <div className="rec-tile">
+              <span className="rec-val font-mono">{rec.dismissals}</span>
+              <span className="rec-lbl">Dismissals</span>
+            </div>
+          </div>
+
+          {/* Historical Dismissal Distribution */}
+          <div className="dismissal-modes-deck">
+            <span className="modes-title font-mono">HISTORICAL DISMISSAL MODES:</span>
+            <div className="modes-row">
+              <div className="mode-chip slips">
+                <span>🧤 Slip/Behind</span>
+                <strong className="font-mono">{rec.caught_behind_slips_pct}%</strong>
+              </div>
+              <div className="mode-chip deep">
+                <span>🚀 Deep Rope</span>
+                <strong className="font-mono">{rec.caught_deep_boundary_pct}%</strong>
+              </div>
+              <div className="mode-chip infield">
+                <span>🛡️ Infield</span>
+                <strong className="font-mono">{rec.caught_infield_pct}%</strong>
+              </div>
+              <div className="mode-chip bowled">
+                <span>🎯 Bowled/LBW</span>
+                <strong className="font-mono">{rec.bowled_lbw_pct}%</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ML Outcome Probability Engine */}
       {ml && (
-        <div className="ml-prediction-box">
-          <h4>🤖 ML Outcome Probability Engine</h4>
+        <div className="tactical-card ml-prob-card">
+          <div className="card-header-flex">
+            <span className="card-tag font-mono">🤖 ML PROBABILITY ENGINE</span>
+            <span className="live-tag font-mono">1,000 SIMS</span>
+          </div>
+
           <div className="ml-bars-container">
             <div className="ml-bar-row">
               <div className="ml-bar-label">
-                <span>⚪ Dot Ball</span>
+                <span>⚪ Dot Ball Rate</span>
                 <span className="font-mono">{ml.dot_pct.toFixed(1)}%</span>
               </div>
               <div className="ml-progress-bg">
@@ -232,113 +345,76 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({
             </div>
           </div>
 
+          {/* Monte Carlo 1,000 Deliveries Telemetry */}
           {sim && (
-            <div className="sim-stats-grid">
-              <div className="sim-stat-card">
-                <span className="sim-stat-val font-mono">{sim.expected_runs_per_over.toFixed(1)}</span>
-                <span className="sim-stat-label">Exp. Runs / Over</span>
+            <div className="sim-telemetry-grid">
+              <div className="sim-cell">
+                <span className="sim-val font-mono">{sim.expected_runs_per_over.toFixed(1)}</span>
+                <span className="sim-lbl font-mono">Exp. Runs/Over</span>
               </div>
-              <div className="sim-stat-card">
-                <span className="sim-stat-val font-mono">{sim.confidence_interval_90_min} - {sim.confidence_interval_90_max}</span>
-                <span className="sim-stat-label">90% CI Over Runs</span>
+              <div className="sim-cell">
+                <span className="sim-val font-mono">{sim.confidence_interval_90_min}-{sim.confidence_interval_90_max}</span>
+                <span className="sim-lbl font-mono">90% CI Over</span>
               </div>
-              <div className="sim-stat-card">
-                <span className="sim-stat-val font-mono">{sim.tactical_utility_score.toFixed(1)}</span>
-                <span className="sim-stat-label">Tactical Score</span>
+              <div className="sim-cell">
+                <span className="sim-val font-mono">{sim.tactical_utility_score.toFixed(1)}</span>
+                <span className="sim-lbl font-mono">Tactical Score</span>
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Metrics Section */}
-      <div className="metrics-grid">
-        <div className="metric-box">
-          <span className="metric-val">{current.wicket}</span>
-          <span className="metric-label">Expected Wicket</span>
+      {/* Core Defense Metrics */}
+      <div className="metrics-triad">
+        <div className="metric-tile">
+          <span className="metric-num font-mono">{current.wicket}</span>
+          <span className="metric-caption">Expected Wicket</span>
         </div>
-        <div className="metric-box">
-          <span className="metric-val">{current.ers}</span>
-          <span className="metric-label">Runs Saved (ERS)</span>
+        <div className="metric-tile">
+          <span className="metric-num font-mono">{current.ers}</span>
+          <span className="metric-caption">Runs Saved (ERS)</span>
         </div>
-        <div className="metric-box">
-          <span className="metric-val">{current.cds}</span>
-          <span className="metric-label">Defensive Score (CDS)</span>
-        </div>
-      </div>
-
-      <div className="confidence-section">
-        <div className="confidence-header">
-          <span>Recommendation Confidence</span>
-          <span>{current.confidence}</span>
-        </div>
-        <div className="confidence-bar-bg">
-          <div className="confidence-bar-fill" style={{ width: current.confidence }} />
+        <div className="metric-tile">
+          <span className="metric-num font-mono">{current.cds}</span>
+          <span className="metric-caption">Defensive Score (CDS)</span>
         </div>
       </div>
 
-      {/* Explanation Box */}
-      <div className="explanation-box">
-        <h4>Why this field?</h4>
-        <ul>
+      {/* Confidence Meter */}
+      <div className="confidence-meter">
+        <div className="conf-label-row">
+          <span className="conf-title">Model Confidence</span>
+          <span className="conf-val font-mono">{current.confidence}</span>
+        </div>
+        <div className="conf-track">
+          <div className="conf-fill" style={{ width: current.confidence }} />
+        </div>
+      </div>
+
+      {/* Tactical Rationale */}
+      <div className="tactical-card rationale-card">
+        <span className="card-tag font-mono">🎯 TACTICAL RATIONALE</span>
+        <ul className="rationale-list">
           {current.explanations.map((exp, idx) => (
             <li key={idx}>{exp}</li>
           ))}
         </ul>
       </div>
 
-      {/* Head-to-Head Matchup Statistics Section */}
-      <div className="matchup-stats-box">
-        <h4>Head-to-Head Record</h4>
-        {metrics?.matchup_stats?.has_history ? (
-          <div className="matchup-grid">
-            <div className="matchup-header-stats">
-              <span>{metrics.matchup_stats.balls_faced} balls faced</span>
-              <span> | </span>
-              <span>{metrics.matchup_stats.runs_scored} runs scored</span>
-              <span> | </span>
-              <span>{metrics.matchup_stats.dismissals} dismissals</span>
-            </div>
-            <div className="matchup-metrics-grid">
-              <div className="matchup-metric">
-                <span className="matchup-val">{metrics.matchup_stats.strike_rate.toFixed(1)}</span>
-                <span className="matchup-label">Strike Rate</span>
-              </div>
-              <div className="matchup-metric">
-                <span className="matchup-val">{metrics.matchup_stats.dot_ball_pct.toFixed(0)}%</span>
-                <span className="matchup-label">Dot Balls</span>
-              </div>
-              <div className="matchup-metric">
-                <span className="matchup-val">{metrics.matchup_stats.boundary_pct.toFixed(0)}%</span>
-                <span className="matchup-label">Boundaries</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="no-matchup-history">
-            ℹ️ No head-to-head history found. Falls back to expert rule priors.
-          </div>
-        )}
-      </div>
-
-      {/* Coordinates Table */}
-      <div className="coordinates-section">
-        <div className="coordinates-header">
-          <h4>Fielder Coordinates</h4>
-          <div className="header-actions">
-            <button type="button" onClick={handleExportReport} className="btn btn-export">
-              📥 Export Report
-            </button>
-            <button type="button" onClick={onReset} className="btn btn-reset">
-              🔄 Reset Positions
-            </button>
-          </div>
+      {/* Coordinates Table with Catch Efficiency */}
+      <div className="tactical-card coords-card">
+        <div className="coords-head">
+          <span className="card-tag font-mono">📍 FIELDER COORDINATES</span>
+          <button type="button" onClick={handleExportReport} className="btn-export-dossier font-mono">
+            📥 Export Report
+          </button>
         </div>
-        <div className="table-wrapper">
-          <table className="coords-table">
+        <div className="table-scroll-wrap">
+          <table className="coords-data-table">
             <thead>
               <tr>
-                <th>Position</th>
+                <th>Fielder</th>
                 <th>X (m)</th>
                 <th>Y (m)</th>
                 <th>Role</th>
@@ -351,8 +427,8 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({
                   <td className="font-mono">{f.x.toFixed(1)}</td>
                   <td className="font-mono">{f.y.toFixed(1)}</td>
                   <td>
-                    <span className={`role-badge ${f.role}`}>
-                      {f.role === 'wicket_taking' ? 'Wicket' : f.role === 'run_saving' ? 'Save' : 'Core'}
+                    <span className={`role-tag ${f.role}`}>
+                      {f.role === 'wicket_taking' ? 'Wicket' : f.role === 'run_saving' ? 'Save' : 'Fixed'}
                     </span>
                   </td>
                 </tr>
