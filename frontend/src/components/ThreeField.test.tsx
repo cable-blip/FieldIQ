@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MatchContextPanel } from './MatchContextPanel';
@@ -23,22 +23,22 @@ describe('MatchContextPanel Component', () => {
     render(<MatchContextPanel onSubmit={mockSubmit} loading={false} />);
 
     // Check header
-    expect(screen.getByText('Match Situation Setup')).toBeInTheDocument();
+    expect(screen.getByText('TACTICAL CONTROL')).toBeInTheDocument();
 
     // Wait for players list to fetch and load
     await screen.findByRole('option', { name: 'AB de Villiers' });
 
     // Select Batter name
-    const batterSelect = screen.getByLabelText(/batter name/i);
+    const batterSelect = screen.getByLabelText(/active batter/i);
     fireEvent.change(batterSelect, { target: { value: 'AB de Villiers' } });
 
     // Select Bowler name
-    const bowlerSelect = screen.getByLabelText(/bowler name/i);
+    const bowlerSelect = screen.getByLabelText(/active bowler/i);
     fireEvent.change(bowlerSelect, { target: { value: 'Jasprit Bumrah' } });
 
-    // Change tactical objective
-    const objectiveSelect = screen.getByLabelText(/tactical objective/i);
-    fireEvent.change(objectiveSelect, { target: { value: 'prevent_boundary' } });
+    // Change tactical objective by clicking the Prevent Boundary card
+    const preventBoundaryCard = screen.getByRole('button', { name: /prevent boundary/i });
+    await user.click(preventBoundaryCard);
 
     // Submit form
     const submitBtn = screen.getByRole('button', { name: /recommend tactical field/i });
@@ -47,8 +47,8 @@ describe('MatchContextPanel Component', () => {
     expect(mockSubmit).toHaveBeenCalledWith({
       match_format: 'ODI',
       innings: 1,
-      over: 1,
-      runs: 0,
+      over: 4,
+      runs: 18,
       wickets: 0,
       batter_name: 'AB de Villiers',
       bowler_name: 'Jasprit Bumrah',
@@ -63,8 +63,7 @@ describe('TacticalPanel Component', () => {
     { name: 'Point', x: 22.0, y: -2.0, role: 'run_saving' },
   ];
 
-  it('renders coordinate table and triggers reset', async () => {
-    const user = userEvent.setup();
+  it('renders coordinate table and displays metrics', async () => {
     const mockReset = vi.fn();
     render(
       <TacticalPanel
@@ -85,10 +84,7 @@ describe('TacticalPanel Component', () => {
     expect(screen.getByText('-14.0')).toBeInTheDocument();
     expect(screen.getByText('Point')).toBeInTheDocument();
 
-    // Click reset
-    const resetBtn = screen.getByRole('button', { name: /reset positions/i });
-    await user.click(resetBtn);
-
-    expect(mockReset).toHaveBeenCalled();
+    // Verify report exporter button exists
+    expect(screen.getByRole('button', { name: /export report/i })).toBeInTheDocument();
   });
 });

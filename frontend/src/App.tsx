@@ -102,6 +102,20 @@ function App() {
     setLastMatchState(null);
   };
 
+  const handleCopyCoordinates = () => {
+    const jsonStr = JSON.stringify(
+      fielders.map((f) => ({
+        position: f.name,
+        x: Number(f.x.toFixed(1)),
+        y: Number(f.y.toFixed(1)),
+        role: f.role,
+      })),
+      null,
+      2
+    );
+    navigator.clipboard.writeText(jsonStr);
+  };
+
   const handleSelectStrategy = (strategyId: string) => {
     setSelectedStrategy(strategyId);
     const target = alternatives.find((a) => a.strategy_id === strategyId);
@@ -204,10 +218,11 @@ function App() {
       <Navbar
         onOpenDatasetStudio={() => setIsDatasetStudioOpen(true)}
         onResetLayout={handleResetPositions}
+        onCopyCoordinates={handleCopyCoordinates}
       />
 
       {error && (
-        <div className="app-error-banner">
+        <div className="app-error-banner font-mono">
           ⚠️ <strong>API Connection Error:</strong> {error} (Displaying local fallback metrics)
         </div>
       )}

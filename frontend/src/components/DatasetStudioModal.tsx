@@ -26,9 +26,12 @@ export const DatasetStudioModal: React.FC<DatasetStudioModalProps> = ({
   const [summary, setSummary] = useState<DatasetSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [uploading, setUploading] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
 
   const fetchSummary = async () => {
     setLoading(true);
@@ -49,15 +52,22 @@ export const DatasetStudioModal: React.FC<DatasetStudioModalProps> = ({
     if (isOpen) {
       fetchSummary();
       setMessage(null);
+      setUploadProgress('');
     }
   }, [isOpen]);
 
-  const handleFileUpload = async (file: File) => {
+  const handleFilesUpload = async (fileList: FileList | File[]) => {
+    const filesArray = Array.from(fileList);
+    if (filesArray.length === 0) return;
+
     setUploading(true);
     setMessage(null);
+    setUploadProgress(`Processing and uploading ${filesArray.length} match dataset files...`);
 
     const formData = new FormData();
-    formData.append('file', file);
+    filesArray.forEach((f) => {
+      formData.append('files', f);
+    });
 
     try {
       const res = await fetch('/api/v1/dataset/upload', {
@@ -67,18 +77,22 @@ export const DatasetStudioModal: React.FC<DatasetStudioModalProps> = ({
 
       const data = await res.json();
       if (res.ok) {
-        setMessage({ type: 'success', text: data.message || `Successfully ingested ${file.name}!` });
+        setMessage({
+          type: 'success',
+          text: data.message || `Successfully ingested ${filesArray.length} dataset files!`,
+        });
         if (data.summary) {
           setSummary(data.summary);
         }
         if (onDatasetUpdated) onDatasetUpdated();
       } else {
-        setMessage({ type: 'error', text: data.detail || 'Upload failed. Check file format.' });
+        setMessage({ type: 'error', text: data.detail || 'Batch upload failed. Please verify format.' });
       }
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Network error during dataset upload.' });
     } finally {
       setUploading(false);
+      setUploadProgress('');
     }
   };
 
@@ -114,7 +128,7 @@ export const DatasetStudioModal: React.FC<DatasetStudioModalProps> = ({
             <span className="hub-icon">📂</span>
             <div>
               <h3>Real-Life Dataset Studio</h3>
-              <p>Ingest Cricsheet JSON matches or delivery-level CSV files into FieldIQ ML</p>
+              <p>Batch ingest folders of Cricsheet JSON matches, .zip archives, or CSV delivery logs into FieldIQ ML</p>
             </div>
           </div>
           <button type="button" className="btn-close-modal" onClick={onClose}>
@@ -125,6 +139,12 @@ export const DatasetStudioModal: React.FC<DatasetStudioModalProps> = ({
         {message && (
           <div className={`dataset-alert-banner ${message.type}`}>
             {message.type === 'success' ? '✅ ' : '⚠️ '} {message.text}
+          </div>
+        )}
+
+        {uploadProgress && (
+          <div className="upload-progress-banner font-mono">
+            ⏳ {uploadProgress}
           </div>
         )}
 
@@ -139,30 +159,64 @@ export const DatasetStudioModal: React.FC<DatasetStudioModalProps> = ({
           onDrop={(e) => {
             e.preventDefault();
             setIsDragOver(false);
-            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-              handleFileUpload(e.dataTransfer.files[0]);
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              handleFilesUpload(e.dataTransfer.files);
             }
           }}
-          onClick={() => fileInputRef.current?.click()}
         >
+          {/* Multiple Files Picker */}
           <input
             type="file"
             ref={fileInputRef}
             style={{ display: 'none' }}
-            accept=".csv,.json"
+            multiple
+            accept=".csv,.json,.zip"
             onChange={(e) => {
-              if (e.target.files && e.target.files[0]) {
-                handleFileUpload(e.target.files[0]);
+              if (e.target.files && e.target.files.length > 0) {
+                handleFilesUpload(e.target.files);
               }
             }}
           />
+
+          {/* Folder Directory Picker */}
+          <input
+            type="file"
+            ref={folderInputRef}
+            style={{ display: 'none' }}
+            // @ts-ignore
+            webkitdirectory=""
+            directory=""
+            multiple
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                handleFilesUpload(e.target.files);
+              }
+            }}
+          />
+
           <div className="dropzone-content">
-            <div className="upload-icon-pulse">📥</div>
-            <h4>{uploading ? 'Ingesting & Indexing Dataset...' : 'Drag & Drop Match Dataset File Here'}</h4>
-            <p>Supports <strong>.csv</strong> (ball-by-ball delivery datasets) and <strong>.json</strong> (Cricsheet match datasets)</p>
-            <button type="button" className="btn btn-browse" disabled={uploading}>
-              {uploading ? 'Processing...' : 'Browse Local Files'}
-            </button>
+            <div className="upload-icon-pulse">📁</div>
+            <h4>{uploading ? 'Ingesting, Merging & Profiling Match Deliveries...' : 'Drag & Drop Folder or Files Here'}</h4>
+            <p>Supports <strong>Folders of JSONs</strong>, <strong>.zip Archives</strong>, and <strong>.csv Deliveries</strong></p>
+            
+            <div className="browse-actions-row">
+              <button
+                type="button"
+                className="btn btn-browse"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                📄 Select Files (.csv, .json, .zip)
+              </button>
+              <button
+                type="button"
+                className="btn btn-folder"
+                onClick={() => folderInputRef.current?.click()}
+                disabled={uploading}
+              >
+                📁 Select Entire Folder
+              </button>
+            </div>
           </div>
         </div>
 
@@ -173,7 +227,7 @@ export const DatasetStudioModal: React.FC<DatasetStudioModalProps> = ({
             <span className="telemetry-label">Deliveries Ingested</span>
           </div>
           <div className="telemetry-card">
-            <span className="telemetry-val font-mono">{summary ? summary.total_matches : '0'}</span>
+            <span className="telemetry-val font-mono">{summary ? summary.total_matches.toLocaleString() : '0'}</span>
             <span className="telemetry-label">Matches Indexed</span>
           </div>
           <div className="telemetry-card">
@@ -190,7 +244,7 @@ export const DatasetStudioModal: React.FC<DatasetStudioModalProps> = ({
         <div className="dataset-modal-footer">
           <div className="last-sync-time">
             {summary?.last_updated && (
-              <span>Last Synced: {new Date(summary.last_updated).toLocaleTimeString()}</span>
+              <span className="font-mono">Last Synced: {new Date(summary.last_updated).toLocaleTimeString()}</span>
             )}
           </div>
           <div className="footer-btns">
