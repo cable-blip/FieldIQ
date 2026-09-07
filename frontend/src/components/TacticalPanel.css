@@ -1,112 +1,164 @@
 .tactical-panel {
-  background: linear-gradient(160deg, rgba(16, 22, 34, 0.9), rgba(9, 13, 20, 0.95));
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(56, 139, 253, 0.2);
+  background: linear-gradient(165deg, rgba(12, 19, 34, 0.85), rgba(6, 10, 18, 0.95));
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 243, 255, 0.18);
   border-radius: 14px;
-  padding: 18px 16px;
-  color: #c9d1d9;
+  padding: 16px 14px;
+  color: #f8fafc;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 139, 253, 0.05);
+  gap: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 243, 255, 0.05);
 }
 
-.tactical-header {
+.panel-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(48, 54, 61, 0.6);
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   padding-bottom: 10px;
 }
 
-.tactical-title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.header-icon {
+  font-size: 1.15rem;
+  background: linear-gradient(135deg, rgba(0, 243, 255, 0.2), rgba(168, 85, 247, 0.2));
+  border: 1px solid rgba(0, 243, 255, 0.4);
+  padding: 5px 8px;
+  border-radius: 7px;
+  box-shadow: 0 0 12px rgba(0, 243, 255, 0.15);
 }
 
-.tactical-icon {
-  font-size: 1.2rem;
-  background: rgba(188, 140, 255, 0.15);
-  border: 1px solid rgba(188, 140, 255, 0.35);
-  padding: 4px 6px;
-  border-radius: 6px;
-}
-
-.tactical-title-wrap h3 {
-  font-size: 0.95rem;
+.header-title-wrap h3 {
+  font-size: 0.92rem;
+  color: #ffffff;
   font-weight: 800;
-  color: #f0f6fc;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
   margin: 0;
 }
 
-.tactical-sub {
+.header-subtitle {
   font-size: 0.62rem;
-  color: #8b949e;
-  letter-spacing: 0.6px;
+  color: #38bdf8;
+  letter-spacing: 0.8px;
 }
 
-.legality-pill {
-  font-size: 0.68rem;
-  font-weight: 800;
-  padding: 4px 10px;
-  border-radius: 6px;
-  letter-spacing: 0.6px;
-}
-
-.legality-pill.legal {
-  background: rgba(46, 160, 67, 0.15);
-  border: 1px solid rgba(46, 160, 67, 0.4);
-  color: #3fb950;
-  box-shadow: 0 0 12px rgba(46, 160, 67, 0.15);
-}
-
-.legality-pill.illegal {
-  background: rgba(248, 81, 73, 0.15);
-  border: 1px solid rgba(248, 81, 73, 0.4);
-  color: #f85149;
-  box-shadow: 0 0 12px rgba(248, 81, 73, 0.2);
-}
-
-.violations-alert {
-  background: rgba(248, 81, 73, 0.1);
-  border: 1px solid rgba(248, 81, 73, 0.35);
+/* Legality Banner */
+.legality-banner {
   border-radius: 8px;
   padding: 8px 12px;
-  color: #ff7b72;
-}
-
-.viol-title {
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  display: block;
-  margin-bottom: 4px;
-}
-
-.violations-alert ul {
-  margin: 0;
-  padding-left: 14px;
-  font-size: 0.72rem;
-}
-
-.tactical-card {
-  background: rgba(13, 17, 23, 0.65);
-  border: 1px solid rgba(48, 54, 61, 0.75);
-  border-radius: 10px;
-  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
+  transition: all 0.2s ease;
 }
 
-.card-tag {
-  font-size: 0.68rem;
+.legality-banner.legal {
+  background: rgba(0, 255, 157, 0.08);
+  border: 1px solid rgba(0, 255, 157, 0.3);
+  color: #00ff9d;
+  box-shadow: 0 0 12px rgba(0, 255, 157, 0.1);
+}
+
+.legality-banner.violation {
+  background: rgba(255, 0, 85, 0.1);
+  border: 1px solid rgba(255, 0, 85, 0.35);
+  color: #ff4d79;
+  box-shadow: 0 0 14px rgba(255, 0, 85, 0.15);
+}
+
+.legality-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: #8b949e;
-  letter-spacing: 0.6px;
+}
+
+.violations-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.65rem;
+  color: #fca5a5;
+  padding-left: 4px;
+}
+
+/* Metrics Triad (Expected Wicket, Runs Saved, Defensive Score) */
+.metrics-triad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.metric-tile {
+  background: rgba(3, 6, 12, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.metric-tile:hover {
+  transform: translateY(-2px);
+}
+
+.metric-tile.wicket-tile {
+  border-color: rgba(168, 85, 247, 0.35);
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0.1), rgba(3, 6, 12, 0.75));
+}
+
+.metric-tile.ers-tile {
+  border-color: rgba(0, 243, 255, 0.35);
+  background: linear-gradient(180deg, rgba(0, 243, 255, 0.1), rgba(3, 6, 12, 0.75));
+}
+
+.metric-tile.cds-tile {
+  border-color: rgba(0, 255, 157, 0.35);
+  background: linear-gradient(180deg, rgba(0, 255, 157, 0.1), rgba(3, 6, 12, 0.75));
+}
+
+.metric-num {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.wicket-tile .metric-num {
+  color: #c084fc;
+}
+
+.ers-tile .metric-num {
+  color: #38bdf8;
+}
+
+.cds-tile .metric-num {
+  color: #00ff9d;
+}
+
+.metric-caption {
+  font-size: 0.64rem;
+  color: #94a3b8;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Reusable Tactical Card */
+.tactical-card {
+  background: rgba(3, 6, 12, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .card-header-flex {
@@ -115,168 +167,70 @@
   align-items: center;
 }
 
-.live-tag {
-  font-size: 0.6rem;
+.card-tag {
+  font-size: 0.68rem;
   font-weight: 800;
-  color: #bc8cff;
-  background: rgba(188, 140, 255, 0.15);
-  border: 1px solid rgba(188, 140, 255, 0.3);
-  padding: 2px 6px;
-  border-radius: 4px;
+  color: #94a3b8;
+  letter-spacing: 0.8px;
 }
 
-.strategy-pills-list {
-  display: flex;
-  flex-direction: column;
+.live-tag,
+.card-badge-count {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 243, 255, 0.12);
+  color: #00f3ff;
+  border: 1px solid rgba(0, 243, 255, 0.3);
+}
+
+/* Strategy Chips */
+.strategy-chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 6px;
 }
 
-.strategy-item-btn {
-  font-family: var(--font-sans);
-  background: rgba(22, 27, 34, 0.7);
-  border: 1px solid rgba(48, 54, 61, 0.8);
-  border-radius: 8px;
-  padding: 8px 10px;
-  text-align: left;
+.strategy-pill {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 6px 8px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  transition: all 0.2s ease-in-out;
+  gap: 2px;
+  text-align: left;
+  transition: all 0.2s ease;
 }
 
-.strategy-item-btn:hover {
-  background: rgba(56, 139, 253, 0.1);
-  border-color: #58a6ff;
+.strategy-pill:hover {
+  border-color: rgba(0, 243, 255, 0.3);
 }
 
-.strategy-item-btn.active {
-  background: linear-gradient(135deg, rgba(56, 139, 253, 0.2), rgba(31, 111, 235, 0.1));
-  border-color: #58a6ff;
-  box-shadow: 0 0 14px rgba(56, 139, 253, 0.18);
+.strategy-pill.active {
+  background: rgba(0, 243, 255, 0.15);
+  border-color: #00f3ff;
+  box-shadow: 0 0 12px rgba(0, 243, 255, 0.2);
 }
 
-.strat-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.strat-name {
-  font-size: 0.78rem;
+.strategy-name {
+  font-size: 0.72rem;
   font-weight: 700;
-  color: #f0f6fc;
+  color: #f1f5f9;
 }
 
-.strat-cds {
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #58a6ff;
-  background: rgba(56, 139, 253, 0.15);
-  padding: 1px 5px;
-  border-radius: 4px;
-}
-
-.strat-desc {
-  font-size: 0.65rem;
-  color: #8b949e;
-  line-height: 1.3;
-}
-
-/* Historical Record Card */
-.historical-record-card {
-  border-color: rgba(56, 139, 253, 0.3);
-  background: linear-gradient(145deg, rgba(16, 22, 34, 0.8), rgba(13, 17, 23, 0.9));
-}
-
-.record-stat-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  text-align: center;
-}
-
-.rec-tile {
-  background: rgba(22, 27, 34, 0.7);
-  border: 1px solid rgba(48, 54, 61, 0.7);
-  border-radius: 6px;
-  padding: 6px 4px;
-  display: flex;
-  flex-direction: column;
-}
-
-.rec-val {
-  font-size: 0.88rem;
-  font-weight: 800;
-  color: #58a6ff;
-}
-
-.rec-lbl {
-  font-size: 0.58rem;
-  color: #8b949e;
-  text-transform: uppercase;
-}
-
-.dismissal-modes-deck {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin-top: 4px;
-}
-
-.modes-title {
+.strategy-stat {
   font-size: 0.62rem;
-  color: #8b949e;
-  letter-spacing: 0.4px;
+  color: #38bdf8;
 }
 
-.modes-row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 5px;
-}
-
-.mode-chip {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.68rem;
-  background: rgba(22, 27, 34, 0.8);
-  border: 1px solid rgba(48, 54, 61, 0.7);
-}
-
-.mode-chip.slips {
-  border-color: rgba(248, 81, 73, 0.4);
-  color: #ff7b72;
-}
-
-.mode-chip.deep {
-  border-color: rgba(188, 140, 255, 0.4);
-  color: #bc8cff;
-}
-
-.mode-chip.infield {
-  border-color: rgba(56, 139, 253, 0.4);
-  color: #58a6ff;
-}
-
-.mode-chip.bowled {
-  border-color: rgba(227, 179, 65, 0.4);
-  color: #e3b341;
-}
-
-/* ML Outcome Probabilities */
-.ml-prob-card {
-  border-color: rgba(188, 140, 255, 0.25);
-  box-shadow: 0 0 16px rgba(188, 140, 255, 0.05);
-}
-
+/* ML Probability Bars */
 .ml-bars-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .ml-bar-row {
@@ -288,15 +242,14 @@
 .ml-bar-label {
   display: flex;
   justify-content: space-between;
-  font-size: 0.7rem;
-  color: #c9d1d9;
-  font-weight: 500;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: #94a3b8;
 }
 
 .ml-progress-bg {
-  width: 100%;
   height: 6px;
-  background: rgba(22, 27, 34, 0.9);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -304,125 +257,189 @@
 .ml-progress-fill {
   height: 100%;
   border-radius: 3px;
-  transition: width 0.3s ease-in-out;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ml-progress-fill.dot {
-  background: linear-gradient(90deg, #8b949e, #c9d1d9);
+  background: linear-gradient(90deg, #059669, #00ff9d);
+  box-shadow: 0 0 8px #00ff9d;
 }
 
 .ml-progress-fill.single {
-  background: linear-gradient(90deg, #1f6feb, #58a6ff);
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+  box-shadow: 0 0 8px #38bdf8;
 }
 
 .ml-progress-fill.boundary {
-  background: linear-gradient(90deg, #da3633, #f85149);
+  background: linear-gradient(90deg, #e11d48, #ff0055);
+  box-shadow: 0 0 8px #ff0055;
 }
 
 .ml-progress-fill.wicket {
-  background: linear-gradient(90deg, #8957e5, #bc8cff);
+  background: linear-gradient(90deg, #7e22ce, #c084fc);
+  box-shadow: 0 0 8px #c084fc;
 }
 
 .sim-telemetry-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
-  background: rgba(9, 13, 20, 0.85);
-  border: 1px solid rgba(48, 54, 61, 0.7);
-  padding: 8px 6px;
-  border-radius: 8px;
-  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 6px;
 }
 
 .sim-cell {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .sim-val {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #58a6ff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #00f3ff;
 }
 
 .sim-lbl {
   font-size: 0.58rem;
-  color: #8b949e;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+  color: #94a3b8;
 }
 
-.metrics-triad {
+/* Historical Match Record */
+.history-badge {
+  font-size: 0.6rem;
+  color: #ffb700;
+  background: rgba(255, 183, 0, 0.12);
+  border: 1px solid rgba(255, 183, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.history-stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
 }
 
-.metric-tile {
-  background: rgba(13, 17, 23, 0.8);
-  border: 1px solid rgba(48, 54, 61, 0.7);
-  border-radius: 8px;
-  padding: 8px 4px;
-  text-align: center;
+.hstat-cell {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.5);
+  padding: 4px;
+  border-radius: 4px;
 }
 
-.metric-num {
-  font-size: 1rem;
+.hstat-val {
+  font-size: 0.78rem;
   font-weight: 800;
-  color: #3fb950;
+  color: #ffffff;
 }
 
-.metric-caption {
-  font-size: 0.62rem;
-  color: #8b949e;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+.hstat-lbl {
+  font-size: 0.56rem;
+  color: #94a3b8;
 }
 
-.confidence-meter {
+.dismissal-modes-section {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 6px;
 }
 
-.conf-label-row {
+.sub-tag {
+  font-size: 0.6rem;
+  color: #94a3b8;
+}
+
+.dismissal-chips-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.dismissal-chip {
   display: flex;
   justify-content: space-between;
-  font-size: 0.72rem;
-  color: #8b949e;
-  font-weight: 600;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 0.62rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.conf-track {
-  width: 100%;
-  height: 5px;
-  background: rgba(33, 38, 45, 0.8);
-  border-radius: 3px;
-  overflow: hidden;
+.dismissal-chip.slips {
+  border-color: rgba(0, 243, 255, 0.3);
 }
 
-.conf-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #238636, #3fb950);
-  border-radius: 3px;
-  transition: width 0.3s ease;
+.dismissal-chip.slips .d-pct {
+  color: #00f3ff;
 }
 
-.rationale-list {
-  margin: 0;
-  padding-left: 16px;
-  font-size: 0.72rem;
-  color: #c9d1d9;
-  line-height: 1.4;
+.dismissal-chip.infield {
+  border-color: rgba(0, 255, 157, 0.3);
 }
 
-.rationale-list li {
-  margin-bottom: 4px;
+.dismissal-chip.infield .d-pct {
+  color: #00ff9d;
 }
 
+.dismissal-chip.deep {
+  border-color: rgba(255, 0, 85, 0.3);
+}
+
+.dismissal-chip.deep .d-pct {
+  color: #ff4d79;
+}
+
+.dismissal-chip.bowled {
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.dismissal-chip.bowled .d-pct {
+  color: #c084fc;
+}
+
+/* Head to Head */
+.h2h-badge {
+  font-size: 0.6rem;
+  color: #00ff9d;
+}
+
+.h2h-metrics {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  color: #cbd5e1;
+}
+
+/* Tactical Directives */
+.explanations-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.explanations-list li {
+  font-size: 0.66rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+  position: relative;
+  padding-left: 12px;
+}
+
+.explanations-list li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: #00f3ff;
+}
+
+/* Fielder Coordinates Table */
 .coords-head {
   display: flex;
   justify-content: space-between;
@@ -430,73 +447,65 @@
 }
 
 .btn-export-dossier {
-  background: rgba(46, 160, 67, 0.15);
-  border: 1px solid rgba(46, 160, 67, 0.4);
-  color: #3fb950;
-  font-size: 0.68rem;
-  font-weight: 700;
+  background: rgba(0, 243, 255, 0.1);
+  color: #38bdf8;
+  border: 1px solid rgba(0, 243, 255, 0.3);
   padding: 3px 8px;
   border-radius: 4px;
+  font-size: 0.64rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease;
 }
 
 .btn-export-dossier:hover {
-  background: #238636;
+  background: rgba(0, 243, 255, 0.2);
   color: #ffffff;
+  border-color: #00f3ff;
 }
 
 .table-scroll-wrap {
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid rgba(48, 54, 61, 0.7);
-  border-radius: 6px;
 }
 
 .coords-data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.72rem;
-  text-align: left;
-}
-
-.coords-data-table th,
-.coords-data-table td {
-  padding: 5px 8px;
-  border-bottom: 1px solid rgba(48, 54, 61, 0.4);
+  font-size: 0.68rem;
 }
 
 .coords-data-table th {
-  background: rgba(22, 27, 34, 0.95);
-  color: #8b949e;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  text-align: left;
+  color: #94a3b8;
+  padding: 4px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   font-weight: 600;
 }
 
+.coords-data-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
 .role-tag {
-  display: inline-block;
-  padding: 1px 5px;
-  border-radius: 6px;
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 3px;
 }
 
 .role-tag.wicket_taking {
-  background: rgba(248, 81, 73, 0.2);
-  color: #f85149;
-  border: 1px solid rgba(248, 81, 73, 0.4);
+  background: rgba(255, 0, 85, 0.15);
+  color: #ff4d79;
 }
 
 .role-tag.run_saving {
-  background: rgba(56, 139, 253, 0.2);
-  color: #58a6ff;
-  border: 1px solid rgba(56, 139, 253, 0.4);
+  background: rgba(0, 243, 255, 0.15);
+  color: #38bdf8;
 }
 
 .role-tag.core {
-  background: rgba(187, 128, 9, 0.2);
-  color: #e3b341;
-  border: 1px solid rgba(187, 128, 9, 0.4);
+  background: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
 }

@@ -21,9 +21,9 @@ export interface AlternativeField {
 export interface BatterFormatRecord {
   format_name: string;
   bowler_type_category: string;
-  balls_faced: int;
-  runs_scored: int;
-  dismissals: int;
+  balls_faced: number;
+  runs_scored: number;
+  dismissals: number;
   batting_average: number;
   strike_rate: number;
   dot_ball_pct: number;
@@ -106,200 +106,162 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({
           cds: '0.85',
           confidence: '88%',
           explanations: [
-            '5 fielders placed on the boundary rope (ODI / T20 maximum cap).',
-            'Deep Midwicket, Long On, and Long Off cover straight boundaries.'
-          ],
-          is_legal: true,
-          violations: []
+            '5 fielders placed on the boundary rope (ICC limited-overs cap).',
+            'Deep Midwicket, Long On, and Long Off cover primary boundary arcs.'
+          ]
         };
       case 'build_pressure':
         return {
-          wicket: '10.2%',
-          ers: '1.45',
-          cds: '0.90',
-          confidence: '82%',
+          wicket: '8.2%',
+          ers: '0.95',
+          cds: '0.82',
+          confidence: '85%',
           explanations: [
-            'Inner circle fielders are placed tight to restrict singles.',
-            'Focus on maintaining a low run rate.'
-          ],
-          is_legal: true,
-          violations: []
+            'Tight inner ring cordon at Point, Cover, and Midwicket to restrict singles.',
+            'Deep fielders deployed to cut off primary boundary release valves.'
+          ]
         };
       case 'stop_singles':
         return {
-          wicket: '8.1%',
-          ers: '1.10',
-          cds: '0.80',
-          confidence: '80%',
+          wicket: '7.1%',
+          ers: '1.05',
+          cds: '0.78',
+          confidence: '82%',
           explanations: [
-            'Maximum players inside the circle to prevent strike rotation.'
-          ],
-          is_legal: true,
-          violations: []
+            'Aggressive inner ring ring-fence within 15-20 meters of the pitch.',
+            'Mid Off and Mid On pushed up to challenge batter strike rotation.'
+          ]
         };
       case 'attack_wicket':
       default:
         return {
-          wicket: '18.7%',
-          ers: '0.91',
-          cds: '1.05',
-          confidence: '85%',
+          wicket: '12.8%',
+          ers: '0.75',
+          cds: '0.90',
+          confidence: '92%',
           explanations: [
-            '1st Slip and Gully are reserved to capture outside edges.',
-            'Silly Mid Off captures close drives.'
-          ],
-          is_legal: true,
-          violations: []
+            'Slip cordon & Gully positioned for outside edges against new ball seam.',
+            'Deep Backward Square Leg placed as hook/pull top-edge trap.'
+          ]
         };
     }
   };
 
-  const current = metrics
-    ? {
-        wicket: `${(metrics.ewo * 100).toFixed(1)}%`,
-        ers: metrics.ers.toFixed(2),
-        cds: metrics.cds.toFixed(2),
-        confidence: '91%',
-        explanations: metrics.explanations,
-        is_legal: metrics.is_legal,
-        violations: metrics.violations,
-      }
-    : getFallbackMetrics();
+  const fallback = getFallbackMetrics();
 
-  const handleExportReport = () => {
-    const reportData = {
-      system: 'FieldIQ Cricket Tactical Field Intelligence',
-      generated_at: new Date().toISOString(),
-      objective,
-      metrics,
-      fielders: fielders.map((f) => ({
-        position: f.name,
-        x: Number(f.x.toFixed(1)),
-        y: Number(f.y.toFixed(1)),
-        role: f.role,
-      })),
-    };
-    const jsonStr = JSON.stringify(reportData, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `FieldIQ_Tactical_Report_${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const current = {
+    wicket: metrics?.ewo !== undefined ? `${(metrics.ewo * 10).toFixed(1)}%` : fallback.wicket,
+    ers: metrics?.ers !== undefined ? metrics.ers.toFixed(2) : fallback.ers,
+    cds: metrics?.cds !== undefined ? metrics.cds.toFixed(2) : fallback.cds,
+    confidence: fallback.confidence,
+    explanations: metrics?.explanations && metrics.explanations.length > 0 ? metrics.explanations : fallback.explanations,
+    is_legal: metrics?.is_legal !== undefined ? metrics.is_legal : true,
+    violations: metrics?.violations || []
   };
 
   const ml = metrics?.ml_probabilities;
   const sim = metrics?.simulation_metrics;
-  const rec = ml?.format_record;
+  const h2h = metrics?.matchup_stats;
+  const record = ml?.format_record;
+
+  const handleExportReport = () => {
+    const reportData = {
+      timestamp: new Date().toISOString(),
+      objective,
+      metrics: current,
+      ml_probabilities: ml,
+      simulation_telemetry: sim,
+      field_placements: fielders.map((f) => ({
+        position: f.name,
+        x: Number(f.x.toFixed(1)),
+        y: Number(f.y.toFixed(1)),
+        role: f.role
+      }))
+    };
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `FieldIQ_Tactical_Dossier_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="tactical-panel">
-      {/* Header with Legality Indicator */}
-      <div className="tactical-header">
-        <div className="tactical-title-wrap">
-          <span className="tactical-icon">📊</span>
-          <div>
-            <h3>TACTICAL INTELLIGENCE</h3>
-            <span className="tactical-sub font-mono">HISTORICAL DATA-DRIVEN ENGINE</span>
-          </div>
-        </div>
-        <div className={`legality-pill font-mono ${current.is_legal ? 'legal' : 'illegal'}`}>
-          {current.is_legal ? '✅ LEGAL' : '⚠️ ILLEGAL'}
+      {/* Panel Header */}
+      <div className="panel-header">
+        <span className="header-icon">📊</span>
+        <div className="header-title-wrap">
+          <h3 className="font-display">TACTICAL DOSSIER</h3>
+          <span className="header-subtitle font-mono">LIVE SPATIAL TELEMETRY</span>
         </div>
       </div>
 
-      {current.violations.length > 0 && (
-        <div className="violations-alert">
-          <span className="viol-title">ICC RESTRICTION VIOLATIONS:</span>
-          <ul>
+      {/* ICC Legality & Rule Enforcement Banner */}
+      <div className={`legality-banner ${current.is_legal ? 'legal' : 'violation'}`}>
+        <div className="legality-indicator">
+          <span className="legality-icon">{current.is_legal ? '🛡️' : '⚠️'}</span>
+          <span className="legality-text font-mono">
+            {current.is_legal ? 'FIELD LEGAL · ICC COMPLIANT' : 'FIELD ILLEGAL · RESTRICTION VIOLATION'}
+          </span>
+        </div>
+        {!current.is_legal && current.violations.length > 0 && (
+          <ul className="violations-list font-mono">
             {current.violations.map((v, idx) => (
-              <li key={idx}>{v}</li>
+              <li key={idx}>✕ {v}</li>
             ))}
           </ul>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Alternative Tactical Strategies */}
+      {/* Core Defense Metrics Triad (Preserves 'Expected Wicket', 'Runs Saved (ERS)', 'Defensive Score (CDS)' for Vitest) */}
+      <div className="metrics-triad">
+        <div className="metric-tile wicket-tile">
+          <span className="metric-num font-mono">{current.wicket}</span>
+          <span className="metric-caption">Expected Wicket</span>
+        </div>
+        <div className="metric-tile ers-tile">
+          <span className="metric-num font-mono">{current.ers}</span>
+          <span className="metric-caption">Runs Saved (ERS)</span>
+        </div>
+        <div className="metric-tile cds-tile">
+          <span className="metric-num font-mono">{current.cds}</span>
+          <span className="metric-caption">Defensive Score (CDS)</span>
+        </div>
+      </div>
+
+      {/* Candidate Strategy Alternatives Selector */}
       {alternatives && alternatives.length > 0 && (
-        <div className="tactical-card strategy-deck">
-          <span className="card-tag font-mono">TACTICAL STRATEGY ALTERNATIVES</span>
-          <div className="strategy-pills-list">
-            {alternatives.map((alt) => (
-              <button
-                key={alt.strategy_id}
-                type="button"
-                className={`strategy-item-btn ${selectedStrategy === alt.strategy_id ? 'active' : ''}`}
-                onClick={() => onSelectStrategy && onSelectStrategy(alt.strategy_id)}
-              >
-                <div className="strat-top">
-                  <span className="strat-name">{alt.strategy_name}</span>
-                  <span className="strat-cds font-mono">CDS {alt.cds.toFixed(2)}</span>
-                </div>
-                <span className="strat-desc">{alt.description}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Historical Batter Dismissal & Matchup Record */}
-      {rec && (
-        <div className="tactical-card historical-record-card">
+        <div className="tactical-card strategy-card">
           <div className="card-header-flex">
-            <span className="card-tag font-mono">📖 HISTORICAL MATCH RECORD</span>
-            <span className="live-tag font-mono">{rec.format_name} · {rec.bowler_type_category}</span>
+            <span className="card-tag font-mono">⚡ CANDIDATE STRATEGIES</span>
+            <span className="card-badge-count font-mono">{alternatives.length} READY</span>
           </div>
-
-          <div className="record-stat-grid">
-            <div className="rec-tile">
-              <span className="rec-val font-mono">{rec.batting_average.toFixed(1)}</span>
-              <span className="rec-lbl">Average</span>
-            </div>
-            <div className="rec-tile">
-              <span className="rec-val font-mono">{rec.strike_rate.toFixed(1)}</span>
-              <span className="rec-lbl">Strike Rate</span>
-            </div>
-            <div className="rec-tile">
-              <span className="rec-val font-mono">{rec.balls_faced}</span>
-              <span className="rec-lbl">Balls Faced</span>
-            </div>
-            <div className="rec-tile">
-              <span className="rec-val font-mono">{rec.dismissals}</span>
-              <span className="rec-lbl">Dismissals</span>
-            </div>
-          </div>
-
-          {/* Historical Dismissal Distribution */}
-          <div className="dismissal-modes-deck">
-            <span className="modes-title font-mono">HISTORICAL DISMISSAL MODES:</span>
-            <div className="modes-row">
-              <div className="mode-chip slips">
-                <span>🧤 Slip/Behind</span>
-                <strong className="font-mono">{rec.caught_behind_slips_pct}%</strong>
-              </div>
-              <div className="mode-chip deep">
-                <span>🚀 Deep Rope</span>
-                <strong className="font-mono">{rec.caught_deep_boundary_pct}%</strong>
-              </div>
-              <div className="mode-chip infield">
-                <span>🛡️ Infield</span>
-                <strong className="font-mono">{rec.caught_infield_pct}%</strong>
-              </div>
-              <div className="mode-chip bowled">
-                <span>🎯 Bowled/LBW</span>
-                <strong className="font-mono">{rec.bowled_lbw_pct}%</strong>
-              </div>
-            </div>
+          <div className="strategy-chips">
+            {alternatives.map((alt) => {
+              const isSelected = selectedStrategy === alt.strategy_id;
+              return (
+                <button
+                  key={alt.strategy_id}
+                  type="button"
+                  className={`strategy-pill ${isSelected ? 'active' : ''}`}
+                  onClick={() => onSelectStrategy && onSelectStrategy(alt.strategy_id)}
+                >
+                  <span className="strategy-name">{alt.strategy_name}</span>
+                  <span className="strategy-stat font-mono">CDS {alt.cds.toFixed(2)}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* ML Outcome Probability Engine */}
+      {/* 1,000-Delivery Monte Carlo Simulation Bar */}
       {ml && (
         <div className="tactical-card ml-prob-card">
           <div className="card-header-flex">
-            <span className="card-tag font-mono">🤖 ML PROBABILITY ENGINE</span>
+            <span className="card-tag font-mono">🤖 MONTE CARLO PROBABILITY ENGINE</span>
             <span className="live-tag font-mono">1,000 SIMS</span>
           </div>
 
@@ -365,44 +327,85 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({
         </div>
       )}
 
-      {/* Core Defense Metrics */}
-      <div className="metrics-triad">
-        <div className="metric-tile">
-          <span className="metric-num font-mono">{current.wicket}</span>
-          <span className="metric-caption">Expected Wicket</span>
-        </div>
-        <div className="metric-tile">
-          <span className="metric-num font-mono">{current.ers}</span>
-          <span className="metric-caption">Runs Saved (ERS)</span>
-        </div>
-        <div className="metric-tile">
-          <span className="metric-num font-mono">{current.cds}</span>
-          <span className="metric-caption">Defensive Score (CDS)</span>
-        </div>
-      </div>
+      {/* Historical Match Record Card */}
+      {record && (
+        <div className="tactical-card match-history-card">
+          <div className="card-header-flex">
+            <span className="card-tag font-mono">📜 HISTORICAL MATCH RECORD</span>
+            <span className="history-badge font-mono">{record.bowler_type_category}</span>
+          </div>
 
-      {/* Confidence Meter */}
-      <div className="confidence-meter">
-        <div className="conf-label-row">
-          <span className="conf-title">Model Confidence</span>
-          <span className="conf-val font-mono">{current.confidence}</span>
-        </div>
-        <div className="conf-track">
-          <div className="conf-fill" style={{ width: current.confidence }} />
-        </div>
-      </div>
+          <div className="history-stats-grid">
+            <div className="hstat-cell">
+              <span className="hstat-val font-mono">{record.balls_faced}</span>
+              <span className="hstat-lbl">Balls</span>
+            </div>
+            <div className="hstat-cell">
+              <span className="hstat-val font-mono">{record.batting_average.toFixed(1)}</span>
+              <span className="hstat-lbl">Average</span>
+            </div>
+            <div className="hstat-cell">
+              <span className="hstat-val font-mono">{record.strike_rate.toFixed(1)}</span>
+              <span className="hstat-lbl">Strike Rate</span>
+            </div>
+            <div className="hstat-cell">
+              <span className="hstat-val font-mono">{record.dot_ball_pct.toFixed(1)}%</span>
+              <span className="hstat-lbl">Dot %</span>
+            </div>
+          </div>
 
-      {/* Tactical Rationale */}
-      <div className="tactical-card rationale-card">
-        <span className="card-tag font-mono">🎯 TACTICAL RATIONALE</span>
-        <ul className="rationale-list">
+          {/* Dismissal Mode Distribution Chips */}
+          <div className="dismissal-modes-section">
+            <span className="sub-tag font-mono">DISMISSAL PROFILE:</span>
+            <div className="dismissal-chips-grid">
+              <div className="dismissal-chip slips">
+                <span className="d-label">Slips / Behind</span>
+                <span className="d-pct font-mono">{record.caught_behind_slips_pct.toFixed(1)}%</span>
+              </div>
+              <div className="dismissal-chip infield">
+                <span className="d-label">Infield Drives</span>
+                <span className="d-pct font-mono">{record.caught_infield_pct.toFixed(1)}%</span>
+              </div>
+              <div className="dismissal-chip deep">
+                <span className="d-label">Deep Boundary</span>
+                <span className="d-pct font-mono">{record.caught_deep_boundary_pct.toFixed(1)}%</span>
+              </div>
+              <div className="dismissal-chip bowled">
+                <span className="d-label">Bowled / LBW</span>
+                <span className="d-pct font-mono">{record.bowled_lbw_pct.toFixed(1)}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Head-to-Head Stats Badge */}
+      {h2h && h2h.has_history && (
+        <div className="tactical-card h2h-card">
+          <div className="card-header-flex">
+            <span className="card-tag font-mono">⚔️ DIRECT HEAD-TO-HEAD</span>
+            <span className="h2h-badge font-mono">{h2h.balls_faced} BALLS LOGGED</span>
+          </div>
+          <div className="h2h-metrics font-mono">
+            <span>Runs: <b>{h2h.runs_scored}</b></span>
+            <span>Wickets: <b>{h2h.dismissals}</b></span>
+            <span>SR: <b>{h2h.strike_rate.toFixed(1)}</b></span>
+            <span>Dot%: <b>{h2h.dot_ball_pct.toFixed(0)}%</b></span>
+          </div>
+        </div>
+      )}
+
+      {/* Tactical Explanations */}
+      <div className="tactical-card explanations-card">
+        <span className="card-tag font-mono">💡 TACTICAL DIRECTIVES</span>
+        <ul className="explanations-list">
           {current.explanations.map((exp, idx) => (
             <li key={idx}>{exp}</li>
           ))}
         </ul>
       </div>
 
-      {/* Coordinates Table with Catch Efficiency */}
+      {/* Coordinates Table with Catch Efficiency & Export Report Button */}
       <div className="tactical-card coords-card">
         <div className="coords-head">
           <span className="card-tag font-mono">📍 FIELDER COORDINATES</span>
@@ -421,9 +424,9 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({
               </tr>
             </thead>
             <tbody>
-              {fielders.map((f) => (
-                <tr key={f.name}>
-                  <td>{f.name}</td>
+              {fielders.map((f, idx) => (
+                <tr key={`${f.name || 'fielder'}-${idx}`}>
+                  <td>{f.name || `Fielder ${idx + 1}`}</td>
                   <td className="font-mono">{f.x.toFixed(1)}</td>
                   <td className="font-mono">{f.y.toFixed(1)}</td>
                   <td>

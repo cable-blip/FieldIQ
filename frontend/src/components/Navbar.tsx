@@ -5,12 +5,16 @@ interface NavbarProps {
   onOpenDatasetStudio: () => void;
   onResetLayout: () => void;
   onCopyCoordinates?: () => void;
+  venueName?: string;
+  isGameplanActive?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onOpenDatasetStudio,
   onResetLayout,
-  onCopyCoordinates
+  onCopyCoordinates,
+  venueName = "Lord's",
+  isGameplanActive = false
 }) => {
   const [copied, setCopied] = useState<boolean>(false);
 
@@ -25,20 +29,24 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="navbar-container">
       <div className="navbar-left">
-        <div className="brand-logo-gem">🏏</div>
+        <div className="brand-logo-gem">
+          <span className="brand-icon">⚡</span>
+        </div>
         <div className="brand-header">
           <div className="brand-title-wrap">
-            <span className="brand-title">FIELDIQ</span>
-            <span className="brand-badge">PRO</span>
+            <span className="brand-title font-display">FIELDIQ</span>
+            <span className="brand-badge font-mono">PRO 3.0</span>
           </div>
-          <span className="brand-sub">SPATIAL INTELLIGENCE SUITE</span>
+          <span className="brand-sub font-mono">CYBERNETIC SPATIAL INTELLIGENCE</span>
         </div>
       </div>
 
       <div className="navbar-center">
         <div className="live-status-pill">
           <span className="pulse-dot" />
-          <span className="status-text font-mono">LIVE PROBABILITY ENGINE · 1,000-DELIVERY MONTE CARLO ACTIVE</span>
+          <span className="status-text font-mono">
+            {isGameplanActive ? 'MULTI-OVER SEQUENCING ACTIVE' : 'LIVE 1,000-DELIVERY MONTE CARLO'} · {venueName.toUpperCase()}
+          </span>
         </div>
       </div>
 
@@ -46,29 +54,29 @@ export const Navbar: React.FC<NavbarProps> = ({
         {onCopyCoordinates && (
           <button
             type="button"
-            className="btn-nav-action copy-btn"
+            className="btn-nav-action copy-btn font-mono"
             onClick={handleCopy}
             title="Copy 3D fielder coordinates to clipboard"
           >
-            {copied ? '✅ Copied JSON' : '📋 Copy Coords'}
+            {copied ? '✅ COPIED' : '📋 COPY COORDS'}
           </button>
         )}
 
         <button
           type="button"
-          className="btn-nav-action dataset-studio-btn"
+          className="btn-nav-action dataset-studio-btn font-mono"
           onClick={onOpenDatasetStudio}
         >
-          📂 Dataset Studio
+          📂 DATASET STUDIO
         </button>
 
         <button
           type="button"
-          className="btn-nav-action reset-btn"
+          className="btn-nav-action reset-btn font-mono"
           onClick={onResetLayout}
           title="Reset field positions to standard default"
         >
-          🔄 Reset Field
+          🔄 RESET
         </button>
       </div>
     </header>

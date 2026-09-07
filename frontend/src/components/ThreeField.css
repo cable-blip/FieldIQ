@@ -1,12 +1,12 @@
 .three-field-container {
   position: relative;
   width: 100%;
-  height: 600px;
-  border: 1px solid rgba(56, 139, 253, 0.22);
+  height: 620px;
+  border: 1px solid rgba(0, 243, 255, 0.22);
   border-radius: 14px;
   overflow: hidden;
-  background-color: #090d14;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), inset 0 0 40px rgba(0, 0, 0, 0.5);
+  background-color: #04070e;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.75), inset 0 0 40px rgba(0, 0, 0, 0.6);
 }
 
 .view-presets {
@@ -33,43 +33,94 @@
 .btn-preset-ui,
 .btn-toggle-ui {
   font-family: var(--font-sans);
-  background: rgba(16, 22, 34, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(56, 139, 253, 0.25);
-  color: #c9d1d9;
-  font-size: 0.75rem;
-  font-weight: 600;
+  background: rgba(12, 19, 34, 0.85);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 243, 255, 0.25);
+  color: #f1f5f9;
+  font-size: 0.74rem;
+  font-weight: 700;
   padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: 0.3px;
 }
 
 .btn-preset-ui:hover {
-  background: linear-gradient(135deg, rgba(56, 139, 253, 0.3), rgba(31, 111, 235, 0.4));
+  background: linear-gradient(135deg, rgba(0, 243, 255, 0.25), rgba(2, 132, 199, 0.35));
   color: #ffffff;
-  border-color: #58a6ff;
-  box-shadow: 0 4px 14px rgba(56, 139, 253, 0.25);
+  border-color: #00f3ff;
+  box-shadow: 0 0 14px rgba(0, 243, 255, 0.35);
+  transform: translateY(-1px);
 }
 
 .btn-toggle-ui {
-  color: #8b949e;
-  border-color: rgba(48, 54, 61, 0.8);
-}
-
-.btn-toggle-ui:hover {
-  background: rgba(22, 27, 34, 0.95);
-  color: #ffffff;
+  color: #94a3b8;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .btn-toggle-ui.active {
-  background: rgba(46, 160, 67, 0.2);
-  color: #3fb950;
-  border-color: #3fb950;
-  box-shadow: 0 0 12px rgba(46, 160, 67, 0.2);
+  background: rgba(0, 243, 255, 0.15);
+  color: #00f3ff;
+  border-color: #00f3ff;
+  box-shadow: 0 0 12px rgba(0, 243, 255, 0.25);
 }
 
+/* Floating Wind Compass Widget */
+.wind-compass-hud {
+  position: absolute;
+  top: 60px;
+  left: 14px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(4, 7, 14, 0.85);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 243, 255, 0.25);
+  padding: 6px 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.compass-dial {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px dashed rgba(0, 243, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 243, 255, 0.08);
+}
+
+.compass-arrow {
+  color: #00f3ff;
+  font-size: 0.7rem;
+  transition: transform 0.3s ease;
+  line-height: 1;
+}
+
+.compass-telemetry {
+  display: flex;
+  flex-direction: column;
+}
+
+.wind-speed {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.wind-heading {
+  font-size: 0.58rem;
+  color: #38bdf8;
+  letter-spacing: 0.5px;
+}
+
+/* Bottom Spatial Footer */
 .spatial-hud-footer {
   position: absolute;
   bottom: 12px;
@@ -80,30 +131,40 @@
   justify-content: space-between;
   align-items: center;
   pointer-events: none;
-  background: rgba(6, 8, 13, 0.75);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(56, 139, 253, 0.15);
-  padding: 6px 12px;
-  border-radius: 8px;
 }
 
 .hud-badge {
-  font-size: 0.65rem;
-  color: #58a6ff;
-  letter-spacing: 0.4px;
-  font-weight: 600;
+  background: rgba(12, 19, 34, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 243, 255, 0.25);
+  color: #00f3ff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 .hud-hint {
+  background: rgba(12, 19, 34, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
   font-size: 0.65rem;
-  color: #8b949e;
-  letter-spacing: 0.2px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
 }
 
 @media (max-width: 768px) {
+  .three-field-container {
+    height: 440px;
+  }
+  
   .spatial-hud-footer {
     flex-direction: column;
-    gap: 4px;
-    text-align: center;
+    gap: 6px;
+    align-items: flex-start;
   }
 }
