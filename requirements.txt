@@ -1,5 +1,20 @@
-fastapi
-uvicorn[standard]
-pytest
-httpx
-pandas
+# Production dependencies — pinned 2026-10-03
+# Verified against Python 3.13.15 environment
+# To reproduce: pip install -r requirements.txt
+
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+pydantic==2.13.4
+starlette==1.6.0
+
+# ML / data
+pandas==3.0.5
+numpy==2.5.2
+scikit-learn==1.9.0
+xgboost==3.4.1
+joblib==1.6.0
+
+# Test
+pytest==9.1.1
+httpx==0.28.1
+anyio==4.14.2
