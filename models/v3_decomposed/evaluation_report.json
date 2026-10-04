@@ -1,0 +1,143 @@
+{
+  "by_batter": {
+    "AB de Villiers": {
+      "sample_size_n": 139,
+      "wickets_nw": 7,
+      "boundaries_nb": 13,
+      "empirical_wicket_rate": 0.0504,
+      "empirical_boundary_rate": 0.0935,
+      "log_loss": 1.5022,
+      "brier_score": 0.6767
+    },
+    "Brendon McCullum": {
+      "sample_size_n": 181,
+      "wickets_nw": 6,
+      "boundaries_nb": 49,
+      "empirical_wicket_rate": 0.0331,
+      "empirical_boundary_rate": 0.2707,
+      "log_loss": 1.4268,
+      "brier_score": 0.6875
+    },
+    "Chris Gayle": {
+      "sample_size_n": 206,
+      "wickets_nw": 7,
+      "boundaries_nb": 39,
+      "empirical_wicket_rate": 0.034,
+      "empirical_boundary_rate": 0.1893,
+      "log_loss": 1.1932,
+      "brier_score": 0.5687
+    },
+    "David Warner": {
+      "sample_size_n": 201,
+      "wickets_nw": 8,
+      "boundaries_nb": 34,
+      "empirical_wicket_rate": 0.0398,
+      "empirical_boundary_rate": 0.1692,
+      "log_loss": 1.3772,
+      "brier_score": 0.6384
+    },
+    "Kumar Sangakkara": {
+      "sample_size_n": 139,
+      "wickets_nw": 6,
+      "boundaries_nb": 15,
+      "empirical_wicket_rate": 0.0432,
+      "empirical_boundary_rate": 0.1079,
+      "log_loss": 1.3966,
+      "brier_score": 0.6558
+    },
+    "Mahela Jayawardene": {
+      "sample_size_n": 76,
+      "wickets_nw": 11,
+      "boundaries_nb": 5,
+      "empirical_wicket_rate": 0.1447,
+      "empirical_boundary_rate": 0.0658,
+      "log_loss": 1.526,
+      "brier_score": 0.6577
+    },
+    "Martin Guptill": {
+      "sample_size_n": 224,
+      "wickets_nw": 6,
+      "boundaries_nb": 46,
+      "empirical_wicket_rate": 0.0268,
+      "empirical_boundary_rate": 0.2054,
+      "log_loss": 1.4374,
+      "brier_score": 0.6937
+    },
+    "Shane Watson": {
+      "sample_size_n": 160,
+      "wickets_nw": 8,
+      "boundaries_nb": 27,
+      "empirical_wicket_rate": 0.05,
+      "empirical_boundary_rate": 0.1688,
+      "log_loss": 1.3119,
+      "brier_score": 0.6522
+    },
+    "Virat Kohli": {
+      "sample_size_n": 152,
+      "wickets_nw": 5,
+      "boundaries_nb": 28,
+      "empirical_wicket_rate": 0.0329,
+      "empirical_boundary_rate": 0.1842,
+      "log_loss": 1.2044,
+      "brier_score": 0.5766
+    }
+  },
+  "by_phase": {
+    "Powerplay": {
+      "sample_size_n": 784,
+      "wickets_nw": 33,
+      "boundaries_nb": 160,
+      "empirical_wicket_rate": 0.0421,
+      "empirical_boundary_rate": 0.2041,
+      "log_loss": 1.3837,
+      "brier_score": 0.654
+    },
+    "Middle": {
+      "sample_size_n": 597,
+      "wickets_nw": 28,
+      "boundaries_nb": 74,
+      "empirical_wicket_rate": 0.0469,
+      "empirical_boundary_rate": 0.124,
+      "log_loss": 1.3247,
+      "brier_score": 0.6249
+    },
+    "Death": {
+      "sample_size_n": 97,
+      "wickets_nw": 3,
+      "boundaries_nb": 22,
+      "empirical_wicket_rate": 0.0309,
+      "empirical_boundary_rate": 0.2268,
+      "log_loss": 1.4339,
+      "brier_score": 0.6878
+    }
+  },
+  "by_h2h_tier": {
+    "direct_h2h": {
+      "sample_size_n": 154,
+      "wickets_nw": 6,
+      "boundaries_nb": 17,
+      "empirical_wicket_rate": 0.039,
+      "empirical_boundary_rate": 0.1104,
+      "log_loss": 1.3228,
+      "brier_score": 0.6216
+    },
+    "vs_bowler_type": {
+      "sample_size_n": 1183,
+      "wickets_nw": 52,
+      "boundaries_nb": 202,
+      "empirical_wicket_rate": 0.044,
+      "empirical_boundary_rate": 0.1708,
+      "log_loss": 1.3613,
+      "brier_score": 0.642
+    },
+    "insufficient_data": {
+      "sample_size_n": 141,
+      "wickets_nw": 6,
+      "boundaries_nb": 37,
+      "empirical_wicket_rate": 0.0426,
+      "empirical_boundary_rate": 0.2624,
+      "log_loss": 1.4226,
+      "brier_score": 0.6897
+    }
+  }
+}

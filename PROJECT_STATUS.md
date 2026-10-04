@@ -81,11 +81,12 @@ Result:  74 passed, 1 warning in 68.74s
 | test_health.py | 1 | Health check endpoint |
 | test_live_delivery_remapping.py | 5 | Live delivery logging, zone elevation, undo/reset |
 | test_matchup_stats.py | 2 | Matchup history initialization and retrieval |
+| test_ml_decomposed_training.py | 6 | Decomposed math sum=1.0, 3-split stability spread, promotion gates, stratified schema, factorized inference |
 | test_ml_model_training.py | 6 | Feature extraction, GameId split, model metadata |
 | test_ml_prediction_engine.py | 4 | ML manager, kinematics, Monte Carlo evaluation |
 | test_optimizer_integration.py | 4 | Virat Kohli recommendation, boundary prevention, custom evaluation |
 | test_simulator.py | 2 | Candidate fields generation |
-| **TOTAL** | **74** | **Zero failures** |
+| **TOTAL** | **80** | **Zero failures** |
 
 ---
 
@@ -98,5 +99,37 @@ Result:  74 passed, 1 warning in 68.74s
   3. `vs_bowler_type`: Batter vs bowler style overall (>= 30 balls).
   4. `insufficient_data`: Sparse history (<15 balls). Returns `None` for rates; never fabricates numbers. Baseline domain heuristics applied transparently.
 - **Bowler Resolution:** `resolve_bowler_profile()` maps any named bowler to real-world curated style (`bowler_style.py`) while preserving the bowler's actual identity so H2H queries match real delivery data.
-- **Dynamic Model Confidence:** Metrics read dynamically from `models/model_metadata.json` via `MLModelManager.get_wicket_evaluation_metrics()` rather than hardcoded literals. Verified by unit test.
+- **Dynamic Model Confidence:** Metrics read dynamically from active metadata via `MLModelManager.get_wicket_evaluation_metrics()` rather than hardcoded literals. Verified by unit test.
 - **Coverage Validation:** Verified across all 9 confirmed batters in dataset.
+
+---
+
+## Machine Learning & Model Gating Status (Phase 3 Verified)
+
+### 1. Training Pipeline (`scripts/train/train_decomposed_models.py`)
+- **Decomposed Architecture:**
+  - **Model 1 (`wicket_binary_model`):** Predicts $P(\text{wicket} \mid \mathbf{x})$.
+  - **Model 2 (`boundary_binary_model`):** Predicts $P(\text{boundary} \mid \text{no-wicket}, \mathbf{x})$.
+  - **Empirical Boundary Ratio:** $P(4 \mid B) = 0.7318$, $P(6 \mid B) = 0.2682$ derived from 1,253 training boundaries and recorded as `provenance: empirical_ratio_from_training_boundaries` (never claimed as a trained model).
+  - **Model 3 (`remainder_run_model`):** Predicts $P(r \in \{0,1,2,3\} \mid \text{no-wicket}, \text{no-boundary}, \mathbf{x})$.
+- **Probability Reconstruction:** Strictly satisfies $\sum_{i=0}^6 P_i = 1.0 \pm 10^{-5}$ across all inputs. Verified by automated tests.
+
+### 2. Three-Split Data Stability (Seeds: 42, 101, 2024)
+- **Zero Leakage:** Evaluated across 3 independent match-level partitions with 0 match overlap.
+- **Observed Metrics Spread:**
+  - **Wicket PR-AUC:** Mean 0.0828 (range 0.0670 – 0.1031) vs baseline rate 0.0419 (~2.0x lift over empirical base rate).
+  - **Wicket Recall:** Mean 0.1919 (range 0.1724 – 0.2188).
+  - **Wicket Precision:** Mean 0.1067 (range 0.0984 – 0.1207).
+  - **Boundary F1:** Mean 0.3660 (range 0.3298 – 0.3969) at $t=0.20$ threshold (beats 0.35 gate!).
+  - **Boundary PR-AUC:** Mean 0.2879 (range 0.2628 – 0.3029) vs empirical baseline ~0.179.
+  - **Combined 7-Class Log-Loss:** Mean 1.3493 (range 1.3398 – 1.3632, spread = 0.0234).
+
+### 3. Promotion Gates & Governance
+- **Gate Decision:** `promoted: false` (strictly maintained).
+- **Checklist Summary:**
+  - Gate 1 (Wicket Recall $\ge 20\%$ & Precision $\ge 15\%$): **FAILED** (Recall mean 19.2%, Precision mean 10.7%).
+  - Gate 2 (Boundary F1 $\ge 0.35$ & PR-AUC $>$ baseline): **PASSED** (F1 mean 0.3660, PR-AUC mean 0.2879).
+  - Gate 3 (Combined Log-Loss $< 1.3233$): **FAILED** (Mean 1.3493 vs 1.3233 baseline due to joint probability dispersion).
+  - Gate 4 (3-Split Stability Spread): **PASSED** (Log-loss range 0.0234 across independent match splits).
+  - Gate 5 (Stratified Reporting): **PASSED** (Detailed report with raw $n$ and $n_w$ across all 9 batters, 3 phases, and 3 H2H tiers).
+- **Status:** Saved under `models/v3_decomposed/` with `promoted: false`. Inference defaults to baseline model while supporting switchable factorized inference via `MLModelManager.set_active_architecture("decomposed")`.

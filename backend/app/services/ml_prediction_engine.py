@@ -47,6 +47,7 @@ from backend.app.services.ml_feature_engineering import (
 MODELS_DIR = Path(__file__).resolve().parents[3] / "models"
 MODEL_FILE_PATH = MODELS_DIR / "fieldiq_xgb_model.joblib"
 METADATA_FILE_PATH = MODELS_DIR / "model_metadata.json"
+DECOMPOSED_MODELS_DIR = MODELS_DIR / "v3_decomposed"
 
 
 @dataclass
@@ -96,47 +97,134 @@ class SimulationMetrics:
 
 class MLModelManager:
     """
-    Singleton loader and inference provider for the trained XGBoost model.
+    Singleton loader and inference provider for trained XGBoost models.
+    Supports both legacy single multi-class model and the Phase 3 decomposed 3-model architecture.
     """
     _model = None
+    _decomposed_models = None
     _metadata = None
     _load_attempted = False
+    _active_architecture = "single"  # "single" or "decomposed"
+
+    @classmethod
+    def load_models(cls, force_arch: Optional[str] = None) -> None:
+        cls._load_attempted = True
+
+        # Check if decomposed model directory exists
+        decomposed_meta_path = DECOMPOSED_MODELS_DIR / "metadata.json"
+        has_decomposed = (
+            decomposed_meta_path.exists()
+            and (DECOMPOSED_MODELS_DIR / "wicket_binary_model.joblib").exists()
+            and (DECOMPOSED_MODELS_DIR / "boundary_binary_model.joblib").exists()
+            and (DECOMPOSED_MODELS_DIR / "remainder_run_model.joblib").exists()
+        )
+
+        decomposed_meta = None
+        if decomposed_meta_path.exists():
+            try:
+                with open(decomposed_meta_path, "r", encoding="utf-8") as f:
+                    decomposed_meta = json.load(f)
+            except Exception:
+                decomposed_meta = None
+
+        is_decomposed_promoted = bool(decomposed_meta and decomposed_meta.get("promoted", False))
+
+        target_arch = force_arch or ("decomposed" if is_decomposed_promoted else "single")
+
+        if target_arch == "decomposed" and has_decomposed:
+            try:
+                cls._decomposed_models = {
+                    "m1_cal": joblib.load(DECOMPOSED_MODELS_DIR / "wicket_binary_model.joblib"),
+                    "m2": joblib.load(DECOMPOSED_MODELS_DIR / "boundary_binary_model.joblib"),
+                    "m3": joblib.load(DECOMPOSED_MODELS_DIR / "remainder_run_model.joblib"),
+                    "empirical_boundary_split": decomposed_meta.get("empirical_boundary_split", {}) if decomposed_meta else {},
+                }
+                cls._metadata = decomposed_meta
+                cls._active_architecture = "decomposed"
+                print(f"[MLModelManager] Active architecture set to decomposed (promoted={is_decomposed_promoted})")
+                return
+            except Exception as e:
+                print(f"[MLModelManager] Failed loading decomposed models: {e}; falling back to single model.")
+
+        # Default / Fallback: Single multi-class model
+        cls._active_architecture = "single"
+        if MODEL_FILE_PATH.exists():
+            try:
+                cls._model = joblib.load(MODEL_FILE_PATH)
+                print(f"[MLModelManager] Loaded trained XGBoost model from {MODEL_FILE_PATH.name}")
+            except Exception as e:
+                print(f"[MLModelManager] Failed to load model: {e}")
+                cls._model = None
+        if METADATA_FILE_PATH.exists():
+            try:
+                with open(METADATA_FILE_PATH, "r", encoding="utf-8") as f:
+                    cls._metadata = json.load(f)
+            except Exception:
+                cls._metadata = None
 
     @classmethod
     def get_model(cls):
         if not cls._load_attempted:
-            cls._load_attempted = True
-            if MODEL_FILE_PATH.exists():
-                try:
-                    cls._model = joblib.load(MODEL_FILE_PATH)
-                    print(f"[MLModelManager] Loaded trained XGBoost model from {MODEL_FILE_PATH.name}")
-                except Exception as e:
-                    print(f"[MLModelManager] Failed to load model: {e}")
-                    cls._model = None
-            if METADATA_FILE_PATH.exists():
-                try:
-                    with open(METADATA_FILE_PATH, "r", encoding="utf-8") as f:
-                        cls._metadata = json.load(f)
-                except Exception:
-                    cls._metadata = None
+            cls.load_models()
         return cls._model
+
+    @classmethod
+    def get_decomposed_models(cls) -> Optional[Dict[str, Any]]:
+        if not cls._load_attempted:
+            cls.load_models()
+        return cls._decomposed_models
+
+    @classmethod
+    def get_active_architecture(cls) -> str:
+        if not cls._load_attempted:
+            cls.load_models()
+        return cls._active_architecture
+
+    @classmethod
+    def set_active_architecture(cls, arch: str) -> None:
+        cls.reset()
+        cls.load_models(force_arch=arch)
 
     @classmethod
     def get_metadata(cls) -> Optional[Dict[str, Any]]:
         if not cls._load_attempted:
-            cls.get_model()
+            cls.load_models()
         return cls._metadata
 
     @classmethod
     def reset(cls) -> None:
         cls._model = None
+        cls._decomposed_models = None
         cls._metadata = None
         cls._load_attempted = False
+        cls._active_architecture = "single"
 
     @classmethod
     def get_wicket_evaluation_metrics(cls) -> Dict[str, Any]:
-        """Extract live measured evaluation metrics from model_metadata.json without hardcoding."""
+        """Extract live measured evaluation metrics from active metadata without hardcoding."""
         metadata = cls.get_metadata() or {}
+        arch = cls.get_active_architecture()
+
+        if arch == "decomposed":
+            stability = metadata.get("stability_spread", {})
+            w_rec = stability.get("wicket_recall", {})
+            w_prec = stability.get("wicket_precision", {})
+            recall = round(float(w_rec.get("mean", 0.192)), 3)
+            precision = round(float(w_prec.get("mean", 0.107)), 3)
+            level = "low" if recall < 0.25 else ("medium" if recall < 0.50 else "high")
+            status = "promoted" if metadata.get("promoted", False) else "uncalibrated_baseline"
+            return {
+                "status": status,
+                "level": level,
+                "wicket_prediction_recall": recall,
+                "wicket_prediction_precision": precision,
+                "disclosure": (
+                    f"Decomposed wicket model recall is {round(recall * 100, 1)}% (precision {round(precision * 100, 1)}%) "
+                    f"across 3-split validation. Probabilities are treated as {level}-confidence baselines "
+                    f"under governance status: {status}."
+                ),
+            }
+
         report = metadata.get("classification_report", {})
         wicket_stats = report.get("wicket", {})
         recall = round(float(wicket_stats.get("recall", 0.02)), 3)
@@ -152,7 +240,7 @@ class MLModelManager:
                 f"Wicket model recall is {round(recall * 100, 1)}% (precision {round(precision * 100, 1)}%) "
                 f"on held-out test split. Probabilities must be treated as {level}-confidence baselines "
                 f"until Phase 3 promotion criteria are met."
-            )
+            ),
         }
 
     @classmethod
@@ -167,12 +255,11 @@ class MLModelManager:
         ball_in_over: int = 3,
     ) -> Optional[Dict[str, float]]:
         """
-        Uses the trained XGBoost multi-class classifier to predict delivery outcome distribution.
-        Returns a dict of class name -> probability, or None if model unavailable.
+        Predicts delivery outcome distribution across the 7 classes.
+        Routes to factorized models if active, or legacy single model.
         """
-        model = cls.get_model()
-        if model is None:
-            return None
+        if not cls._load_attempted:
+            cls.load_models()
 
         try:
             vec = build_single_feature_vector(
@@ -184,7 +271,45 @@ class MLModelManager:
                 ball_in_over=ball_in_over,
                 zone_id=zone_id,
             )
-            # vec is (1, N)
+
+            # Decomposed inference path
+            if cls._active_architecture == "decomposed" and cls._decomposed_models:
+                m1 = cls._decomposed_models["m1_cal"]
+                m2 = cls._decomposed_models["m2"]
+                m3 = cls._decomposed_models["m3"]
+                b_split = cls._decomposed_models["empirical_boundary_split"]
+
+                p_w = float(m1.predict_proba(vec)[0, 1])
+                p_b = float(m2.predict_proba(vec)[0, 1])
+                p_r = m3.predict_proba(vec)[0]  # [dot, single, two, three]
+
+                p_4_given_b = float(b_split.get("p_4_given_boundary", 0.7318))
+                p_6_given_b = float(b_split.get("p_6_given_boundary", 0.2682))
+
+                p_four = (1.0 - p_w) * p_b * p_4_given_b
+                p_six = (1.0 - p_w) * p_b * p_6_given_b
+                p_dot = (1.0 - p_w) * (1.0 - p_b) * float(p_r[0])
+                p_single = (1.0 - p_w) * (1.0 - p_b) * float(p_r[1])
+                p_two = (1.0 - p_w) * (1.0 - p_b) * float(p_r[2])
+                p_three = (1.0 - p_w) * (1.0 - p_b) * float(p_r[3])
+
+                total = p_dot + p_single + p_two + p_three + p_four + p_six + p_w
+                if total > 0:
+                    return {
+                        "dot": float(p_dot / total),
+                        "single": float(p_single / total),
+                        "two": float(p_two / total),
+                        "three": float(p_three / total),
+                        "four": float(p_four / total),
+                        "six": float(p_six / total),
+                        "wicket": float(p_w / total),
+                    }
+
+            # Legacy single model path
+            model = cls.get_model()
+            if model is None:
+                return None
+
             probs = model.predict_proba(vec)[0]
             return {
                 CLASS_NAMES[i]: float(probs[i])
