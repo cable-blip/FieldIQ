@@ -134,6 +134,28 @@ class MLModelManager:
         cls._load_attempted = False
 
     @classmethod
+    def get_wicket_evaluation_metrics(cls) -> Dict[str, Any]:
+        """Extract live measured evaluation metrics from model_metadata.json without hardcoding."""
+        metadata = cls.get_metadata() or {}
+        report = metadata.get("classification_report", {})
+        wicket_stats = report.get("wicket", {})
+        recall = round(float(wicket_stats.get("recall", 0.02)), 3)
+        precision = round(float(wicket_stats.get("precision", 0.167)), 3)
+        level = "low" if recall < 0.25 else ("medium" if recall < 0.50 else "high")
+        status = "promoted" if metadata.get("promoted", False) else "uncalibrated_baseline"
+        return {
+            "status": status,
+            "level": level,
+            "wicket_prediction_recall": recall,
+            "wicket_prediction_precision": precision,
+            "disclosure": (
+                f"Wicket model recall is {round(recall * 100, 1)}% (precision {round(precision * 100, 1)}%) "
+                f"on held-out test split. Probabilities must be treated as {level}-confidence baselines "
+                f"until Phase 3 promotion criteria are met."
+            )
+        }
+
+    @classmethod
     def predict_sector_probabilities(
         cls,
         batter_stats: Dict[str, Any],

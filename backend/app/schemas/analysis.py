@@ -104,8 +104,8 @@ class MLOutcomeProbabilitiesSchema(BaseModel):
     expected_wickets_per_ball: float
     format_record: Optional[BatterFormatRecordSchema] = None
     model_confidence: str = "low"
-    wicket_prediction_recall: float = 0.02
-    wicket_prediction_precision: float = 0.167
+    wicket_prediction_recall: Optional[float] = None
+    wicket_prediction_precision: Optional[float] = None
 
 class SimulationMetricsSchema(BaseModel):
     simulated_deliveries: int

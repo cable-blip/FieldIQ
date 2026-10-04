@@ -37,7 +37,7 @@ from backend.app.services.optimizer import recommend_field
 from backend.app.services.simulator import generate_candidate_fields
 from backend.app.services.rules_engine import validate_field
 from backend.app.services.metrics import compute_ers, compute_ewo, compute_cds
-from backend.app.services.ml_prediction_engine import compute_ml_matchup_prediction
+from backend.app.services.ml_prediction_engine import compute_ml_matchup_prediction, MLModelManager
 from backend.app.services.environmental_engine import (
     EnvironmentalConditions,
     PitchPhysicsEngine,
@@ -244,6 +244,8 @@ def create_analysis_request(
             stumped_pct=rec.stumped_pct
         )
 
+    model_confidence_info = MLModelManager.get_wicket_evaluation_metrics()
+
     ml_probs_schema = MLOutcomeProbabilitiesSchema(
         dot_pct=ml_probs.dot_pct,
         single_pct=ml_probs.single_pct,
@@ -255,9 +257,9 @@ def create_analysis_request(
         expected_runs_per_ball=ml_probs.expected_runs_per_ball,
         expected_wickets_per_ball=ml_probs.expected_wickets_per_ball,
         format_record=fmt_rec_schema,
-        model_confidence="low",
-        wicket_prediction_recall=0.02,
-        wicket_prediction_precision=0.167
+        model_confidence=model_confidence_info["level"],
+        wicket_prediction_recall=model_confidence_info["wicket_prediction_recall"],
+        wicket_prediction_precision=model_confidence_info["wicket_prediction_precision"]
     )
 
     sim_metrics_schema = SimulationMetricsSchema(
@@ -275,13 +277,6 @@ def create_analysis_request(
     coverage_tier = "direct_h2h" if (h2h_stats.get("has_history") and h2h_stats.get("balls_faced", 0) >= 15) else (
         "sparse_h2h" if h2h_stats.get("has_history") else "insufficient_data"
     )
-    model_confidence_info = {
-        "status": "uncalibrated_baseline",
-        "level": "low",
-        "wicket_prediction_recall": 0.02,
-        "wicket_prediction_precision": 0.167,
-        "disclosure": "Wicket model recall is 2.0% on test split. Probabilities must be treated as low-confidence heuristic baselines until Phase 3 promotion criteria are met."
-    }
 
     return AnalysisResponse(
         status="available",
@@ -398,6 +393,8 @@ def evaluate_custom_field(
             stumped_pct=rec.stumped_pct
         )
 
+    eval_confidence_info = MLModelManager.get_wicket_evaluation_metrics()
+
     ml_probs_schema = MLOutcomeProbabilitiesSchema(
         dot_pct=ml_probs.dot_pct,
         single_pct=ml_probs.single_pct,
@@ -409,9 +406,9 @@ def evaluate_custom_field(
         expected_runs_per_ball=ml_probs.expected_runs_per_ball,
         expected_wickets_per_ball=ml_probs.expected_wickets_per_ball,
         format_record=fmt_rec_schema,
-        model_confidence="low",
-        wicket_prediction_recall=0.02,
-        wicket_prediction_precision=0.167
+        model_confidence=eval_confidence_info["level"],
+        wicket_prediction_recall=eval_confidence_info["wicket_prediction_recall"],
+        wicket_prediction_precision=eval_confidence_info["wicket_prediction_precision"]
     )
 
     sim_metrics_schema = SimulationMetricsSchema(
@@ -439,13 +436,7 @@ def evaluate_custom_field(
         is_legal=is_legal,
         violations=violations,
         data_coverage=eval_coverage,
-        model_confidence={
-            "status": "uncalibrated_baseline",
-            "level": "low",
-            "wicket_prediction_recall": 0.02,
-            "wicket_prediction_precision": 0.167,
-            "disclosure": "Wicket model recall is 2.0% on test split. Probabilities must be treated as low-confidence heuristic baselines until Phase 3 promotion criteria are met."
-        },
+        model_confidence=eval_confidence_info,
         ml_probabilities=ml_probs_schema,
         simulation_metrics=sim_metrics_schema,
         pitch_multipliers=pitch_mults
