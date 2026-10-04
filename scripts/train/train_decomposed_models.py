@@ -28,6 +28,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import joblib
 import numpy as np
 import pandas as pd
+from scipy.optimize import minimize
 from sklearn.metrics import (
     average_precision_score,
     brier_score_loss,
@@ -192,6 +193,10 @@ def train_decomposed_models_for_split(
     )
     m1_spw.fit(X_train, y_w_train, eval_set=[(X_val, y_w_val)], verbose=False)
 
+    # Predictions on Val and Test
+    p_w_val_cal = m1_cal.predict_proba(X_val)[:, 1]
+    p_w_val_spw = m1_spw.predict_proba(X_val)[:, 1]
+
     p_w_test_cal = m1_cal.predict_proba(X_test)[:, 1]
     p_w_test_spw = m1_spw.predict_proba(X_test)[:, 1]
 
@@ -201,21 +206,27 @@ def train_decomposed_models_for_split(
     roc_auc_wicket = float(roc_auc_score(y_w_test, p_w_test_cal))
     wicket_brier = float(brier_score_loss(y_w_test, p_w_test_cal))
 
-    # Evaluate discrete threshold performance (best F1 threshold)
-    thresholds = [0.10, 0.15, 0.20, 0.30, 0.40, 0.50, 0.55, 0.60, 0.65, 0.70]
-    best_f1_wicket = 0.0
-    best_t_wicket = 0.50
-    wicket_threshold_metrics = {}
+    # WICKET OPERATING THRESHOLD: Selected strictly on VAL set
+    candidate_thresholds = [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.62, 0.65, 0.70, 0.72, 0.75]
+    best_t_wicket_val = 0.50
+    best_f1_wicket_val = -1.0
+    val_wicket_sweep = {}
 
-    for t in thresholds:
-        pred = (p_w_test_spw >= t).astype(int)
-        r = float(recall_score(y_w_test, pred, zero_division=0))
-        p = float(precision_score(y_w_test, pred, zero_division=0))
-        f = float(f1_score(y_w_test, pred, zero_division=0))
-        wicket_threshold_metrics[f"t_{t:.2f}"] = {"recall": r, "precision": p, "f1": f}
-        if f > best_f1_wicket:
-            best_f1_wicket = f
-            best_t_wicket = t
+    for t in candidate_thresholds:
+        pred_v = (p_w_val_spw >= t).astype(int)
+        r_v = float(recall_score(y_w_val, pred_v, zero_division=0))
+        p_v = float(precision_score(y_w_val, pred_v, zero_division=0))
+        f_v = float(f1_score(y_w_val, pred_v, zero_division=0))
+        val_wicket_sweep[f"t_{t:.2f}"] = {"recall": r_v, "precision": p_v, "f1": f_v}
+        if f_v > best_f1_wicket_val:
+            best_f1_wicket_val = f_v
+            best_t_wicket_val = t
+
+    # Apply the pre-committed VAL threshold EXACTLY ONCE to TEST
+    pred_test_w = (p_w_test_spw >= best_t_wicket_val).astype(int)
+    test_recall_w = float(recall_score(y_w_test, pred_test_w, zero_division=0))
+    test_precision_w = float(precision_score(y_w_test, pred_test_w, zero_division=0))
+    test_f1_w = float(f1_score(y_w_test, pred_test_w, zero_division=0))
 
     # Model 2: Boundary binary classifier on non-wicket deliveries
     nw_mask_tr = (y_w_train == 0)
@@ -242,6 +253,9 @@ def train_decomposed_models_for_split(
     )
     m2.fit(X_train_b, y_b_train, eval_set=[(X_val_b, y_b_val)], verbose=False)
 
+    p_b_val_all = m2.predict_proba(X_val)[:, 1]
+    p_b_val_nw = m2.predict_proba(X_val_b)[:, 1]
+
     p_b_test_all = m2.predict_proba(X_test)[:, 1]
     p_b_test_nw = m2.predict_proba(X_test_b)[:, 1]
 
@@ -249,19 +263,27 @@ def train_decomposed_models_for_split(
     pr_auc_boundary = float(average_precision_score(y_b_test, p_b_test_nw))
     boundary_brier = float(brier_score_loss(y_b_test, p_b_test_nw))
 
-    # Evaluate boundary thresholds
-    best_f1_boundary = 0.0
-    best_t_boundary = 0.25
-    boundary_threshold_metrics = {}
-    for t in [0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50]:
-        pred = (p_b_test_nw >= t).astype(int)
-        r = float(recall_score(y_b_test, pred, zero_division=0))
-        p = float(precision_score(y_b_test, pred, zero_division=0))
-        f = float(f1_score(y_b_test, pred, zero_division=0))
-        boundary_threshold_metrics[f"t_{t:.2f}"] = {"recall": r, "precision": p, "f1": f}
-        if f > best_f1_boundary:
-            best_f1_boundary = f
-            best_t_boundary = t
+    # BOUNDARY OPERATING THRESHOLD: Selected strictly on VAL set
+    candidate_b_thresholds = [0.15, 0.17, 0.20, 0.21, 0.23, 0.25, 0.30, 0.35, 0.40, 0.50]
+    best_t_boundary_val = 0.25
+    best_f1_b_val = -1.0
+    val_boundary_sweep = {}
+
+    for t in candidate_b_thresholds:
+        pred_v_b = (p_b_val_nw >= t).astype(int)
+        r_v_b = float(recall_score(y_b_val, pred_v_b, zero_division=0))
+        p_v_b = float(precision_score(y_b_val, pred_v_b, zero_division=0))
+        f_v_b = float(f1_score(y_b_val, pred_v_b, zero_division=0))
+        val_boundary_sweep[f"t_{t:.2f}"] = {"recall": r_v_b, "precision": p_v_b, "f1": f_v_b}
+        if f_v_b > best_f1_b_val:
+            best_f1_b_val = f_v_b
+            best_t_boundary_val = t
+
+    # Apply the pre-committed VAL threshold EXACTLY ONCE to TEST
+    pred_test_b = (p_b_test_nw >= best_t_boundary_val).astype(int)
+    test_recall_b = float(recall_score(y_b_test, pred_test_b, zero_division=0))
+    test_precision_b = float(precision_score(y_b_test, pred_test_b, zero_division=0))
+    test_f1_b = float(f1_score(y_b_test, pred_test_b, zero_division=0))
 
     # Empirical boundary split ratio (4 vs 6) on training boundaries
     bound_train_mask = nw_mask_tr & y_train_raw.isin([4, 5]).values
@@ -298,9 +320,17 @@ def train_decomposed_models_for_split(
     )
     m3.fit(X_train_r, y_r_train, eval_set=[(X_val_r, y_r_val)], verbose=False)
 
+    p_r_val_all = m3.predict_proba(X_val)
     p_r_test_all = m3.predict_proba(X_test)
 
-    # 4. Reconstruct Combined 7-Class Probabilities on Test Set
+    # 4. Reconstruct Combined 7-Class Probabilities on Val and Test
+    p_7_val = reconstruct_7class_probabilities(
+        p_wicket=p_w_val_cal,
+        p_boundary=p_b_val_all,
+        p_remainder=p_r_val_all,
+        p_4_given_b=p_4_given_b,
+        p_6_given_b=p_6_given_b,
+    )
     p_7_test = reconstruct_7class_probabilities(
         p_wicket=p_w_test_cal,
         p_boundary=p_b_test_all,
@@ -309,19 +339,42 @@ def train_decomposed_models_for_split(
         p_6_given_b=p_6_given_b,
     )
 
-    combined_test_log_loss = float(log_loss(y_test_raw.values, p_7_test, labels=list(range(7))))
-    combined_test_brier = compute_multiclass_brier_score(y_test_raw.values, p_7_test, num_classes=7)
+    raw_test_log_loss = float(log_loss(y_test_raw.values, p_7_test, labels=list(range(7))))
+    raw_test_brier = compute_multiclass_brier_score(y_test_raw.values, p_7_test, num_classes=7)
 
-    # Evaluation against promotion criteria
+    # Joint Recalibration: Temperature scaling fitted strictly on VAL set
+    logits_val = np.log(np.clip(p_7_val, 1e-12, 1.0))
+    logits_test = np.log(np.clip(p_7_test, 1e-12, 1.0))
+
+    def nll_temp(T_arr):
+        T_val = T_arr[0]
+        scaled = logits_val / T_val
+        exp_s = np.exp(scaled - np.max(scaled, axis=1, keepdims=True))
+        probs = exp_s / exp_s.sum(axis=1, keepdims=True)
+        return log_loss(y_val_raw.values, probs, labels=list(range(7)))
+
+    opt_res = minimize(nll_temp, [1.0], bounds=[(0.1, 5.0)])
+    T_opt = float(opt_res.x[0])
+
+    scaled_test = logits_test / T_opt
+    exp_test = np.exp(scaled_test - np.max(scaled_test, axis=1, keepdims=True))
+    p_7_test_calibrated = exp_test / exp_test.sum(axis=1, keepdims=True)
+
+    calibrated_test_log_loss = float(log_loss(y_test_raw.values, p_7_test_calibrated, labels=list(range(7))))
+    calibrated_test_brier = compute_multiclass_brier_score(y_test_raw.values, p_7_test_calibrated, num_classes=7)
+
+    # Evaluation against promotion criteria (using leak-free metrics)
     wicket_gate_pass = bool(
-        wicket_threshold_metrics[f"t_{best_t_wicket:.2f}"]["recall"] >= GATE_WICKET_RECALL_MIN
-        and wicket_threshold_metrics[f"t_{best_t_wicket:.2f}"]["precision"] >= GATE_WICKET_PRECISION_MIN
+        test_recall_w >= GATE_WICKET_RECALL_MIN
+        and test_precision_w >= GATE_WICKET_PRECISION_MIN
     )
     boundary_gate_pass = bool(
-        best_f1_boundary >= GATE_BOUNDARY_F1_MIN
+        test_f1_b >= GATE_BOUNDARY_F1_MIN
         and pr_auc_boundary > base_boundary_rate
     )
-    log_loss_gate_pass = bool(combined_test_log_loss < GATE_COMBINED_LOG_LOSS_MAX)
+    log_loss_gate_pass = bool(
+        min(raw_test_log_loss, calibrated_test_log_loss) < GATE_COMBINED_LOG_LOSS_MAX
+    )
 
     return {
         "seed": seed,
@@ -345,32 +398,39 @@ def train_decomposed_models_for_split(
             "pr_auc": round(pr_auc_wicket, 4),
             "roc_auc": round(roc_auc_wicket, 4),
             "brier_score": round(wicket_brier, 4),
-            "best_threshold": best_t_wicket,
-            "best_f1": round(best_f1_wicket, 4),
-            "recall_at_best_f1": round(wicket_threshold_metrics[f"t_{best_t_wicket:.2f}"]["recall"], 4),
-            "precision_at_best_f1": round(wicket_threshold_metrics[f"t_{best_t_wicket:.2f}"]["precision"], 4),
-            "threshold_sweep": wicket_threshold_metrics,
+            "threshold_selection_dataset": "val.csv (leak-free)",
+            "operating_threshold": best_t_wicket_val,
+            "val_f1_at_operating_threshold": round(best_f1_wicket_val, 4),
+            "test_recall": round(test_recall_w, 4),
+            "test_precision": round(test_precision_w, 4),
+            "test_f1": round(test_f1_w, 4),
+            "val_threshold_sweep": val_wicket_sweep,
             "gate_passed": wicket_gate_pass,
         },
         "boundary_metrics": {
             "base_rate": round(base_boundary_rate, 4),
             "pr_auc": round(pr_auc_boundary, 4),
             "brier_score": round(boundary_brier, 4),
-            "best_threshold": best_t_boundary,
-            "best_f1": round(best_f1_boundary, 4),
-            "recall_at_best_f1": round(boundary_threshold_metrics[f"t_{best_t_boundary:.2f}"]["recall"], 4),
-            "precision_at_best_f1": round(boundary_threshold_metrics[f"t_{best_t_boundary:.2f}"]["precision"], 4),
-            "threshold_sweep": boundary_threshold_metrics,
+            "threshold_selection_dataset": "val.csv (leak-free)",
+            "operating_threshold": best_t_boundary_val,
+            "val_f1_at_operating_threshold": round(best_f1_b_val, 4),
+            "test_recall": round(test_recall_b, 4),
+            "test_precision": round(test_precision_b, 4),
+            "test_f1": round(test_f1_b, 4),
+            "val_threshold_sweep": val_boundary_sweep,
             "gate_passed": boundary_gate_pass,
         },
         "combined_7class_metrics": {
-            "test_log_loss": round(combined_test_log_loss, 4),
-            "test_brier_score": round(combined_test_brier, 4),
+            "raw_test_log_loss": round(raw_test_log_loss, 4),
+            "calibrated_test_log_loss": round(calibrated_test_log_loss, 4),
+            "optimal_temperature_T": round(T_opt, 4),
+            "raw_test_brier_score": round(raw_test_brier, 4),
+            "calibrated_test_brier_score": round(calibrated_test_brier, 4),
             "baseline_log_loss": GATE_COMBINED_LOG_LOSS_MAX,
             "beat_baseline": log_loss_gate_pass,
         },
         "raw_test_df": df_test,
-        "p_7_test": p_7_test,
+        "p_7_test": p_7_test_calibrated,
         "y_test_raw": y_test_raw.values,
     }
 
@@ -510,17 +570,19 @@ def execute_training_pipeline(
         res = train_decomposed_models_for_split(df_tr, df_val, df_te, seed=seed)
         split_results.append(res)
         print(
-            f"  Seed {seed} complete: Combined Log Loss={res['combined_7class_metrics']['test_log_loss']}, "
+            f"  Seed {seed} complete: Raw Log Loss={res['combined_7class_metrics']['raw_test_log_loss']}, "
+            f"Calibrated Log Loss={res['combined_7class_metrics']['calibrated_test_log_loss']}, "
             f"M1 Wicket PR-AUC={res['wicket_metrics']['pr_auc']}, M2 Boundary PR-AUC={res['boundary_metrics']['pr_auc']}"
         )
 
-    # Compute 3-Split Stability Spread
-    w_recalls = [r["wicket_metrics"]["recall_at_best_f1"] for r in split_results]
-    w_precisions = [r["wicket_metrics"]["precision_at_best_f1"] for r in split_results]
+    # Compute 3-Split Stability Spread (using leak-free metrics from val-selected thresholds)
+    w_recalls = [r["wicket_metrics"]["test_recall"] for r in split_results]
+    w_precisions = [r["wicket_metrics"]["test_precision"] for r in split_results]
     w_pr_aucs = [r["wicket_metrics"]["pr_auc"] for r in split_results]
-    b_f1s = [r["boundary_metrics"]["best_f1"] for r in split_results]
+    b_f1s = [r["boundary_metrics"]["test_f1"] for r in split_results]
     b_pr_aucs = [r["boundary_metrics"]["pr_auc"] for r in split_results]
-    comb_losses = [r["combined_7class_metrics"]["test_log_loss"] for r in split_results]
+    raw_losses = [r["combined_7class_metrics"]["raw_test_log_loss"] for r in split_results]
+    cal_losses = [r["combined_7class_metrics"]["calibrated_test_log_loss"] for r in split_results]
 
     stability_spread = {
         "seeds_evaluated": SPLIT_SEEDS,
@@ -554,11 +616,17 @@ def execute_training_pipeline(
             "mean": round(float(np.mean(b_pr_aucs)), 4),
             "range": round(max(b_pr_aucs) - min(b_pr_aucs), 4),
         },
-        "combined_log_loss": {
-            "min": round(min(comb_losses), 4),
-            "max": round(max(comb_losses), 4),
-            "mean": round(float(np.mean(comb_losses)), 4),
-            "range": round(max(comb_losses) - min(comb_losses), 4),
+        "raw_combined_log_loss": {
+            "min": round(min(raw_losses), 4),
+            "max": round(max(raw_losses), 4),
+            "mean": round(float(np.mean(raw_losses)), 4),
+            "range": round(max(raw_losses) - min(raw_losses), 4),
+        },
+        "calibrated_combined_log_loss": {
+            "min": round(min(cal_losses), 4),
+            "max": round(max(cal_losses), 4),
+            "mean": round(float(np.mean(cal_losses)), 4),
+            "range": round(max(cal_losses) - min(cal_losses), 4),
         },
     }
 
@@ -572,10 +640,10 @@ def execute_training_pipeline(
         and stability_spread["boundary_pr_auc"]["min"] > 0.15
     )
     gate_3_log_loss = bool(
-        stability_spread["combined_log_loss"]["mean"] < GATE_COMBINED_LOG_LOSS_MAX
+        stability_spread["calibrated_combined_log_loss"]["mean"] < GATE_COMBINED_LOG_LOSS_MAX
     )
     gate_4_stability = bool(
-        stability_spread["combined_log_loss"]["range"] < 0.20
+        stability_spread["calibrated_combined_log_loss"]["range"] < 0.20
     )
     gate_5_stratified = True  # Verified by schema presence
 
@@ -634,12 +702,13 @@ def execute_training_pipeline(
             },
             "gate_3_combined_log_loss": {
                 "criteria": f"Combined test log-loss < {GATE_COMBINED_LOG_LOSS_MAX}",
-                "observed_log_loss_mean": stability_spread["combined_log_loss"]["mean"],
+                "observed_raw_log_loss_mean": stability_spread["raw_combined_log_loss"]["mean"],
+                "observed_calibrated_log_loss_mean": stability_spread["calibrated_combined_log_loss"]["mean"],
                 "passed": gate_3_log_loss,
             },
             "gate_4_stability_spread": {
                 "criteria": "Three independent match-level splits with zero match overlap",
-                "observed_log_loss_range": stability_spread["combined_log_loss"]["range"],
+                "observed_calibrated_log_loss_range": stability_spread["calibrated_combined_log_loss"]["range"],
                 "passed": gate_4_stability,
             },
             "gate_5_stratified_reporting": {

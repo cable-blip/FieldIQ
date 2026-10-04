@@ -110,7 +110,7 @@ def test_promotion_gate_checklist_and_governance():
 
     # Check stability spread structure
     spread = meta.get("stability_spread", {})
-    for metric_name in ["wicket_recall", "wicket_precision", "boundary_f1", "combined_log_loss"]:
+    for metric_name in ["wicket_recall", "wicket_precision", "boundary_f1", "raw_combined_log_loss", "calibrated_combined_log_loss"]:
         assert metric_name in spread, f"Spread must contain {metric_name}"
         m_entry = spread[metric_name]
         for key in ["min", "max", "mean", "range"]:

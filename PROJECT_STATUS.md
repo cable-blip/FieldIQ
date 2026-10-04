@@ -116,20 +116,22 @@ Result:  74 passed, 1 warning in 68.74s
 
 ### 2. Three-Split Data Stability (Seeds: 42, 101, 2024)
 - **Zero Leakage:** Evaluated across 3 independent match-level partitions with 0 match overlap.
+- **Leak-Free Thresholding:** Operating decision thresholds for Model 1 (wicket) and Model 2 (boundary) were selected strictly on `val.csv` and applied to `test.csv` exactly once (no test-set search leakage).
 - **Observed Metrics Spread:**
   - **Wicket PR-AUC:** Mean 0.0828 (range 0.0670 – 0.1031) vs baseline rate 0.0419 (~2.0x lift over empirical base rate).
-  - **Wicket Recall:** Mean 0.1919 (range 0.1724 – 0.2188).
-  - **Wicket Precision:** Mean 0.1067 (range 0.0984 – 0.1207).
-  - **Boundary F1:** Mean 0.3660 (range 0.3298 – 0.3969) at $t=0.20$ threshold (beats 0.35 gate!).
+  - **Wicket Recall:** Mean 0.1298 (range 0.1077 – 0.1724) on pre-committed validation threshold.
+  - **Wicket Precision:** Mean 0.1638 (range 0.1010 – 0.2414) on pre-committed validation threshold.
+  - **Boundary F1:** Mean 0.3569 (range 0.3207 – 0.3758) on pre-committed validation threshold (passes 0.35 gate!).
   - **Boundary PR-AUC:** Mean 0.2879 (range 0.2628 – 0.3029) vs empirical baseline ~0.179.
-  - **Combined 7-Class Log-Loss:** Mean 1.3493 (range 1.3398 – 1.3632, spread = 0.0234).
+  - **Raw Combined Log-Loss:** Mean 1.3493 (range 1.3398 – 1.3632).
+  - **Calibrated Combined Log-Loss:** Mean 1.3483 (range 1.3379 – 1.3598, range = 0.0219) via validation temperature scaling.
 
 ### 3. Promotion Gates & Governance
 - **Gate Decision:** `promoted: false` (strictly maintained).
 - **Checklist Summary:**
-  - Gate 1 (Wicket Recall $\ge 20\%$ & Precision $\ge 15\%$): **FAILED** (Recall mean 19.2%, Precision mean 10.7%).
-  - Gate 2 (Boundary F1 $\ge 0.35$ & PR-AUC $>$ baseline): **PASSED** (F1 mean 0.3660, PR-AUC mean 0.2879).
-  - Gate 3 (Combined Log-Loss $< 1.3233$): **FAILED** (Mean 1.3493 vs 1.3233 baseline due to joint probability dispersion).
-  - Gate 4 (3-Split Stability Spread): **PASSED** (Log-loss range 0.0234 across independent match splits).
+  - Gate 1 (Wicket Recall $\ge 20\%$ & Precision $\ge 15\%$): **FAILED** (Recall mean 13.0%, Precision mean 16.4% on validation-committed threshold).
+  - Gate 2 (Boundary F1 $\ge 0.35$ & PR-AUC $>$ baseline): **PASSED** (F1 mean 0.3569, PR-AUC mean 0.2879).
+  - Gate 3 (Combined Log-Loss $< 1.3233$): **FAILED** (Mean 1.3483 calibrated vs 1.3233 baseline). Joint decomposition multiplication creates structural entropy on dot balls that temperature/Platt recalibration does not bridge.
+  - Gate 4 (3-Split Stability Spread): **PASSED** (Calibrated log-loss range 0.0219 across independent match splits).
   - Gate 5 (Stratified Reporting): **PASSED** (Detailed report with raw $n$ and $n_w$ across all 9 batters, 3 phases, and 3 H2H tiers).
 - **Status:** Saved under `models/v3_decomposed/` with `promoted: false`. Inference defaults to baseline model while supporting switchable factorized inference via `MLModelManager.set_active_architecture("decomposed")`.
