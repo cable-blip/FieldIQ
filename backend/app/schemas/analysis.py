@@ -135,6 +135,7 @@ class AnalysisResponse(BaseModel):
     matchup_stats: MatchupStatsSchema
     data_coverage: Optional[str] = None
     model_confidence: Optional[Dict[str, Any]] = None
+    bowler_provenance: Optional[Dict[str, str]] = None
     alternative_fields: list[AlternativeFieldSchema] = []
     zone_chart: dict[str, float] = {}
     ml_probabilities: Optional[MLOutcomeProbabilitiesSchema] = None
@@ -160,6 +161,7 @@ class EvaluateFieldResponse(BaseModel):
     violations: list[str]
     data_coverage: Optional[str] = None
     model_confidence: Optional[Dict[str, Any]] = None
+    bowler_provenance: Optional[Dict[str, str]] = None
     ml_probabilities: Optional[MLOutcomeProbabilitiesSchema] = None
     simulation_metrics: Optional[SimulationMetricsSchema] = None
     pitch_multipliers: Optional[Dict[str, float]] = None

@@ -63,6 +63,14 @@ def test_direct_h2h_rich_pair_informs_field():
     h2h_explanations = [e for e in body["tactical_explanations"] if "H2H Intelligence" in e or "Direct H2H" in e]
     assert len(h2h_explanations) > 0, "Expected H2H intelligence note in tactical explanations"
 
+    # Bowler provenance must transparently disclose curated_categorical vs synthetic_estimate
+    assert "bowler_provenance" in body
+    prov = body["bowler_provenance"]
+    assert prov is not None
+    assert prov["bowler_type"] == "curated_categorical"
+    assert prov["new_ball_strength"] == "synthetic_estimate"
+    assert prov["death_bowling_strength"] == "synthetic_estimate"
+
 
 def test_sparse_or_fallback_tier():
     """Virat Kohli vs James Franklin only has 1 delivery in the dataset."""

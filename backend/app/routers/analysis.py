@@ -316,6 +316,7 @@ def create_analysis_request(
         matchup_stats=h2h_stats_schema,
         data_coverage=coverage_tier,
         model_confidence=model_confidence_info,
+        bowler_provenance=getattr(bowler, "provenance_metadata", None),
         alternative_fields=alt_schemas,
         zone_chart=batter.zone_chart if (batter and getattr(batter, 'zone_chart', None)) else {},
         ml_probabilities=ml_probs_schema,
@@ -460,6 +461,7 @@ def evaluate_custom_field(
         violations=violations,
         data_coverage=eval_coverage,
         model_confidence=eval_confidence_info,
+        bowler_provenance=getattr(bowler, "provenance_metadata", None),
         ml_probabilities=ml_probs_schema,
         simulation_metrics=sim_metrics_schema,
         pitch_multipliers=pitch_mults

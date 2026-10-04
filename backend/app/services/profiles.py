@@ -81,6 +81,15 @@ class BowlerProfile:
     dismissal_modes: list[str]
     new_ball_strength: float
     death_bowling_strength: float
+    provenance_metadata: dict[str, str] = field(default_factory=lambda: {
+        "bowler_type": "curated_categorical",
+        "pace_class": "curated_categorical",
+        "attack_channel": "curated_categorical",
+        "length_preference": "curated_categorical",
+        "dismissal_modes": "curated_categorical",
+        "new_ball_strength": "synthetic_estimate",
+        "death_bowling_strength": "synthetic_estimate"
+    })
 
 @dataclass
 class FielderProfile:
