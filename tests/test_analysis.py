@@ -28,6 +28,12 @@ def test_accepts_analysis_request() -> None:
     assert "ers" in body
     assert "ewo" in body
     assert body["accepted_request"]["batter_name"] == "Virat Kohli"
+    assert "data_coverage" in body
+    assert body["data_coverage"] in ("direct_h2h", "sparse_h2h", "insufficient_data")
+    assert "model_confidence" in body
+    assert body["model_confidence"]["wicket_prediction_recall"] == 0.02
+    assert body["model_confidence"]["wicket_prediction_precision"] == 0.167
+    assert body["ml_probabilities"]["wicket_prediction_recall"] == 0.02
 
 
 def test_rejects_invalid_wicket_count() -> None:

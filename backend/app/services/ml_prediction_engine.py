@@ -2,17 +2,21 @@
 ml_prediction_engine.py — Advanced Historical Data-Driven Matchup & Fielder-Centric ML Optimization Engine.
 
 Combines:
-1. Deep Historical Match Data Mining (Format record, Bowler-type average/SR, Dismissal modes & spatial catch zones)
-2. Fielder Kinematic Catch Conversion & Boundary Interception Mechanics
-3. 1,000-Delivery Multi-Class Monte Carlo Simulation Engine
+1. Trained XGBoost Multi-Class Classifier on 10,000+ real T20I deliveries
+2. Deep Historical Match Data Mining (Format record, Bowler-type average/SR, Dismissal modes & spatial catch zones)
+3. Fielder Kinematic Catch Conversion & Boundary Interception Mechanics
+4. 1,000-Delivery Multi-Class Monte Carlo Simulation Engine with Pitch & Ground Physics
 """
 from __future__ import annotations
+import json
 import math
 import numpy as np
 import pandas as pd
 from typing import Dict, Any, List, Tuple, Optional
 from dataclasses import dataclass, field
 from pathlib import Path
+
+import joblib
 
 from backend.app.services.profiles import (
     BatterProfile,
@@ -34,6 +38,15 @@ from backend.app.services.ground_geometry import (
     GroundGeometryEngine,
     GroundDimensionPreset
 )
+from backend.app.services.ml_feature_engineering import (
+    CLASS_NAMES,
+    FEATURE_COLUMNS,
+    build_single_feature_vector,
+)
+
+MODELS_DIR = Path(__file__).resolve().parents[3] / "models"
+MODEL_FILE_PATH = MODELS_DIR / "fieldiq_xgb_model.joblib"
+METADATA_FILE_PATH = MODELS_DIR / "model_metadata.json"
 
 
 @dataclass
@@ -47,7 +60,6 @@ class BatterFormatRecord:
     strike_rate: float
     dot_ball_pct: float
     boundary_pct: float
-    # Dismissal mode distribution percentages
     caught_behind_slips_pct: float
     caught_infield_pct: float
     caught_deep_boundary_pct: float
@@ -82,6 +94,85 @@ class SimulationMetrics:
     fielder_catch_efficiencies: Dict[str, float] = field(default_factory=dict)
 
 
+class MLModelManager:
+    """
+    Singleton loader and inference provider for the trained XGBoost model.
+    """
+    _model = None
+    _metadata = None
+    _load_attempted = False
+
+    @classmethod
+    def get_model(cls):
+        if not cls._load_attempted:
+            cls._load_attempted = True
+            if MODEL_FILE_PATH.exists():
+                try:
+                    cls._model = joblib.load(MODEL_FILE_PATH)
+                    print(f"[MLModelManager] Loaded trained XGBoost model from {MODEL_FILE_PATH.name}")
+                except Exception as e:
+                    print(f"[MLModelManager] Failed to load model: {e}")
+                    cls._model = None
+            if METADATA_FILE_PATH.exists():
+                try:
+                    with open(METADATA_FILE_PATH, "r", encoding="utf-8") as f:
+                        cls._metadata = json.load(f)
+                except Exception:
+                    cls._metadata = None
+        return cls._model
+
+    @classmethod
+    def get_metadata(cls) -> Optional[Dict[str, Any]]:
+        if not cls._load_attempted:
+            cls.get_model()
+        return cls._metadata
+
+    @classmethod
+    def reset(cls) -> None:
+        cls._model = None
+        cls._metadata = None
+        cls._load_attempted = False
+
+    @classmethod
+    def predict_sector_probabilities(
+        cls,
+        batter_stats: Dict[str, Any],
+        is_pace: bool,
+        is_spin: bool,
+        phase_code: int,
+        over_num: int,
+        zone_id: int,
+        ball_in_over: int = 3,
+    ) -> Optional[Dict[str, float]]:
+        """
+        Uses the trained XGBoost multi-class classifier to predict delivery outcome distribution.
+        Returns a dict of class name -> probability, or None if model unavailable.
+        """
+        model = cls.get_model()
+        if model is None:
+            return None
+
+        try:
+            vec = build_single_feature_vector(
+                batter_stats=batter_stats,
+                is_pace=is_pace,
+                is_spin=is_spin,
+                phase_code=phase_code,
+                over_num=over_num,
+                ball_in_over=ball_in_over,
+                zone_id=zone_id,
+            )
+            # vec is (1, N)
+            probs = model.predict_proba(vec)[0]
+            return {
+                CLASS_NAMES[i]: float(probs[i])
+                for i in range(len(CLASS_NAMES))
+            }
+        except Exception as e:
+            print(f"[MLModelManager] Prediction error: {e}")
+            return None
+
+
 class HistoricalMatchDataMiner:
     """
     Mines real delivery datasets to build deep format, phase, and bowler-type
@@ -103,6 +194,11 @@ class HistoricalMatchDataMiner:
             return cls._cached_df
         except Exception:
             return None
+
+    @classmethod
+    def reset_cache(cls) -> None:
+        cls._cached_df = None
+        cls._cached_file_mtime = 0.0
 
     @classmethod
     def extract_batter_record_vs_bowler_type(
@@ -138,28 +234,43 @@ class HistoricalMatchDataMiner:
         if df is None or len(df) == 0:
             return default_record
 
-        # Filter deliveries for this batter
-        batter_cols = [c for c in df.columns if c.lower() in ["batter", "batsman"]]
-        if not batter_cols:
+        # Flexible column resolution
+        cols_lower = {str(c).lower(): c for c in df.columns}
+        b_col = cols_lower.get("batter") or cols_lower.get("batsman")
+        if not b_col:
             return default_record
 
-        b_col = batter_cols[0]
-        batter_df = df[df[b_col].astype(str).str.lower() == batter_name.lower()]
-
+        batter_df = df[df[b_col].astype(str).str.strip().str.lower() == batter_name.strip().lower()]
         if len(batter_df) == 0:
             return default_record
 
+        runs_col = cols_lower.get("runsbatter") or cols_lower.get("runs_batter") or cols_lower.get("runs")
+        w_col = cols_lower.get("wicket") or cols_lower.get("is_wicket")
+        wk_col = cols_lower.get("wicketmethod") or cols_lower.get("wicket_kind") or cols_lower.get("wicket_type")
+
         total_balls = len(batter_df)
-        total_runs = int(batter_df["runs_batter"].sum()) if "runs_batter" in batter_df.columns else int(total_balls * 0.95)
+        if runs_col:
+            total_runs = int(pd.to_numeric(batter_df[runs_col], errors="coerce").fillna(0).sum())
+        else:
+            total_runs = int(total_balls * 0.95)
+
         if total_runs <= 0:
             total_runs = max(1, int(total_balls * 0.85))
-        
+
         # Wicket calculations
-        wickets_df = batter_df[batter_df["is_wicket"] == 1] if "is_wicket" in batter_df.columns else pd.DataFrame()
-        total_outs = max(1, len(wickets_df))
-        
+        total_outs = 1
+        if w_col:
+            wickets_mask = batter_df[w_col].apply(lambda w: bool(w) and str(w).lower() not in ("false", "0", "nan"))
+            wickets_df = batter_df[wickets_mask]
+            total_outs = max(1, len(wickets_df))
+        else:
+            wickets_df = pd.DataFrame()
+
         # Dismissal mode breakdown
-        modes = wickets_df["wicket_kind"].dropna().str.lower().tolist() if "wicket_kind" in wickets_df.columns else []
+        modes = []
+        if wk_col and not wickets_df.empty:
+            modes = wickets_df[wk_col].dropna().astype(str).str.lower().tolist()
+
         caught_count = sum(1 for m in modes if "caught" in m)
         bowled_lbw_count = sum(1 for m in modes if any(k in m for k in ["bowled", "lbw"]))
         stumped_count = sum(1 for m in modes if "stumped" in m)
@@ -172,8 +283,13 @@ class HistoricalMatchDataMiner:
             c_infield = round((caught_count * 0.30 / total_outs) * 100, 1)
             c_deep = round((caught_count * 0.20 / total_outs) * 100, 1)
 
-        dot_balls = int((batter_df["runs_batter"] == 0).sum()) if "runs_batter" in batter_df.columns else int(total_balls * 0.44)
-        boundaries = int((batter_df["runs_batter"] >= 4).sum()) if "runs_batter" in batter_df.columns else int(total_balls * 0.15)
+        if runs_col:
+            r_series = pd.to_numeric(batter_df[runs_col], errors="coerce").fillna(0)
+            dot_balls = int((r_series == 0).sum())
+            boundaries = int((r_series >= 4).sum())
+        else:
+            dot_balls = int(total_balls * 0.44)
+            boundaries = int(total_balls * 0.15)
 
         avg = round(total_runs / total_outs, 1)
         sr = round((total_runs / total_balls) * 100, 1) if total_balls > 0 else 100.0
@@ -209,34 +325,29 @@ class FielderKinematicEngine:
         target_y: float,
         fielder_x: float = 0.0,
         fielder_y: float = 0.0,
-        shot_hang_time: float = 2.2, # seconds
+        shot_hang_time: float = 2.2,
         is_close_catch: bool = False
     ) -> float:
         """
         Computes the probability of converting an aerial mistimed shot into a catch.
         """
-        # Reaction time (close in fielders have faster reaction reflexes)
         t_react = 0.22 if is_close_catch else (0.40 - 0.15 * fielder.jump)
-        v_sprint = 6.0 + 3.0 * fielder.jump # 6.0m/s - 9.0m/s
-        r_dive = 1.2 + 1.2 * fielder.jump # 1.2m - 2.4m
+        v_sprint = 6.0 + 3.0 * fielder.jump
+        r_dive = 1.2 + 1.2 * fielder.jump
 
-        # Position of fielder
         fx = getattr(fielder, 'x', fielder_x)
         fy = getattr(fielder, 'y', fielder_y)
 
-        # Euclidean distance
         dx = target_x - fx
         dy = target_y - fy
         dist = math.sqrt(dx * dx + dy * dy)
 
-        # Catch opportunity
         dist_to_run = max(0.0, dist - r_dive)
         t_reach = t_react + (dist_to_run / v_sprint)
 
         if t_reach > shot_hang_time:
-            return 0.0 # Ball hits the turf before fielder can arrive
+            return 0.0
 
-        # Catch reliability factor
         skill_factor = fielder.close_in_skill if is_close_catch else (
             fielder.boundary_skill * 0.6 + fielder.catching * 0.4 if dist > 30.0 else fielder.catching
         )
@@ -280,14 +391,12 @@ class FielderKinematicEngine:
             if p.position_name in ["Wicketkeeper", "Bowler"]:
                 continue
 
-            # Calculate polar angle
             angle = math.atan2(p.y, p.x)
             if angle < 0:
                 angle += 2 * math.pi
 
             r = math.sqrt(p.x * p.x + p.y * p.y)
 
-            # Match to closest sector
             best_sec = "Mid Off"
             min_diff = 999.0
             for sec, s_angle in sector_angles.items():
@@ -316,10 +425,24 @@ class FielderKinematicEngine:
         return sector_coverage
 
 
+# Sector index to zone ID (1-8 for RHB)
+SECTOR_NAME_TO_ZONE_ID = {
+    "Fine Leg": 1,
+    "Square Leg": 2,
+    "Mid Wicket": 3,
+    "Mid On": 4,
+    "Mid Off": 5,
+    "Cover": 6,
+    "Point": 7,
+    "Third Man": 8,
+}
+
+
 class AdvancedMonteCarloSimulator:
     """
     Simulates 1,000 stochastic deliveries sampling continuous exit velocity,
-    launch elevation, turf roll, and fielder kinematic catch/cut-off interceptions.
+    launch elevation, turf roll, and fielder kinematic catch/cut-off interceptions,
+    grounded by the trained XGBoost multi-class classifier.
     """
 
     @classmethod
@@ -333,16 +456,18 @@ class AdvancedMonteCarloSimulator:
         objective: str = "attack_wicket",
         n_simulations: int = 1000,
         environmental_conditions: Optional[EnvironmentalConditions] = None,
-        ground_preset_id: str = "standard"
+        ground_preset_id: str = "standard",
+        over_num: Optional[int] = None,
+        ball_in_over: Optional[int] = None,
     ) -> Tuple[MLOutcomeProbabilities, SimulationMetrics]:
         np.random.seed(42)
 
         env = environmental_conditions or EnvironmentalConditions()
         ground = GroundGeometryEngine.get_preset_by_id(ground_preset_id)
         is_pace = "Pace" in format_record.bowler_type_category
+        is_spin = "Spin" in format_record.bowler_type_category
 
         pitch_mults = PitchPhysicsEngine.compute_condition_multipliers(env, is_pace)
-
         coverage = FielderKinematicEngine.evaluate_field_coverage_matrix(placements, batter, bowler)
         sector_names = list(coverage.keys())
 
@@ -355,12 +480,31 @@ class AdvancedMonteCarloSimulator:
 
         zone_probs = np.array(zone_weights) / sum(zone_weights)
 
+        # Build batter stats payload for ML Model
+        metadata = MLModelManager.get_metadata()
+        cached_stats = metadata.get("batter_statistics", {}) if metadata else {}
+        b_key = batter.name.strip().lower()
+        batter_stats = cached_stats.get(b_key, {
+            "batting_average": format_record.batting_average,
+            "strike_rate": format_record.strike_rate,
+            "dot_ball_pct": format_record.dot_ball_pct,
+            "boundary_pct": format_record.boundary_pct,
+            "dismissal_rate": format_record.dismissals / max(1, format_record.balls_faced),
+            "is_rhb": 1 if getattr(batter, "handedness", Handedness.RHB) == Handedness.RHB else 0,
+            "zone_weights": {z: 0.125 for z in range(1, 9)},
+        })
+
+        phase_code = 0 if phase == MatchPhase.POWERPLAY else (1 if phase == MatchPhase.MIDDLE else 2)
+        default_rep_over = 3 if phase == MatchPhase.POWERPLAY else (10 if phase == MatchPhase.MIDDLE else 18)
+        sim_over = over_num if over_num is not None else default_rep_over
+        sim_ball = max(1, min(6, ball_in_over)) if ball_in_over is not None else 3
+
         # Baseline probabilities conditioned on historical format record & pitch exit velocity
         base_dot = format_record.dot_ball_pct / 100.0
         base_boundary = (format_record.boundary_pct / 100.0) * pitch_mults["exit_velocity_multiplier"]
         base_wicket = (format_record.dismissals / max(1, format_record.balls_faced))
 
-        # Adjust for match phase
+        # Adjust for match phase in heuristic mode
         if phase == MatchPhase.POWERPLAY:
             base_dot *= 0.90
             base_boundary *= 1.25
@@ -370,18 +514,42 @@ class AdvancedMonteCarloSimulator:
             base_boundary *= 1.45
             base_wicket *= 1.35
 
-        sim_outcomes = [] # 0=dot, 1=single, 2=two, 4=four, 6=six, -1=wicket
+        sim_outcomes = []
         runs_per_sim = []
-
         fielder_catches: Dict[str, int] = {p.position_name: 0 for p in placements}
 
+        # Query ML Model for each sector beforehand
+        sector_ml_probs: Dict[str, Dict[str, float]] = {}
+        for sec in sector_names:
+            z_id = SECTOR_NAME_TO_ZONE_ID.get(sec, 0)
+            pred = MLModelManager.predict_sector_probabilities(
+                batter_stats=batter_stats,
+                is_pace=is_pace,
+                is_spin=is_spin,
+                phase_code=phase_code,
+                over_num=sim_over,
+                zone_id=z_id,
+                ball_in_over=sim_ball,
+            )
+            if pred:
+                sector_ml_probs[sec] = pred
+
         for _ in range(n_simulations):
-            # Sample shot direction sector
             sec_idx = np.random.choice(len(sector_names), p=zone_probs)
             sec = sector_names[sec_idx]
             sec_data = coverage[sec]
-
             rand_event = np.random.rand()
+
+            # Check if ML model provided predictions for this sector
+            ml_pred = sector_ml_probs.get(sec)
+            if ml_pred:
+                cur_dot = ml_pred["dot"]
+                cur_boundary = (ml_pred["four"] + ml_pred["six"]) * pitch_mults["exit_velocity_multiplier"]
+                cur_wicket = ml_pred["wicket"]
+            else:
+                cur_dot = base_dot
+                cur_boundary = base_boundary
+                cur_wicket = base_wicket
 
             # 1. Edge & Mistimed Shot Catches (Wicket Trap Test)
             if is_pace:
@@ -391,47 +559,41 @@ class AdvancedMonteCarloSimulator:
                 base_spin_risk = getattr(batter, 'sweep_risk_vs_spin', 0.4)
                 edge_vulnerability = base_spin_risk * pitch_mults["spin_turn_multiplier"]
 
-            is_mistimed = rand_event < (base_wicket * 2.2 * (0.8 + 0.4 * edge_vulnerability))
+            is_mistimed = rand_event < (cur_wicket * 2.2 * (0.8 + 0.4 * edge_vulnerability))
 
             if is_mistimed:
-                # Check if caught by close slips / gully / keeper (boosted by edge carry)
-                close_catch_threshold = base_wicket * 1.3 * pitch_mults["edge_carry_multiplier"]
+                close_catch_threshold = cur_wicket * 1.3 * pitch_mults["edge_carry_multiplier"]
                 if sec_data["close_fielders"] > 0 and rand_event < close_catch_threshold:
                     sim_outcomes.append(-1)
                     runs_per_sim.append(0)
                     for f_name in sec_data["fielders"]:
                         fielder_catches[f_name] = fielder_catches.get(f_name, 0) + 1
                     continue
-                elif sec_data["deep_fielders"] > 0 and rand_event < (base_wicket * 1.1):
-                    # Aerial boundary catch
+                elif sec_data["deep_fielders"] > 0 and rand_event < (cur_wicket * 1.1):
                     sim_outcomes.append(-1)
                     runs_per_sim.append(0)
                     for f_name in sec_data["fielders"]:
                         fielder_catches[f_name] = fielder_catches.get(f_name, 0) + 1
                     continue
-                elif sec_data["infield_fielders"] > 0 and rand_event < (base_wicket * 0.8):
-                    # Infield drive catch
+                elif sec_data["infield_fielders"] > 0 and rand_event < (cur_wicket * 0.8):
                     sim_outcomes.append(-1)
                     runs_per_sim.append(0)
                     continue
 
-            # 2. Boundary Shot Simulation (Suppressed by Deep Fielders & Asymmetric Boundary Size)
-            # Calculate sector boundary radius
+            # 2. Boundary Shot Simulation
             sector_angle_rad = sec_idx * (2 * math.pi / len(sector_names))
             sec_boundary_radius = GroundGeometryEngine.calculate_boundary_radius_at_angle(ground, sector_angle_rad)
 
-            # Shorter boundary (<62m) boosts boundary chance; longer boundary (>70m) decreases it
             boundary_distance_factor = 1.0
             if sec_boundary_radius < 62.0:
                 boundary_distance_factor += (62.0 - sec_boundary_radius) * 0.02
             elif sec_boundary_radius > 70.0:
                 boundary_distance_factor = max(0.65, 1.0 - (sec_boundary_radius - 70.0) * 0.015)
 
-            is_boundary_attempt = (rand_event < (base_boundary * 1.2 * boundary_distance_factor))
+            is_boundary_attempt = (rand_event < (cur_boundary * 1.2 * boundary_distance_factor))
             if is_boundary_attempt:
                 suppression = sec_data["boundary_suppression"]
                 if np.random.rand() > suppression:
-                    # Deep fielder cuts off boundary -> converted to single or two
                     if np.random.rand() > 0.40:
                         sim_outcomes.append(2)
                         runs_per_sim.append(2)
@@ -439,7 +601,6 @@ class AdvancedMonteCarloSimulator:
                         sim_outcomes.append(1)
                         runs_per_sim.append(1)
                 else:
-                    # Pierces gap for 4 or 6
                     if np.random.rand() > 0.25:
                         sim_outcomes.append(4)
                         runs_per_sim.append(4)
@@ -449,15 +610,13 @@ class AdvancedMonteCarloSimulator:
                 continue
 
             # 3. Strike Rotation / Dot Ball Simulation
-            if rand_event < (base_dot * 1.1):
-                # Cut off in inner circle for dot
+            if rand_event < (cur_dot * 1.1):
                 sim_outcomes.append(0)
                 runs_per_sim.append(0)
             else:
                 sim_outcomes.append(1)
                 runs_per_sim.append(1)
 
-        # Aggregate empirical counts
         total = len(sim_outcomes)
         dot_count = sim_outcomes.count(0)
         single_count = sim_outcomes.count(1)
@@ -477,12 +636,10 @@ class AdvancedMonteCarloSimulator:
         exp_runs_per_ball = round(sum(runs_per_sim) / total, 3)
         exp_runs_per_over = round(exp_runs_per_ball * 6, 2)
 
-        # Compute empirical 90% confidence interval over 6 balls
         over_runs_samples = [sum(runs_per_sim[i:i+6]) for i in range(0, total - 6, 6)]
         ci_min = float(np.percentile(over_runs_samples, 5)) if over_runs_samples else 2.0
         ci_max = float(np.percentile(over_runs_samples, 95)) if over_runs_samples else 12.0
 
-        # Tactical score
         if objective == "attack_wicket":
             tactical_score = round(wicket_pct * 2.2 + dot_pct * 0.4 - exp_runs_per_over * 0.5, 2)
         elif objective == "prevent_boundary":
@@ -490,7 +647,6 @@ class AdvancedMonteCarloSimulator:
         else:
             tactical_score = round(dot_pct * 1.2 - exp_runs_per_over * 0.8, 2)
 
-        # Fielder catch efficiency ratings
         catch_efficiencies = {
             f_name: round(min(1.0, count / max(1, wicket_count * 0.4)), 2)
             for f_name, count in fielder_catches.items()
@@ -534,7 +690,9 @@ def compute_ml_matchup_prediction(
     n_simulations: int = 1000,
     format_name: Optional[str] = None,
     environmental_conditions: Optional[EnvironmentalConditions] = None,
-    ground_preset_id: str = "standard"
+    ground_preset_id: str = "standard",
+    over_num: Optional[int] = None,
+    ball_in_over: Optional[int] = None,
 ) -> Tuple[MLOutcomeProbabilities, SimulationMetrics]:
     """
     Main entry point for computing historical data-driven ML matchup outcome probabilities
@@ -557,5 +715,7 @@ def compute_ml_matchup_prediction(
         objective=objective,
         n_simulations=n_simulations,
         environmental_conditions=environmental_conditions,
-        ground_preset_id=ground_preset_id
+        ground_preset_id=ground_preset_id,
+        over_num=over_num,
+        ball_in_over=ball_in_over,
     )

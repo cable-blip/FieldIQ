@@ -17,7 +17,11 @@ from backend.app.schemas.analysis import (
     GroundDimensionPresetSchema,
     GameplanRequestSchema,
     GameplanResponseSchema,
-    OverPlanSchema
+    OverPlanSchema,
+    LiveDeliveryRequest,
+    LiveDeliveryResponse,
+    LiveMatchResetRequest,
+    LoggedDeliveryItem
 )
 from backend.app.services.profiles import (
     get_sample_batters,
@@ -48,16 +52,11 @@ from backend.app.services.gameplan_engine import GameplanSequencingEngine
 from backend.app.services.real_data_loader import (
     get_available_batters_from_df,
     load_all_batters_from_df,
+    get_all_available_batters,
+    load_batter_profile_from_real_data,
     DATA_DIR
 )
-
-# Cache deliveries dataset on module load
-try:
-    deliveries_df = pd.read_csv(DATA_DIR / 'real_batters_deliveries.csv')
-    AVAILABLE_REAL_BATTERS = get_available_batters_from_df(deliveries_df)
-except Exception:
-    deliveries_df = None
-    AVAILABLE_REAL_BATTERS = []
+from backend.app.services.live_match_engine import LiveMatchEngine
 
 router = APIRouter(prefix="/api/v1", tags=["analysis"])
 
@@ -65,7 +64,8 @@ router = APIRouter(prefix="/api/v1", tags=["analysis"])
 @router.get("/players", status_code=status.HTTP_200_OK)
 def get_players_list():
     sample_bowlers = [b.name for b in get_sample_bowlers()]
-    batters_list = AVAILABLE_REAL_BATTERS if AVAILABLE_REAL_BATTERS else [b.name for b in get_sample_batters()]
+    real_batters = get_all_available_batters()
+    batters_list = real_batters if real_batters else [b.name for b in get_sample_batters()]
     return {
         "batters": batters_list,
         "bowlers": sample_bowlers
@@ -112,15 +112,8 @@ def create_analysis_request(
     ground_id = request.ground_preset_id or "standard"
     ground = GroundGeometryEngine.get_preset_by_id(ground_id)
 
-    # Resolve batter profile (dynamic from CSV dataset if present)
-    batter = None
-    if deliveries_df is not None and request.batter_name in AVAILABLE_REAL_BATTERS:
-        try:
-            real_profiles = load_all_batters_from_df(deliveries_df)
-            batter = next((b for b in real_profiles if b.name.lower() == request.batter_name.lower()), None)
-        except Exception:
-            pass
-
+    # Resolve batter profile (dynamic from real dataset if present)
+    batter = load_batter_profile_from_real_data(request.batter_name)
     if batter is None:
         batters = get_sample_batters()
         batter = next((b for b in batters if b.name.lower() == request.batter_name.lower()), batters[0])
@@ -227,7 +220,8 @@ def create_analysis_request(
         match_format=request.match_format.value,
         objective=request.tactical_objective.value,
         environmental_conditions=env,
-        ground_preset_id=ground.id
+        ground_preset_id=ground.id,
+        over_num=request.over,
     )
 
     fmt_rec_schema = None
@@ -260,7 +254,10 @@ def create_analysis_request(
         wicket_pct=ml_probs.wicket_pct,
         expected_runs_per_ball=ml_probs.expected_runs_per_ball,
         expected_wickets_per_ball=ml_probs.expected_wickets_per_ball,
-        format_record=fmt_rec_schema
+        format_record=fmt_rec_schema,
+        model_confidence="low",
+        wicket_prediction_recall=0.02,
+        wicket_prediction_precision=0.167
     )
 
     sim_metrics_schema = SimulationMetricsSchema(
@@ -275,9 +272,20 @@ def create_analysis_request(
         fielder_catch_efficiencies=sim_metrics.fielder_catch_efficiencies
     )
 
+    coverage_tier = "direct_h2h" if (h2h_stats.get("has_history") and h2h_stats.get("balls_faced", 0) >= 15) else (
+        "sparse_h2h" if h2h_stats.get("has_history") else "insufficient_data"
+    )
+    model_confidence_info = {
+        "status": "uncalibrated_baseline",
+        "level": "low",
+        "wicket_prediction_recall": 0.02,
+        "wicket_prediction_precision": 0.167,
+        "disclosure": "Wicket model recall is 2.0% on test split. Probabilities must be treated as low-confidence heuristic baselines until Phase 3 promotion criteria are met."
+    }
+
     return AnalysisResponse(
         status="available",
-        data_driven=True if request.batter_name in AVAILABLE_REAL_BATTERS else False,
+        data_driven=True if (load_batter_profile_from_real_data(request.batter_name) is not None) else False,
         reason="Deterministic expert recommendation rules engine with Bayesian ML simulation.",
         placements=placements_schema,
         ers=result.ers,
@@ -287,6 +295,8 @@ def create_analysis_request(
         is_legal=result.is_legal,
         violations=result.violations,
         matchup_stats=h2h_stats,
+        data_coverage=coverage_tier,
+        model_confidence=model_confidence_info,
         alternative_fields=alt_schemas,
         zone_chart=batter.zone_chart if (batter and getattr(batter, 'zone_chart', None)) else {},
         ml_probabilities=ml_probs_schema,
@@ -334,14 +344,7 @@ def evaluate_custom_field(
         )
 
     # Resolve batter & bowler
-    batter = None
-    if deliveries_df is not None and request.batter_name in AVAILABLE_REAL_BATTERS:
-        try:
-            real_profiles = load_all_batters_from_df(deliveries_df)
-            batter = next((b for b in real_profiles if b.name.lower() == request.batter_name.lower()), None)
-        except Exception:
-            pass
-
+    batter = load_batter_profile_from_real_data(request.batter_name)
     if batter is None:
         batters = get_sample_batters()
         batter = next((b for b in batters if b.name.lower() == request.batter_name.lower()), batters[0])
@@ -371,7 +374,8 @@ def evaluate_custom_field(
         match_format=request.match_format.value,
         objective="attack_wicket",
         environmental_conditions=env,
-        ground_preset_id=ground.id
+        ground_preset_id=ground.id,
+        over_num=request.over,
     )
 
     fmt_rec_schema = None
@@ -404,7 +408,10 @@ def evaluate_custom_field(
         wicket_pct=ml_probs.wicket_pct,
         expected_runs_per_ball=ml_probs.expected_runs_per_ball,
         expected_wickets_per_ball=ml_probs.expected_wickets_per_ball,
-        format_record=fmt_rec_schema
+        format_record=fmt_rec_schema,
+        model_confidence="low",
+        wicket_prediction_recall=0.02,
+        wicket_prediction_precision=0.167
     )
 
     sim_metrics_schema = SimulationMetricsSchema(
@@ -419,12 +426,26 @@ def evaluate_custom_field(
         fielder_catch_efficiencies=sim_metrics.fielder_catch_efficiencies
     )
 
+    from backend.app.services.matchup_stats import get_matchup_stats
+    eval_h2h = get_matchup_stats(request.batter_name, request.bowler_name)
+    eval_coverage = "direct_h2h" if (eval_h2h.get("has_history") and eval_h2h.get("balls_faced", 0) >= 15) else (
+        "sparse_h2h" if eval_h2h.get("has_history") else "insufficient_data"
+    )
+
     return EvaluateFieldResponse(
         ers=round(ers, 2),
         ewo=round(ewo, 2),
         cds=round(cds, 2),
         is_legal=is_legal,
         violations=violations,
+        data_coverage=eval_coverage,
+        model_confidence={
+            "status": "uncalibrated_baseline",
+            "level": "low",
+            "wicket_prediction_recall": 0.02,
+            "wicket_prediction_precision": 0.167,
+            "disclosure": "Wicket model recall is 2.0% on test split. Probabilities must be treated as low-confidence heuristic baselines until Phase 3 promotion criteria are met."
+        },
         ml_probabilities=ml_probs_schema,
         simulation_metrics=sim_metrics_schema,
         pitch_multipliers=pitch_mults
@@ -486,3 +507,108 @@ def generate_gameplan(
             for op in res["gameplan_sequence"]
         ]
     )
+
+
+# ---------------------------------------------------------------------------
+# Real-Time Ball-by-Ball Delivery Ingestion & Dynamic Field Re-Mapping Endpoints
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/match/delivery",
+    response_model=LiveDeliveryResponse,
+    status_code=status.HTTP_200_OK
+)
+def log_live_delivery(request: LiveDeliveryRequest) -> LiveDeliveryResponse:
+    """
+    Ingests a single delivery into the live session, increments match score/ball,
+    dynamically elevates/adjusts the batter's wagon wheel sector danger,
+    and automatically re-maps the field placements for the next delivery.
+    """
+    fmt = ServiceMatchFormat.T20 if request.match_format == MatchFormat.T20 else ServiceMatchFormat.ODI
+    env = EnvironmentalConditions.from_dict(
+        request.environmental_conditions.model_dump() if request.environmental_conditions else {}
+    )
+
+    result = LiveMatchEngine.log_delivery(
+        session_id="default",
+        batter_name=request.batter_name,
+        bowler_name=request.bowler_name,
+        match_format=fmt,
+        over=request.over,
+        ball=request.ball,
+        runs_batter=request.runs_batter,
+        extras=request.extras,
+        extra_type=request.extra_type,
+        shot_sector=request.shot_sector,
+        shot_band=request.shot_band,
+        is_wicket=request.is_wicket,
+        wicket_kind=request.wicket_kind or "",
+        dismissed_player=request.dismissed_player or "",
+        tactical_objective=request.tactical_objective.value,
+        ground_preset_id=request.ground_preset_id or "standard",
+        environmental_conditions=env
+    )
+
+    return LiveDeliveryResponse(**result)
+
+
+@router.get(
+    "/match/live",
+    response_model=LiveDeliveryResponse,
+    status_code=status.HTTP_200_OK
+)
+def get_live_match_state(session_id: str = "default") -> LiveDeliveryResponse:
+    """
+    Retrieves the current live session score, active field placements, and recent deliveries.
+    """
+    result = LiveMatchEngine.get_live_state(session_id=session_id)
+    return LiveDeliveryResponse(**result)
+
+
+@router.post(
+    "/match/undo",
+    response_model=LiveDeliveryResponse,
+    status_code=status.HTTP_200_OK
+)
+def undo_last_delivery(session_id: str = "default") -> LiveDeliveryResponse:
+    """
+    Reverts the last logged delivery, restoring the previous score, balls, zone danger, and field.
+    """
+    result = LiveMatchEngine.undo_delivery(session_id=session_id)
+    if result.get("status") == "error":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result.get("message", "Cannot undo delivery.")
+        )
+    return LiveDeliveryResponse(**result)
+
+
+@router.post(
+    "/match/reset",
+    response_model=LiveDeliveryResponse,
+    status_code=status.HTTP_200_OK
+)
+def reset_live_match(request: LiveMatchResetRequest) -> LiveDeliveryResponse:
+    """
+    Resets the live match session with custom starting score, over, and players.
+    """
+    fmt = ServiceMatchFormat.T20 if request.match_format == MatchFormat.T20 else ServiceMatchFormat.ODI
+    env = EnvironmentalConditions.from_dict(
+        request.environmental_conditions.model_dump() if request.environmental_conditions else {}
+    )
+
+    result = LiveMatchEngine.reset_session(
+        session_id="default",
+        batter_name=request.batter_name or "Virat Kohli",
+        bowler_name=request.bowler_name or "Generic Right-Arm Fast (New Ball)",
+        match_format=fmt,
+        starting_over=request.starting_over,
+        starting_ball=request.starting_ball,
+        starting_runs=request.starting_runs,
+        starting_wickets=request.starting_wickets,
+        tactical_objective=request.tactical_objective.value,
+        ground_preset_id=request.ground_preset_id or "standard",
+        environmental_conditions=env
+    )
+
+    return LiveDeliveryResponse(**result)

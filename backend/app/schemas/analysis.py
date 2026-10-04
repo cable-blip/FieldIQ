@@ -103,6 +103,9 @@ class MLOutcomeProbabilitiesSchema(BaseModel):
     expected_runs_per_ball: float
     expected_wickets_per_ball: float
     format_record: Optional[BatterFormatRecordSchema] = None
+    model_confidence: str = "low"
+    wicket_prediction_recall: float = 0.02
+    wicket_prediction_precision: float = 0.167
 
 class SimulationMetricsSchema(BaseModel):
     simulated_deliveries: int
@@ -128,6 +131,8 @@ class AnalysisResponse(BaseModel):
     is_legal: bool
     violations: list[str]
     matchup_stats: MatchupStatsSchema
+    data_coverage: Optional[str] = None
+    model_confidence: Optional[Dict[str, Any]] = None
     alternative_fields: list[AlternativeFieldSchema] = []
     zone_chart: dict[str, float] = {}
     ml_probabilities: Optional[MLOutcomeProbabilitiesSchema] = None
@@ -151,6 +156,8 @@ class EvaluateFieldResponse(BaseModel):
     cds: float
     is_legal: bool
     violations: list[str]
+    data_coverage: Optional[str] = None
+    model_confidence: Optional[Dict[str, Any]] = None
     ml_probabilities: Optional[MLOutcomeProbabilitiesSchema] = None
     simulation_metrics: Optional[SimulationMetricsSchema] = None
     pitch_multipliers: Optional[Dict[str, float]] = None
@@ -205,3 +212,79 @@ class GameplanResponseSchema(BaseModel):
     pitch_multipliers: Dict[str, float]
     planned_overs_count: int
     gameplan_sequence: list[OverPlanSchema]
+
+
+class LiveDeliveryRequest(BaseModel):
+    batter_name: str = Field(default="Virat Kohli", min_length=1, max_length=100)
+    bowler_name: str = Field(default="Generic Right-Arm Fast (New Ball)", min_length=1, max_length=100)
+    match_format: MatchFormat = MatchFormat.ODI
+    over: int = Field(default=0, ge=0, le=100)
+    ball: int = Field(default=0, ge=0, le=6)
+    runs_batter: int = Field(default=0, ge=0, le=7)
+    extras: int = Field(default=0, ge=0, le=7)
+    extra_type: str = "none"  # "none", "wide", "no_ball", "bye", "leg_bye"
+    shot_sector: str = "Cover"
+    shot_band: str = "Deep"
+    is_wicket: bool = False
+    wicket_kind: Optional[str] = ""
+    dismissed_player: Optional[str] = ""
+    tactical_objective: TacticalObjective = TacticalObjective.ATTACK_WICKET
+    environmental_conditions: Optional[EnvironmentalConditionsSchema] = None
+    ground_preset_id: Optional[str] = "standard"
+
+
+class LoggedDeliveryItem(BaseModel):
+    delivery_id: str
+    over: int
+    ball: int
+    display_over: str
+    batter_name: str
+    bowler_name: str
+    runs_batter: int
+    extras: int
+    runs_total: int
+    extra_type: str
+    shot_sector: str
+    shot_band: str
+    is_wicket: bool
+    wicket_kind: str
+    tactical_adjustment: str
+    timestamp: str
+
+
+class LiveDeliveryResponse(BaseModel):
+    status: str = "success"
+    session_id: str
+    over: int
+    ball: int
+    display_over: str
+    runs: int
+    wickets: int
+    current_run_rate: float
+    phase: str
+    field_restriction: str
+    tactical_commentary: str
+    zone_chart: Dict[str, float]
+    placements: list[FieldPlacementSchema]
+    ers: float
+    ewo: float
+    cds: float
+    is_legal: bool
+    violations: list[str] = []
+    ml_probabilities: Optional[MLOutcomeProbabilitiesSchema] = None
+    simulation_metrics: Optional[SimulationMetricsSchema] = None
+    pitch_multipliers: Optional[Dict[str, float]] = None
+    delivery_history: list[LoggedDeliveryItem] = []
+
+
+class LiveMatchResetRequest(BaseModel):
+    batter_name: Optional[str] = "Virat Kohli"
+    bowler_name: Optional[str] = "Generic Right-Arm Fast (New Ball)"
+    match_format: MatchFormat = MatchFormat.ODI
+    starting_over: int = 0
+    starting_ball: int = 0
+    starting_runs: int = 0
+    starting_wickets: int = 0
+    tactical_objective: TacticalObjective = TacticalObjective.ATTACK_WICKET
+    ground_preset_id: Optional[str] = "standard"
+    environmental_conditions: Optional[EnvironmentalConditionsSchema] = None
