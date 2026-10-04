@@ -21,13 +21,15 @@ from backend.app.schemas.analysis import (
     LiveDeliveryRequest,
     LiveDeliveryResponse,
     LiveMatchResetRequest,
-    LoggedDeliveryItem
+    LoggedDeliveryItem,
+    MatchupStatsSchema
 )
 from backend.app.services.profiles import (
     get_sample_batters,
     get_sample_bowlers,
     get_sample_fielders,
     get_keeper,
+    resolve_bowler_profile,
     MatchFormat as ServiceMatchFormat,
     FieldPlacement as ServicePlacement,
     FielderProfile,
@@ -118,8 +120,7 @@ def create_analysis_request(
         batters = get_sample_batters()
         batter = next((b for b in batters if b.name.lower() == request.batter_name.lower()), batters[0])
 
-    bowlers = get_sample_bowlers()
-    bowler = next((b for b in bowlers if b.name.lower() == request.bowler_name.lower()), bowlers[0])
+    bowler = resolve_bowler_profile(request.bowler_name)
 
     fielders = get_sample_fielders()
     keeper = get_keeper()
@@ -204,9 +205,34 @@ def create_analysis_request(
             )
         )
 
-    # Query head-to-head matchup statistics
-    from backend.app.services.matchup_stats import get_matchup_stats
-    h2h_stats = get_matchup_stats(request.batter_name, request.bowler_name)
+    # Extract tiered head-to-head matchup statistics from optimizer result
+    h2h_data = getattr(result, "h2h_stats", None)
+    if h2h_data:
+        h2h_stats_schema = MatchupStatsSchema(
+            has_history=h2h_data["source"] != "insufficient_data",
+            balls_faced=h2h_data["balls_faced"],
+            runs_scored=int(h2h_data.get("runs_scored", 0)) if "runs_scored" in h2h_data else 0,
+            dismissals=int(round(h2h_data["balls_faced"] * (h2h_data.get("dismissal_rate") or 0))),
+            strike_rate=h2h_data.get("strike_rate"),
+            dot_ball_pct=h2h_data.get("dot_pct"),
+            boundary_pct=h2h_data.get("boundary_pct"),
+            source=h2h_data.get("source"),
+            data_coverage_note=h2h_data.get("data_coverage_note", ""),
+        )
+    else:
+        from backend.app.services.matchup_stats import get_matchup_stats
+        legacy_stats = get_matchup_stats(request.batter_name, request.bowler_name)
+        h2h_stats_schema = MatchupStatsSchema(
+            has_history=legacy_stats["has_history"],
+            balls_faced=legacy_stats["balls_faced"],
+            runs_scored=legacy_stats["runs_scored"],
+            dismissals=legacy_stats["dismissals"],
+            strike_rate=legacy_stats["strike_rate"],
+            dot_ball_pct=legacy_stats["dot_ball_pct"],
+            boundary_pct=legacy_stats["boundary_pct"],
+            source="direct_h2h" if legacy_stats["has_history"] else "insufficient_data",
+            data_coverage_note="Direct matchup" if legacy_stats["has_history"] else "No historical records",
+        )
 
     # Execute ML Historical Data-Driven & Monte Carlo Prediction Engine
     is_pace = bowler.bowler_type.name in ["RIGHT_ARM_FAST", "LEFT_ARM_FAST", "RIGHT_ARM_MEDIUM"]
@@ -274,9 +300,7 @@ def create_analysis_request(
         fielder_catch_efficiencies=sim_metrics.fielder_catch_efficiencies
     )
 
-    coverage_tier = "direct_h2h" if (h2h_stats.get("has_history") and h2h_stats.get("balls_faced", 0) >= 15) else (
-        "sparse_h2h" if h2h_stats.get("has_history") else "insufficient_data"
-    )
+    coverage_tier = getattr(result, "data_coverage", "insufficient_data")
 
     return AnalysisResponse(
         status="available",
@@ -289,7 +313,7 @@ def create_analysis_request(
         tactical_explanations=result.tactical_explanations,
         is_legal=result.is_legal,
         violations=result.violations,
-        matchup_stats=h2h_stats,
+        matchup_stats=h2h_stats_schema,
         data_coverage=coverage_tier,
         model_confidence=model_confidence_info,
         alternative_fields=alt_schemas,
@@ -344,8 +368,7 @@ def evaluate_custom_field(
         batters = get_sample_batters()
         batter = next((b for b in batters if b.name.lower() == request.batter_name.lower()), batters[0])
 
-    bowlers = get_sample_bowlers()
-    bowler = next((b for b in bowlers if b.name.lower() == request.bowler_name.lower()), bowlers[0])
+    bowler = resolve_bowler_profile(request.bowler_name)
 
     # Validate legality
     is_legal, violations = validate_field(service_placements, phase, fmt)

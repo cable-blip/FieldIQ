@@ -119,6 +119,8 @@ class FieldResult:
     tactical_explanations: list[str]
     is_legal: bool
     violations: list[str]
+    data_coverage: str = "insufficient_data"
+    h2h_stats: Optional[dict] = None
 
 
 # ---------------------------------------------------------------------------
@@ -369,6 +371,55 @@ def get_sample_bowlers() -> list[BowlerProfile]:
             death_bowling_strength=0.65
         )
     ]
+
+
+def resolve_bowler_profile(bowler_name: str) -> BowlerProfile:
+    """
+    Resolves a BowlerProfile for any bowler name.
+    1. Checks if it matches an existing sample bowler name.
+    2. Uses bowler_style() to determine Pace or Spin classification from real-world curation.
+    3. Retains the actual player name so H2HStatsEngine queries match the real player!
+    """
+    for b in get_sample_bowlers():
+        if b.name.strip().lower() == bowler_name.strip().lower():
+            return b
+
+    from backend.app.services.bowler_style import bowler_style
+    style = bowler_style(bowler_name)
+    if style == "Spin":
+        return BowlerProfile(
+            name=bowler_name,
+            bowler_type=BowlerType.OFF_SPIN,
+            pace_class=PaceClass.SLOW,
+            attack_channel=AttackChannel.AT_STUMPS,
+            length_preference=LengthPreference.GOOD,
+            dismissal_modes=["caught_miscue", "bowled", "lbw"],
+            new_ball_strength=0.50,
+            death_bowling_strength=0.60
+        )
+    elif style == "Pace":
+        return BowlerProfile(
+            name=bowler_name,
+            bowler_type=BowlerType.RIGHT_ARM_FAST,
+            pace_class=PaceClass.FAST,
+            attack_channel=AttackChannel.OUTSIDE_OFF,
+            length_preference=LengthPreference.GOOD,
+            dismissal_modes=["caught_edge", "bowled"],
+            new_ball_strength=0.80,
+            death_bowling_strength=0.80
+        )
+    else:
+        return BowlerProfile(
+            name=bowler_name,
+            bowler_type=BowlerType.RIGHT_ARM_MEDIUM,
+            pace_class=PaceClass.MEDIUM,
+            attack_channel=AttackChannel.OUTSIDE_OFF,
+            length_preference=LengthPreference.GOOD,
+            dismissal_modes=["caught_edge"],
+            new_ball_strength=0.60,
+            death_bowling_strength=0.60
+        )
+
 
 def get_sample_fielders() -> list[FielderProfile]:
     return [

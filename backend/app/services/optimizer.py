@@ -106,7 +106,8 @@ def generate_explanation(
     batter: BatterProfile,
     bowler: BowlerProfile,
     phase: MatchPhase,
-    metrics_dict: dict
+    metrics_dict: dict,
+    h2h_data: Optional[dict] = None,
 ) -> List[str]:
     """
     Generates human-readable explanations for the field setup.
@@ -121,6 +122,25 @@ def generate_explanation(
     # Add matchup summary
     matchup_summary = format_matchup_summary(batter, bowler, tactical_recs)
     explanations.append(matchup_summary)
+
+    # Add honest H2H data coverage disclosure
+    if h2h_data:
+        src = h2h_data.get("source", "insufficient_data")
+        if src == "direct_h2h":
+            explanations.append(
+                f"H2H Intelligence [direct_h2h]: {h2h_data['balls_faced']} balls vs {bowler.name} "
+                f"(SR {h2h_data.get('strike_rate')}%, Dismissal rate: {h2h_data.get('dismissal_rate', 0)*100:.1f}%)."
+            )
+        elif src in ("vs_bowler_type_phase", "vs_bowler_type"):
+            explanations.append(
+                f"H2H Intelligence [{src}]: {h2h_data['balls_faced']} balls vs {getattr(bowler.bowler_type, 'name', bowler.bowler_type)} category "
+                f"(SR {h2h_data.get('strike_rate')}%, Dismissal rate: {h2h_data.get('dismissal_rate', 0)*100:.1f}%)."
+            )
+        else:
+            explanations.append(
+                f"H2H Intelligence [insufficient_data]: {h2h_data.get('data_coverage_note', 'Insufficient direct matchup data')}. "
+                "Applying baseline tactical domain heuristics without fabricating statistics."
+            )
     
     # Map for fast lookup
     rec_dict = {}
@@ -151,7 +171,18 @@ def recommend_field(
     # 1. Determine phase
     phase = get_phase_from_over(current_over, fmt)
     
-    # 2. Stage A: Matchup Analysis
+    # 2. Query H2HStatsEngine with strict tiered fallback
+    from backend.app.services.h2h_stats_engine import get_h2h_stats_engine
+    h2h_engine = get_h2h_stats_engine()
+    b_type = bowler.bowler_type.name if hasattr(bowler.bowler_type, 'name') else str(bowler.bowler_type)
+    h2h_data = h2h_engine.get_matchup_stats(
+        batter=batter.name,
+        bowler=bowler.name,
+        bowler_type=b_type,
+        phase=phase.name if hasattr(phase, 'name') else str(phase),
+    )
+
+    # 3. Stage A: Matchup Analysis
     all_recs = analyze_matchup(batter, bowler, phase)
     max_tactical = get_max_tactical_positions(phase)
     tactical_recs = all_recs[:max_tactical]
@@ -241,7 +272,7 @@ def recommend_field(
     
     # 9. Generate explanations
     explanations = generate_explanation(
-        tactical_placements, zone_placements, tactical_recs, batter, bowler, phase, metrics_dict
+        tactical_placements, zone_placements, tactical_recs, batter, bowler, phase, metrics_dict, h2h_data
     )
     
     # 10. Return FieldResult
@@ -252,7 +283,9 @@ def recommend_field(
         cds=metrics_dict['cds'],
         tactical_explanations=explanations,
         is_legal=is_legal,
-        violations=violations
+        violations=violations,
+        data_coverage=h2h_data.get("source", "insufficient_data"),
+        h2h_stats=h2h_data
     )
 
 

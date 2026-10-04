@@ -1,7 +1,7 @@
 # FieldIQ — Verified Status
 
 **Last verified:** 2026-10-04, by running commands directly in the terminal.
-**Verified by:** Antigravity agent — Phase 1 completion run.
+**Verified by:** Antigravity agent — Phase 2 completion run.
 
 ---
 
@@ -26,7 +26,7 @@
 
 - **Location:** `C:\Users\ADMIN\Downloads\FieldIQ_V2`
 - **Git status:** On branch `main`.
-- **Catch-all Route:** Removed. Unknown routes now return HTTP 404 with generic error body.
+- **Catch-all Route:** Removed. Unknown routes return HTTP 404 with generic error body.
 - **Route Security:** Verified by 4 automated regression tests (`test_route_security.py`).
 
 ---
@@ -43,7 +43,7 @@
 ### Delivery Dataset (`data/real_batters_deliveries.csv`)
 - **Rows:** 10,454
 - **Columns:** `Batter, GameId, Over, RunsBatter, Zone, BowlerName, Wicket, WicketMethod, WhoOut`
-- **Distinct Batters:** 9
+- **Distinct Batters:** 9 (AB de Villiers, Brendon McCullum, Chris Gayle, David Warner, Kumar Sangakkara, Mahela Jayawardene, Martin Guptill, Shane Watson, Virat Kohli)
 - **Distinct Bowlers:** 330
 - **Distinct Matches:** 267
 - **Wickets Count:** 393 (3.76% dismissal rate)
@@ -61,7 +61,7 @@
 
 ```
 Command: python -m pytest tests/ -v
-Result:  69 passed, 1 warning in 58.28s
+Result:  74 passed, 1 warning in 68.74s
 ```
 
 ### Test Breakdown (all passing):
@@ -72,11 +72,12 @@ Result:  69 passed, 1 warning in 58.28s
 | test_ball_in_over_contract.py | 2 | Regression: dynamic ball_in_over propagated, no hardcoded 3 |
 | test_ingestion_contract.py | 4 | Schema presence, null policy, bounds, GameId split |
 | test_advanced_ml_engine.py | 4 | Mining, kinematics, Monte Carlo, zip upload |
-| test_analysis.py | 2 | Analysis API with data_coverage & model confidence |
+| test_analysis.py | 3 | Analysis API, coverage, dynamic metadata update test |
 | test_dataset_upload.py | 4 | Dataset summary, upload validation, retrain trigger |
 | test_dataset_validation.py | 10 | Delivery validation, mapping validation |
 | test_environmental_and_gameplan.py | 7 | Pitch physics, wind, ground geometry presets |
 | test_h2h_stats_engine.py | 4 | Tiered fallbacks: direct, type, insufficient_data |
+| test_h2h_tactical_integration.py | 4 | Rich H2H, sparse fallback, unknown bowler, 9-batter validation |
 | test_health.py | 1 | Health check endpoint |
 | test_live_delivery_remapping.py | 5 | Live delivery logging, zone elevation, undo/reset |
 | test_matchup_stats.py | 2 | Matchup history initialization and retrieval |
@@ -84,31 +85,18 @@ Result:  69 passed, 1 warning in 58.28s
 | test_ml_prediction_engine.py | 4 | ML manager, kinematics, Monte Carlo evaluation |
 | test_optimizer_integration.py | 4 | Virat Kohli recommendation, boundary prevention, custom evaluation |
 | test_simulator.py | 2 | Candidate fields generation |
-| **TOTAL** | **69** | **Zero failures** |
+| **TOTAL** | **74** | **Zero failures** |
 
 ---
 
-## Model Status & Confidence Disclosure
+## Tactical Intelligence & H2H Engine Status (Phase 2 Verified)
 
-- **Live XGBoost Model:** `models/fieldiq_xgb_model.joblib`
-- **Measured Metrics (Test Split):**
-  - Wicket Precision: 16.7%
-  - Wicket Recall: **2.0%**
-  - Wicket F1: 3.5%
-- **Disclosure Policy Enforced:**
-  - API responses (`AnalysisResponse`, `EvaluateFieldResponse`) now explicitly report:
-    `wicket_prediction_recall: 0.02`
-    `wicket_prediction_precision: 0.167`
-    `model_confidence: "low"`
-    `data_coverage: "direct_h2h" | "sparse_h2h" | "insufficient_data"`
-  - Status is documented as `uncalibrated_baseline` until Phase 3 decomposed models are trained and gated.
-
----
-
-## Bug Fixes Completed in Phase 1
-
-1. **Catch-All Route Fixed:** Removed `main.py` catch-all route that returned 200 for missing paths. Added clean 404 handler and 4 regression tests.
-2. **`matchup_stats.py` Column Mismatch Fixed:** Supported `BowlerName`, `RunsBatter`, and boolean `Wicket` values from real CSV. Added 4 regression tests.
-3. **`ball_in_over` Hardcoding Fixed:** Replaced hardcoded `ball_in_over=3` in `ml_prediction_engine.py` with dynamic parameter propagation from request over and ball. Added 2 regression tests.
-4. **Dependency Pinning Fixed:** All dependencies in `requirements.txt` pinned to exact running versions.
-5. **Data Provenance & Ingestion Pipeline Fixed:** Created `scripts/ingest/` (01 download, 02 parse, 03 validate, 04 split), verified Cricsheet SHA-256 checksum, wrote `data/README.md`.
+- **Engine:** `H2HStatsEngine` wired into `optimizer.py` and `/api/v1/analysis`
+- **Fallback Hierarchy Enforced:**
+  1. `direct_h2h`: Batter vs exact bowler (>= 15 balls). Uses empirical strike rate and dismissal rate to scale tactical catching and boundary positions.
+  2. `vs_bowler_type_phase`: Batter vs bowler style in specific match phase (>= 30 balls).
+  3. `vs_bowler_type`: Batter vs bowler style overall (>= 30 balls).
+  4. `insufficient_data`: Sparse history (<15 balls). Returns `None` for rates; never fabricates numbers. Baseline domain heuristics applied transparently.
+- **Bowler Resolution:** `resolve_bowler_profile()` maps any named bowler to real-world curated style (`bowler_style.py`) while preserving the bowler's actual identity so H2H queries match real delivery data.
+- **Dynamic Model Confidence:** Metrics read dynamically from `models/model_metadata.json` via `MLModelManager.get_wicket_evaluation_metrics()` rather than hardcoded literals. Verified by unit test.
+- **Coverage Validation:** Verified across all 9 confirmed batters in dataset.

@@ -61,11 +61,13 @@ class FieldPlacementSchema(BaseModel):
 class MatchupStatsSchema(BaseModel):
     has_history: bool
     balls_faced: int
-    runs_scored: int
-    dismissals: int
-    strike_rate: float
-    dot_ball_pct: float
-    boundary_pct: float
+    runs_scored: Optional[int] = 0
+    dismissals: Optional[int] = 0
+    strike_rate: Optional[float] = None
+    dot_ball_pct: Optional[float] = None
+    boundary_pct: Optional[float] = None
+    source: Optional[str] = "insufficient_data"
+    data_coverage_note: Optional[str] = ""
 
 class BatterFormatRecordSchema(BaseModel):
     format_name: str
