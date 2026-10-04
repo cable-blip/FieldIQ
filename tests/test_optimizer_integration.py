@@ -59,6 +59,20 @@ def test_get_players_list() -> None:
     assert "Virat Kohli" in body["batters"]
     assert "AB de Villiers" in body["batters"]
 
+    # Must contain full set of real bowlers from dataset (330 real bowlers), not just 8 sample archetypes
+    assert len(body["bowlers"]) >= 330, f"Expected >= 330 bowlers, got {len(body['bowlers'])}"
+    assert "Mohammad Asif" in body["bowlers"]
+    assert "Dale Steyn" in body["bowlers"]
+    assert "Morne Morkel" in body["bowlers"]
+
+    # Must expose authoritative enums for dynamic form dropdowns
+    assert "tactical_objectives" in body
+    assert "attack_wicket" in body["tactical_objectives"]
+    assert "prevent_boundary" in body["tactical_objectives"]
+    assert "match_formats" in body
+    assert "T20" in body["match_formats"]
+    assert "ODI" in body["match_formats"]
+
 def test_evaluate_custom_field() -> None:
     # First obtain standard placements
     analysis_res = client.post(

@@ -6,6 +6,7 @@ from backend.app.schemas.analysis import (
     AnalysisRequest,
     AnalysisResponse,
     MatchFormat,
+    TacticalObjective,
     FieldPlacementSchema,
     FielderProfileSchema,
     AlternativeFieldSchema,
@@ -55,6 +56,7 @@ from backend.app.services.real_data_loader import (
     get_available_batters_from_df,
     load_all_batters_from_df,
     get_all_available_batters,
+    get_all_available_bowlers,
     load_batter_profile_from_real_data,
     DATA_DIR
 )
@@ -66,11 +68,15 @@ router = APIRouter(prefix="/api/v1", tags=["analysis"])
 @router.get("/players", status_code=status.HTTP_200_OK)
 def get_players_list():
     sample_bowlers = [b.name for b in get_sample_bowlers()]
+    real_bowlers = get_all_available_bowlers()
+    all_bowlers = sorted(list(set(sample_bowlers + real_bowlers)))
     real_batters = get_all_available_batters()
     batters_list = real_batters if real_batters else [b.name for b in get_sample_batters()]
     return {
         "batters": batters_list,
-        "bowlers": sample_bowlers
+        "bowlers": all_bowlers if all_bowlers else sample_bowlers,
+        "tactical_objectives": [obj.value for obj in TacticalObjective],
+        "match_formats": [fmt.value for fmt in MatchFormat],
     }
 
 

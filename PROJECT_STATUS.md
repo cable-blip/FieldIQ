@@ -1,7 +1,7 @@
 # FieldIQ — Verified Status
 
 **Last verified:** 2026-10-05, by running commands directly in the terminal.
-**Verified by:** Antigravity agent — Phase 4 completion run.
+**Verified by:** Antigravity agent — Phase 5A completion run.
 
 
 ---
@@ -62,12 +62,13 @@
 
 ```
 Command: python -m pytest tests/ -v
-Result:  85 passed, 1 warning in 36.64s
+Result:  88 passed, 1 warning in 37.37s
 ```
 
 ### Test Breakdown (all passing):
 | Test File | Tests | Purpose / Fixes Verified |
 |---|---|---|
+| test_client_form_contract.py | 3 | Phase 5A client contract: options endpoint, form payload table mapping, ODI format |
 | test_acceptance_kohli_asif.py | 1 | Phase 4 acceptance: full Kohli vs Asif walking skeleton, HTTP 200, Tier 2 fallback, 11 placements, powerplay circle legal |
 | test_bowler_type_vocabulary_contract.py | 4 | Regression contract: BowlerType enum -> Pace/Spin normalization, no silent mismatch traps, case insensitivity, H2H integration |
 | test_route_security.py | 4 | Unknown GET/POST return 404, no internals leaked |
@@ -87,9 +88,9 @@ Result:  85 passed, 1 warning in 36.64s
 | test_ml_decomposed_training.py | 6 | Decomposed math sum=1.0, 3-split stability spread, promotion gates, stratified schema, factorized inference |
 | test_ml_model_training.py | 6 | Feature extraction, GameId split, model metadata |
 | test_ml_prediction_engine.py | 4 | ML manager, kinematics, Monte Carlo evaluation |
-| test_optimizer_integration.py | 4 | Virat Kohli recommendation, boundary prevention, custom evaluation |
+| test_optimizer_integration.py | 4 | Real bowlers (>=330), Virat Kohli recommendation, boundary prevention, custom evaluation |
 | test_simulator.py | 2 | Candidate fields generation |
-| **TOTAL** | **85** | **Zero failures** |
+| **TOTAL** | **88** | **Zero failures** |
 
 ---
 
@@ -156,4 +157,28 @@ Result:  85 passed, 1 warning in 36.64s
 - **Canonical Normalization:** Introduced `normalize_bowler_type()` in `bowler_style.py` mapping all `BowlerType` enums, string representations, and aliases to `"Pace"`, `"Spin"`, or `"Unknown"`.
 - **Unknown Bowler Guard:** If a bowler is not in `BOWLER_STYLE`, `b_type` resolves to `"Unknown"`, ensuring unseen bowlers never invent a bowling style and strictly return `insufficient_data` without fabrication.
 - **Contract Enforcement:** 4 automated tests guarantee every `BowlerType` enum member maps correctly, curated dictionaries are valid, and `H2HStatsEngine` integrates cleanly across all 7 enum members.
+
+---
+
+## Minimal Plain Form Frontend & Client Contract (Phase 5A Verified)
+
+### 1. Finding 5 Logged & Resolved (Authority-Inflation in `/players`)
+- **Before:** `GET /api/v1/players` returned `get_sample_bowlers()` — the same 8 synthetic generic archetypes (`Generic Right-Arm Fast`, etc.) that the Phase 2 `bowlers[0]` substitution trap was built around — falsely presenting them as the available bowler population.
+- **After:** Enhanced `real_data_loader.py` with `get_all_available_bowlers()` to dynamically extract all 330 unique real bowlers from `real_batters_deliveries.csv`. Also exposed authoritative enums `tactical_objectives` and `match_formats` directly from the backend schema to prevent frontend drift.
+- **Regression Guard:** Strengthened `test_optimizer_integration.py::test_get_players_list` to assert `len(body["bowlers"]) >= 330` and check for real bowler names (`Mohammad Asif`, `Dale Steyn`, `Morne Morkel`), guaranteeing this endpoint can never silently regress to sample archetypes.
+
+### 2. Frontend Minimal Form Architecture (`frontend/src/`)
+- **Isolation of Legacy Cockpit:** Preserved the legacy 491-line cockpit shell as `frontend/src/App.legacy-cockpit.tsx` so all Three.js, Canvas, and WebGL code is preserved for Phase 5C without contaminating Phase 5A.
+- **Zero 3D / Zero Canvas Root:** Replaced `frontend/src/App.tsx` with a lightweight shell rendering exclusively `MinimalFormView.tsx`.
+- **Minimal Form UI (`frontend/src/components/MinimalFormView.tsx`):**
+  - Plain HTML `<form>` with dynamic options from `/api/v1/players`.
+  - Native HTML5 `<input list="bowler-options">` + `<datalist>` for fast, frictionless typeahead across all 330 bowlers without third-party dependencies.
+  - 1-indexed over dropdown (Overs 1–20 for T20, 1–50 for ODI) explicitly displaying match phases (Powerplay, Middle, Death).
+  - Results Table: Renders all 11 placements (Position Name, X, Y, Role, Tactical Reason).
+  - Legality Banner: Real-time validation display (`is_legal: true/false`, violations list).
+  - Matchup Provenance Card: Displays `data_coverage` tier, balls faced, strike rate, dot ball %, and coverage note.
+  - Uncertainty Disclosure Card: Explicitly displays measured wicket recall (2.0%), precision (16.7%), and `uncalibrated_baseline` status.
+- **Client Contract Suite (`tests/test_client_form_contract.py`):**
+  - 3 automated contract tests verifying options endpoint, exact form submission payload mapping, and ODI format compatibility.
+
 
