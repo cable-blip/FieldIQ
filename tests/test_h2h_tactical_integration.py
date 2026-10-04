@@ -45,7 +45,7 @@ def test_direct_h2h_rich_pair_informs_field():
         },
     )
 
-    assert response.status_code == 202
+    assert response.status_code == 200
     body = response.json()
     assert body["status"] == "available"
     assert body["is_legal"] is True
@@ -88,14 +88,17 @@ def test_sparse_or_fallback_tier():
         },
     )
 
-    assert response.status_code == 202
+    assert response.status_code == 200
     body = response.json()
     assert body["status"] == "available"
     assert body["is_legal"] is True
 
     # Must NOT claim direct_h2h since only 1 ball was faced
     assert body["data_coverage"] != "direct_h2h"
-    assert body["data_coverage"] in ("vs_bowler_type_phase", "vs_bowler_type", "insufficient_data")
+    # Must cleanly fall back to Tier 2 (vs_bowler_type_phase) via Pace in Middle overs (238 balls)
+    assert body["data_coverage"] == "vs_bowler_type_phase"
+    assert body["matchup_stats"]["source"] == "vs_bowler_type_phase"
+    assert body["matchup_stats"]["balls_faced"] == 208
 
 
 def test_unknown_matchup_returns_insufficient_data_without_fabrication():
@@ -114,7 +117,7 @@ def test_unknown_matchup_returns_insufficient_data_without_fabrication():
         },
     )
 
-    assert response.status_code == 202
+    assert response.status_code == 200
     body = response.json()
     assert body["status"] == "available"
     assert body["is_legal"] is True
@@ -149,7 +152,7 @@ def test_all_9_confirmed_batters_produce_legal_field():
                 "tactical_objective": "attack_wicket",
             },
         )
-        assert response.status_code == 202, f"Failed for batter {batter}"
+        assert response.status_code == 200, f"Failed for batter {batter}"
         body = response.json()
         assert body["data_driven"] is True, f"Expected data_driven=True for confirmed batter {batter}"
         assert body["is_legal"] is True, f"Generated illegal field for {batter}: {body.get('violations')}"

@@ -18,7 +18,7 @@ def test_optimizer_integration_virat_kohli() -> None:
         },
     )
 
-    assert response.status_code == 202
+    assert response.status_code == 200
     body = response.json()
     assert body["status"] == "available"
     assert len(body["placements"]) == 11
@@ -43,7 +43,7 @@ def test_optimizer_integration_prevent_boundary() -> None:
         },
     )
 
-    assert response.status_code == 202
+    assert response.status_code == 200
     body = response.json()
     assert body["status"] == "available"
     assert len(body["placements"]) == 11

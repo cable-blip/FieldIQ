@@ -116,3 +116,58 @@ def bowler_style(name: str) -> str:
     """'Pace', 'Spin', or 'Unknown' (bowler not reviewed, or genuinely
     ambiguous - see module docstring). Never guesses."""
     return BOWLER_STYLE.get(name, "Unknown")
+
+
+BOWLER_TYPE_MAP: dict[str, str] = {
+    # Enum member names from BowlerType
+    "RIGHT_ARM_FAST": "Pace",
+    "LEFT_ARM_FAST": "Pace",
+    "RIGHT_ARM_MEDIUM": "Pace",
+    "OFF_SPIN": "Spin",
+    "LEG_SPIN": "Spin",
+    "LEFT_ARM_ORTHODOX": "Spin",
+    "LEFT_ARM_WRIST_SPIN": "Spin",
+    # Common alternate forms / aliases
+    "PACE": "Pace",
+    "SPIN": "Spin",
+    "FAST": "Pace",
+    "MEDIUM": "Pace",
+    "FAST_MEDIUM": "Pace",
+    "SLOW_LEFT_ARM": "Spin",
+    "WRIST_SPIN": "Spin",
+}
+
+
+def normalize_bowler_type(val: any) -> str:
+    """
+    Normalizes any BowlerType enum instance, enum name string, bowling style string,
+    or bowler name to canonical 'Pace', 'Spin', or 'Unknown'.
+    """
+    if val is None:
+        return "Unknown"
+
+    # If it's an Enum with a name attribute
+    if hasattr(val, "name"):
+        val_str = str(val.name).strip()
+    else:
+        val_str = str(val).strip()
+
+    # Exact check in BOWLER_TYPE_MAP (case-insensitive)
+    upper_val = val_str.upper()
+    if upper_val in BOWLER_TYPE_MAP:
+        return BOWLER_TYPE_MAP[upper_val]
+
+    # Check title case directly
+    if val_str in ("Pace", "Spin", "Unknown"):
+        return val_str
+
+    # Check if it's a known bowler name in BOWLER_STYLE
+    if val_str in BOWLER_STYLE:
+        return BOWLER_STYLE[val_str]
+
+    # Check case-insensitive bowler name
+    for b_name, style in BOWLER_STYLE.items():
+        if b_name.lower() == val_str.lower():
+            return style
+
+    return "Unknown"

@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Dict, Any, Optional
 import pandas as pd
 
-from backend.app.services.bowler_style import bowler_style
+from backend.app.services.bowler_style import bowler_style, normalize_bowler_type
 from backend.app.services.profiles import get_phase_from_over, MatchFormat
 
 
@@ -80,8 +80,7 @@ class H2HStatsEngine:
         """
         Returns matchup statistics for a batter vs bowler/type with strict fallback tiers.
         """
-        if not bowler_type or bowler_type == "Unknown":
-            bowler_type = bowler_style(bowler)
+        bowler_type = normalize_bowler_type(bowler_type if bowler_type and bowler_type != "Unknown" else bowler)
 
         source = None
         sub = pd.DataFrame()

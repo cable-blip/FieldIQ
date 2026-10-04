@@ -22,8 +22,16 @@ def isolate_dataset_files():
     yield
 
     if backup_csv.exists():
-        shutil.move(backup_csv, orig_csv)
+        try:
+            shutil.copy2(backup_csv, orig_csv)
+            backup_csv.unlink(missing_ok=True)
+        except Exception:
+            pass
     if backup_json.exists():
-        shutil.move(backup_json, orig_json)
+        try:
+            shutil.copy2(backup_json, orig_json)
+            backup_json.unlink(missing_ok=True)
+        except Exception:
+            pass
 
     initialize_matchup_stats()

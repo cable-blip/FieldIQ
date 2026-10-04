@@ -173,8 +173,10 @@ def recommend_field(
     
     # 2. Query H2HStatsEngine with strict tiered fallback
     from backend.app.services.h2h_stats_engine import get_h2h_stats_engine
+    from backend.app.services.bowler_style import bowler_style, normalize_bowler_type
     h2h_engine = get_h2h_stats_engine()
-    b_type = bowler.bowler_type.name if hasattr(bowler.bowler_type, 'name') else str(bowler.bowler_type)
+    curated_style = bowler_style(bowler.name)
+    b_type = "Unknown" if curated_style == "Unknown" else normalize_bowler_type(bowler.bowler_type)
     h2h_data = h2h_engine.get_matchup_stats(
         batter=batter.name,
         bowler=bowler.name,

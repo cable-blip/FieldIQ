@@ -57,7 +57,7 @@ def test_analysis_endpoint_returns_alternative_fields() -> None:
     }
 
     response = client.post("/api/v1/analysis", json=payload)
-    assert response.status_code == 202
+    assert response.status_code == 200
     data = response.json()
 
     assert "alternative_fields" in data

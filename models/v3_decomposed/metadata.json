@@ -1,7 +1,7 @@
 {
   "model_version": "v3_decomposed",
   "model_type": "Three-Model Decomposed Factorized Architecture",
-  "created_at": "2026-10-04T19:01:16.606538+00:00",
+  "created_at": "2026-10-04T19:10:59.413127+00:00",
   "promoted": false,
   "promotion_gate_checklist": {
     "gate_1_wicket_recall_and_precision": {
@@ -33,7 +33,7 @@
     },
     "all_gates_passed": false
   },
-  "promotion_gate_decision": "Model meets PR-AUC lift and boundary detection benchmarks, but unconstrained wicket precision and combined log-loss require domain gating review. Kept promoted: false per governance rules.",
+  "promotion_gate_decision": "Model meets PR-AUC lift and boundary detection benchmarks, but unconstrained wicket precision and combined log-loss require domain gating review. Log-loss gap attributable to compounding independent estimation error across separately-trained stages on shrinking subsamples \u2014 not yet ruled out as fixable via joint hyperparameter tuning. Kept promoted: false per governance rules.",
   "feature_columns": [
     "batting_average",
     "strike_rate",
@@ -128,6 +128,14 @@
       "test_recall": 0.1094,
       "test_precision": 0.2414,
       "test_f1": 0.1505,
+      "test_recall_wilson_ci": [
+        0.054,
+        0.209
+      ],
+      "test_precision_wilson_ci": [
+        0.1222,
+        0.4211
+      ],
       "val_threshold_sweep": {
         "t_0.20": {
           "recall": 1.0,
@@ -212,6 +220,14 @@
       "test_recall": 0.4766,
       "test_precision": 0.3081,
       "test_f1": 0.3742,
+      "test_recall_wilson_ci": [
+        0.4162,
+        0.5376
+      ],
+      "test_precision_wilson_ci": [
+        0.2646,
+        0.3552
+      ],
       "val_threshold_sweep": {
         "t_0.15": {
           "recall": 0.8087248322147651,

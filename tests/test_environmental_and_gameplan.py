@@ -133,7 +133,7 @@ def test_analysis_request_with_environmental_conditions() -> None:
     }
 
     response = client.post("/api/v1/analysis", json=payload)
-    assert response.status_code == 202
+    assert response.status_code == 200
     data = response.json()
     assert "pitch_multipliers" in data
     assert data["pitch_multipliers"]["seam_movement_multiplier"] > 1.3

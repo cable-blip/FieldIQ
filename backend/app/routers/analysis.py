@@ -100,7 +100,7 @@ def get_ground_presets():
 @router.post(
     "/analysis",
     response_model=AnalysisResponse,
-    status_code=status.HTTP_202_ACCEPTED,
+    status_code=status.HTTP_200_OK,
 )
 def create_analysis_request(
     request: AnalysisRequest,

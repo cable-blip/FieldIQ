@@ -126,7 +126,7 @@ def test_api_analysis_includes_ml_prediction():
         },
     )
 
-    assert response.status_code == 202
+    assert response.status_code == 200
     body = response.json()
     assert "ml_probabilities" in body
     assert body["ml_probabilities"] is not None

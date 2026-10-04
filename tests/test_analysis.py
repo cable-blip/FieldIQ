@@ -20,7 +20,7 @@ def test_accepts_analysis_request() -> None:
         },
     )
 
-    assert response.status_code == 202
+    assert response.status_code == 200
     body = response.json()
     assert body["status"] == "available"
     assert body["data_driven"] is True
@@ -29,7 +29,7 @@ def test_accepts_analysis_request() -> None:
     assert "ewo" in body
     assert body["accepted_request"]["batter_name"] == "Virat Kohli"
     assert "data_coverage" in body
-    assert body["data_coverage"] in ("direct_h2h", "sparse_h2h", "insufficient_data")
+    assert body["data_coverage"] in ("direct_h2h", "vs_bowler_type_phase", "vs_bowler_type", "insufficient_data")
     assert "model_confidence" in body
     assert body["model_confidence"]["wicket_prediction_recall"] == 0.02
     assert body["model_confidence"]["wicket_prediction_precision"] == 0.167
@@ -85,7 +85,7 @@ def test_model_confidence_dynamically_reflects_metadata(monkeypatch) -> None:
             "tactical_objective": "attack_wicket",
         },
     )
-    assert response.status_code == 202
+    assert response.status_code == 200
     body = response.json()
     assert body["model_confidence"]["wicket_prediction_recall"] == 0.38
     assert body["model_confidence"]["status"] == "promoted"

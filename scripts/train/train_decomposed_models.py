@@ -64,6 +64,14 @@ GATE_BOUNDARY_F1_MIN = 0.35
 GATE_COMBINED_LOG_LOSS_MAX = 1.3233  # Old baseline log loss
 
 
+def wilson_ci(p: float, n: int, z: float = 1.96) -> list:
+    if n == 0:
+        return [0.0, 0.0]
+    denominator = 1 + z**2 / n
+    center = p + z**2 / (2 * n)
+    spread = z * np.sqrt(p * (1 - p) / n + z**2 / (4 * n**2))
+    return [round((center - spread) / denominator, 4), round((center + spread) / denominator, 4)]
+
 def split_matches(
     df: pd.DataFrame,
     seed: int,
@@ -404,6 +412,8 @@ def train_decomposed_models_for_split(
             "test_recall": round(test_recall_w, 4),
             "test_precision": round(test_precision_w, 4),
             "test_f1": round(test_f1_w, 4),
+            "test_recall_wilson_ci": wilson_ci(test_recall_w, int(y_w_test.sum())),
+            "test_precision_wilson_ci": wilson_ci(test_precision_w, int(pred_test_w.sum())),
             "val_threshold_sweep": val_wicket_sweep,
             "gate_passed": wicket_gate_pass,
         },
@@ -417,6 +427,8 @@ def train_decomposed_models_for_split(
             "test_recall": round(test_recall_b, 4),
             "test_precision": round(test_precision_b, 4),
             "test_f1": round(test_f1_b, 4),
+            "test_recall_wilson_ci": wilson_ci(test_recall_b, int(y_b_test.sum())),
+            "test_precision_wilson_ci": wilson_ci(test_precision_b, int(pred_test_b.sum())),
             "val_threshold_sweep": val_boundary_sweep,
             "gate_passed": boundary_gate_pass,
         },
@@ -719,7 +731,7 @@ def execute_training_pipeline(
         },
         "promotion_gate_decision": (
             "Model meets PR-AUC lift and boundary detection benchmarks, but unconstrained wicket precision "
-            "and combined log-loss require domain gating review. Kept promoted: false per governance rules."
+            "and combined log-loss require domain gating review. Log-loss gap attributable to compounding independent estimation error across separately-trained stages on shrinking subsamples \u2014 not yet ruled out as fixable via joint hyperparameter tuning. Kept promoted: false per governance rules."
             if not all_gates_passed else
             "All numeric gates passed. Kept promoted: false pending formal review sign-off."
         ),

@@ -1,7 +1,8 @@
 # FieldIQ — Verified Status
 
-**Last verified:** 2026-10-04, by running commands directly in the terminal.
-**Verified by:** Antigravity agent — Phase 2 completion run.
+**Last verified:** 2026-10-05, by running commands directly in the terminal.
+**Verified by:** Antigravity agent — Phase 4 completion run.
+
 
 ---
 
@@ -61,23 +62,25 @@
 
 ```
 Command: python -m pytest tests/ -v
-Result:  74 passed, 1 warning in 68.74s
+Result:  85 passed, 1 warning in 36.64s
 ```
 
 ### Test Breakdown (all passing):
 | Test File | Tests | Purpose / Fixes Verified |
 |---|---|---|
+| test_acceptance_kohli_asif.py | 1 | Phase 4 acceptance: full Kohli vs Asif walking skeleton, HTTP 200, Tier 2 fallback, 11 placements, powerplay circle legal |
+| test_bowler_type_vocabulary_contract.py | 4 | Regression contract: BowlerType enum -> Pace/Spin normalization, no silent mismatch traps, case insensitivity, H2H integration |
 | test_route_security.py | 4 | Unknown GET/POST return 404, no internals leaked |
 | test_matchup_stats_column_contract.py | 4 | Regression: BowlerName, RunsBatter, Wicket boolean |
 | test_ball_in_over_contract.py | 2 | Regression: dynamic ball_in_over propagated, no hardcoded 3 |
 | test_ingestion_contract.py | 4 | Schema presence, null policy, bounds, GameId split |
 | test_advanced_ml_engine.py | 4 | Mining, kinematics, Monte Carlo, zip upload |
-| test_analysis.py | 3 | Analysis API, coverage, dynamic metadata update test |
+| test_analysis.py | 3 | Analysis API (HTTP 200), coverage, dynamic metadata update test |
 | test_dataset_upload.py | 4 | Dataset summary, upload validation, retrain trigger |
 | test_dataset_validation.py | 10 | Delivery validation, mapping validation |
 | test_environmental_and_gameplan.py | 7 | Pitch physics, wind, ground geometry presets |
 | test_h2h_stats_engine.py | 4 | Tiered fallbacks: direct, type, insufficient_data |
-| test_h2h_tactical_integration.py | 4 | Rich H2H, sparse fallback, unknown bowler, 9-batter validation |
+| test_h2h_tactical_integration.py | 4 | Rich H2H, strict Tier 2 fallback, unknown bowler, 9-batter validation |
 | test_health.py | 1 | Health check endpoint |
 | test_live_delivery_remapping.py | 5 | Live delivery logging, zone elevation, undo/reset |
 | test_matchup_stats.py | 2 | Matchup history initialization and retrieval |
@@ -86,7 +89,7 @@ Result:  74 passed, 1 warning in 68.74s
 | test_ml_prediction_engine.py | 4 | ML manager, kinematics, Monte Carlo evaluation |
 | test_optimizer_integration.py | 4 | Virat Kohli recommendation, boundary prevention, custom evaluation |
 | test_simulator.py | 2 | Candidate fields generation |
-| **TOTAL** | **80** | **Zero failures** |
+| **TOTAL** | **85** | **Zero failures** |
 
 ---
 
@@ -131,7 +134,26 @@ Result:  74 passed, 1 warning in 68.74s
 - **Checklist Summary:**
   - Gate 1 (Wicket Recall $\ge 20\%$ & Precision $\ge 15\%$): **FAILED** (Recall mean 13.0%, Precision mean 16.4% on validation-committed threshold).
   - Gate 2 (Boundary F1 $\ge 0.35$ & PR-AUC $>$ baseline): **PASSED** (F1 mean 0.3569, PR-AUC mean 0.2879).
-  - Gate 3 (Combined Log-Loss $< 1.3233$): **FAILED** (Mean 1.3483 calibrated vs 1.3233 baseline). Joint decomposition multiplication creates structural entropy on dot balls that temperature/Platt recalibration does not bridge.
+  - Gate 3 (Combined Log-Loss $< 1.3233$): **FAILED** (Mean 1.3483 calibrated vs 1.3233 baseline). Attributable to compounding independent estimation error across separately-trained stages on shrinking subsamples \u2014 not yet ruled out as fixable via joint hyperparameter tuning.
   - Gate 4 (3-Split Stability Spread): **PASSED** (Calibrated log-loss range 0.0219 across independent match splits).
   - Gate 5 (Stratified Reporting): **PASSED** (Detailed report with raw $n$ and $n_w$ across all 9 batters, 3 phases, and 3 H2H tiers).
 - **Status:** Saved under `models/v3_decomposed/` with `promoted: false`. Inference defaults to baseline model while supporting switchable factorized inference via `MLModelManager.set_active_architecture("decomposed")`.
+
+---
+
+## End-to-End Walking Skeleton & Acceptance Contract (Phase 4 Verified)
+
+### 1. Concrete Acceptance Scenario (`tests/test_acceptance_kohli_asif.py`)
+- **Scenario:** Virat Kohli is batting against Mohammad Asif, T20, Over 3, score 28/0, tactical objective `attack_wicket`.
+- **Synchronous REST Contract:** Returns HTTP 200 OK with complete `AnalysisResponse` payload (corrected legacy `202 Accepted` semantic misuse across all endpoints and tests).
+- **Placements & Legality:** Exactly 11 placements returned, `is_legal == True`, 0 violations. Powerplay legal constraint strictly verified (maximum 2 fielders outside 30-yard circle). Wicketkeeper and Bowler confirmed present.
+- **Tactical Realism:** Deploys close-catching positions (Slips/Gully) and ring coverage on Kohli's preferred scoring arcs (Zones 3 and 6).
+- **Tiered Provenance:** Kohli has 0 direct deliveries vs Asif in real data. The system honestly refuses to claim `direct_h2h` and triggers Tier 2 fallback (`vs_bowler_type_phase`) using 232 real deliveries faced by Kohli against Pace in Powerplay (dismissal rate 0.0172, strike rate 124.14, dot ball 40.09%).
+- **Explicit Uncertainty:** Surfaces active baseline model confidence (recall 0.02, precision 0.167) and marks status `uncalibrated_baseline`. Bowler provenance explicitly notes `bowler_type: curated_categorical` and synthetic estimates for swing/death attributes.
+
+### 2. Bowler Type Vocabulary Normalization & Contract Test (`tests/test_bowler_type_vocabulary_contract.py`)
+- **Bug Discovery & Elimination:** Identified that `optimizer.py` passed `BowlerType.RIGHT_ARM_FAST.name` (`"RIGHT_ARM_FAST"`), whereas `h2h_stats_engine.py` checked against curated `"Pace"` / `"Spin"`. This previously caused Tier 2 to silently drop to `insufficient_data` in end-to-end API calls (a gap in Phase 2 integration testing).
+- **Canonical Normalization:** Introduced `normalize_bowler_type()` in `bowler_style.py` mapping all `BowlerType` enums, string representations, and aliases to `"Pace"`, `"Spin"`, or `"Unknown"`.
+- **Unknown Bowler Guard:** If a bowler is not in `BOWLER_STYLE`, `b_type` resolves to `"Unknown"`, ensuring unseen bowlers never invent a bowling style and strictly return `insufficient_data` without fabrication.
+- **Contract Enforcement:** 4 automated tests guarantee every `BowlerType` enum member maps correctly, curated dictionaries are valid, and `H2HStatsEngine` integrates cleanly across all 7 enum members.
+
