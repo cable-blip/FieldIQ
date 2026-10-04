@@ -180,5 +180,17 @@ Result:  88 passed, 1 warning in 37.37s
   - Uncertainty Disclosure Card: Explicitly displays measured wicket recall (2.0%), precision (16.7%), and `uncalibrated_baseline` status.
 - **Client Contract Suite (`tests/test_client_form_contract.py`):**
   - 3 automated contract tests verifying options endpoint, exact form submission payload mapping, and ODI format compatibility.
+- **Frontend Component Test Suite (`frontend/src/components/MinimalFormView.test.tsx`):**
+  - Executed directly via Node v24.21.0 engine (`"C:\Program Files\Node.js\node.exe" node_modules/vitest/vitest.mjs run src/components/MinimalFormView.test.tsx`).
+  - Result:
+    ```
+    RUN v4.1.11 C:/Users/ADMIN/Downloads/FieldIQ_V2/frontend
+    ✓ src/components/MinimalFormView.test.tsx (2 tests) 315ms
+    Test Files  1 passed (1)
+         Tests  2 passed (2)
+    ```
+  - Test 1: Loads options dynamically on mount (`GET /api/v1/players`), populates datalist with 330 real bowlers, and asserts form inputs.
+  - Test 2: Submits form with Kohli vs Asif, renders full 11-player field placement table, displays Powerplay legality verification banner (`LEGAL FIELD CONFIGURATION`), displays H2H Tier 2 fallback data coverage card (232 balls, strike rate 124.1), and displays active baseline model confidence card (recall 2.0%, precision 16.7%).
+
 
 
