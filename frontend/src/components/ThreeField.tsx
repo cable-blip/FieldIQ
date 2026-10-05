@@ -6,9 +6,18 @@ import { FielderMarker } from './FielderMarker';
 import type { FielderPosition } from './TacticalPanel';
 import './ThreeField.css';
 
-interface ThreeFieldProps {
-  fielders: FielderPosition[];
-  onUpdateFielder: (name: string, x: number, y: number) => void;
+export interface FieldPlacement {
+  position_name: string;
+  name?: string;
+  x: number;
+  y: number;
+  role: string;
+  reason?: string;
+}
+
+export interface ThreeFieldProps {
+  fielders: (FieldPlacement | FielderPosition)[];
+  onUpdateFielder?: (name: string, x: number, y: number) => void;
   zoneChart?: Record<string, number>;
   venueId?: string;
   pitchType?: string;
@@ -139,13 +148,9 @@ const VenueBoundaryRope: React.FC<{ venueId: string }> = ({ venueId }) => {
   return (
     <group>
       {/* Glowing Neon Line */}
-      <line geometry={lineGeometry}>
-        <lineBasicMaterial color="#ffffff" linewidth={2} />
-      </line>
+      <primitive object={new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ color: '#ffffff', linewidth: 2 }))} />
       {/* Outer subtle boundary glow */}
-      <line geometry={lineGeometry} position={[0, 0.01, 0]}>
-        <lineBasicMaterial color="#00f3ff" transparent opacity={0.6} linewidth={1} />
-      </line>
+      <primitive object={new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ color: '#00f3ff', transparent: true, opacity: 0.6, linewidth: 1 }))} position={[0, 0.01, 0]} />
     </group>
   );
 };
@@ -358,17 +363,20 @@ export const ThreeField: React.FC<ThreeFieldProps> = ({
         <VenueBoundaryRope venueId={venueId} />
 
         {/* Fielder Markers with safe name fallback and unique keys */}
-        {fielders.map((f, idx) => (
-          <FielderMarker
-            key={`${f.name || 'fielder'}-${idx}`}
-            name={f.name || `Fielder ${idx + 1}`}
-            x={f.x}
-            y={f.y}
-            role={f.role}
-            showCoverage={showCoverage}
-            onUpdate={(newX, newY) => onUpdateFielder(f.name, newX, newY)}
-          />
-        ))}
+        {fielders.map((f, idx) => {
+          const displayName = (f as any).position_name || (f as any).name || `Fielder ${idx + 1}`;
+          return (
+            <FielderMarker
+              key={`${displayName}-${idx}`}
+              name={displayName}
+              x={f.x}
+              y={f.y}
+              role={f.role as any}
+              showCoverage={showCoverage}
+              onUpdate={(newX, newY) => onUpdateFielder && onUpdateFielder(displayName, newX, newY)}
+            />
+          );
+        })}
 
         <OrbitControls
           ref={controlsRef}

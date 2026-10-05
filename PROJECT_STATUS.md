@@ -1,7 +1,7 @@
 # FieldIQ — Verified Status
 
 **Last verified:** 2026-10-05, by running commands directly in the terminal.
-**Verified by:** Antigravity agent — Phase 5A completion run.
+**Verified by:** Antigravity agent — Phase 5C completion run.
 
 
 ---
@@ -225,6 +225,49 @@ Result: 91 passed, 1 warning in 52.91s
 ```
 Zero regressions across all 23 test suites.
 
+---
 
+## 3D Visualization Layer & Contract Integrity (Phase 5C Verified)
 
+### 1. Finding 6: Legacy Cockpit Contract Suppression & Misnamed Test Audit
+- **Legacy Cockpit Contract Suppression:** Investigation of `App.legacy-cockpit.tsx` revealed that the legacy frontend actively discarded `data_coverage`, `model_confidence`, and `bowler_provenance` at the `/api/v1/analysis` fetch boundary, suppressing critical uncertainty and data lineage disclosures.
+- **Misnamed Test Discovery:** `ThreeField.test.tsx` was discovered to never mount `<ThreeField />` or any Three.js WebGL `<canvas>` element; it merely asserted the existence of legacy DOM controls (`MatchContextPanel` and `TacticalPanel`) against synthetic static fixtures.
+- **Architectural Remedy:** Bypassed `App.legacy-cockpit.tsx` completely. Built `FieldIQ3DView.tsx` directly on top of the hardened contract foundation established in Phase 5A, guaranteeing that all transparency disclosures are preserved and presented to the operator.
 
+### 2. Implementation Architecture
+- **Canonical Schema Alignment:** `ThreeFieldProps` and `FieldPlacement` interfaces strictly align with backend `FieldPlacementSchema` (`position_name`, `x`, `y`, `role`, `reason`).
+- **Display-Only Rule Legality (Rules 10 & 13):** The 3D view and legality banner render server-computed `is_legal` and `violations` directly from the API response. Zero fielding legality or distance checks are re-derived in client TypeScript.
+- **Component Hierarchy:** `App.tsx` cleanly mounts `<FieldIQ3DView />`, integrating:
+  1. Hardened tactical controls (330 bowlers datalist, dynamic batters from `GET /api/v1/players`, 1-indexed phase-aware overs).
+  2. Three.js WebGL 3D field visualization (`<ThreeField />`) with authentic turf, stumps, 30-yard circle, and interactive 3D fielder markers.
+  3. Server legality banner (`✓ LEGAL FIELD CONFIGURATION` / `⚠ FIELD RESTRICTION VIOLATION`).
+  4. Matchup Intelligence Tier card (balls faced, strike rate, dot ball %, source provenance).
+  5. Model Confidence Disclosure card (wicket recall 2.0%, precision 16.7%, status `uncalibrated_baseline`).
+  6. 11-player field placement coordinate table.
+
+### 3. Automated Verification & Testing
+- **Test Setup Polyfill (`frontend/src/test/setup.ts`):** Added a standard `ResizeObserver` mock in the test setup so React Three Fiber / `react-use-measure` runs smoothly in jsdom.
+- **Genuine 3D Integration Test (`frontend/src/components/FieldIQ3DView.test.tsx`):**
+  - Asserts initial form options dynamically populate from `GET /api/v1/players`.
+  - Asserts form submission triggers `POST /api/v1/analysis`.
+  - Asserts the Three.js `<canvas>` element actually mounts and renders in the DOM (`expect(container.querySelector('canvas')).toBeInTheDocument()`).
+  - Asserts display-only server legality banner renders.
+  - Asserts Matchup Intelligence Tier and Model Confidence disclosure cards render with exact backend values.
+  - Asserts 11 field placements render in the coordinate table.
+- **Frontend Test Suite Execution (`npm test`):**
+  ```
+  RUN v4.1.11 C:/Users/ADMIN/Downloads/FieldIQ_V2/frontend
+  ✓ src/components/MinimalFormView.test.tsx (2 tests) 489ms
+  ✓ src/components/ThreeField.test.tsx (2 tests) 520ms
+  ✓ src/components/MappingForm.test.tsx (4 tests) 1334ms
+  ✓ src/components/FieldIQ3DView.test.tsx (2 tests) 925ms
+
+  Test Files  4 passed (4)
+       Tests  10 passed (10)
+    Duration  3.71s
+  ```
+- **Full Backend Test Suite Execution (`python -m pytest tests/ -v`):**
+  ```
+  91 passed, 1 warning in 74.55s
+  ```
+  Zero regressions across all backend endpoints and ML pipelines.
