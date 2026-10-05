@@ -196,6 +196,7 @@ export const TacticalPanel: React.FC<TacticalPanelProps> = ({
           <h3 className="font-display">TACTICAL DOSSIER</h3>
           <span className="header-subtitle font-mono">LIVE SPATIAL TELEMETRY</span>
         </div>
+        <button type="button" onClick={onReset} className="btn-reset-panel" title="Reset Field" style={{ background: 'transparent', border: 'none', color: '#00f3ff', cursor: 'pointer', fontSize: '1.2rem' }}>🔄</button>
       </div>
 
       {/* ICC Legality & Rule Enforcement Banner */}

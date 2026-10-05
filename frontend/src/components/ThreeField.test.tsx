@@ -2,11 +2,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MatchContextPanel } from './MatchContextPanel';
-import { TacticalPanel, FielderPosition } from './TacticalPanel';
+import { TacticalPanel, type FielderPosition } from './TacticalPanel';
 
 describe('MatchContextPanel Component', () => {
   beforeEach(() => {
-    global.fetch = vi.fn().mockImplementation(() =>
+    globalThis.fetch = vi.fn().mockImplementation(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve({

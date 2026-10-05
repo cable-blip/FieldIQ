@@ -1,0 +1,297 @@
+{
+  "model_type": "XGBoost Multi-Class Classifier (multi:softprob)",
+  "trained_at": "2026-09-17T13:54:45.251544+00:00",
+  "total_samples": 10454,
+  "train_samples": 7947,
+  "test_samples": 2507,
+  "train_accuracy": 0.6127,
+  "test_accuracy": 0.517,
+  "test_log_loss": 1.3233,
+  "feature_columns": [
+    "batting_average",
+    "strike_rate",
+    "dot_ball_pct",
+    "boundary_pct",
+    "dismissal_rate",
+    "is_rhb",
+    "bowler_is_pace",
+    "bowler_is_spin",
+    "phase_code",
+    "over_num",
+    "ball_in_over",
+    "zone_id",
+    "batter_zone_weight"
+  ],
+  "class_names": [
+    "dot",
+    "single",
+    "two",
+    "three",
+    "four",
+    "six",
+    "wicket"
+  ],
+  "classification_report": {
+    "dot": {
+      "precision": 0.635305528612997,
+      "recall": 0.6865828092243187,
+      "f1-score": 0.6599496221662469,
+      "support": 954.0
+    },
+    "single": {
+      "precision": 0.46557120500782473,
+      "recall": 0.7177322074788902,
+      "f1-score": 0.5647840531561462,
+      "support": 829.0
+    },
+    "two": {
+      "precision": 0.08333333333333333,
+      "recall": 0.005747126436781609,
+      "f1-score": 0.010752688172043012,
+      "support": 174.0
+    },
+    "three": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 13.0
+    },
+    "four": {
+      "precision": 0.2653061224489796,
+      "recall": 0.13175675675675674,
+      "f1-score": 0.17607223476297967,
+      "support": 296.0
+    },
+    "six": {
+      "precision": 0.16,
+      "recall": 0.02857142857142857,
+      "f1-score": 0.048484848484848485,
+      "support": 140.0
+    },
+    "wicket": {
+      "precision": 0.16666666666666666,
+      "recall": 0.019801980198019802,
+      "f1-score": 0.035398230088495575,
+      "support": 101.0
+    },
+    "accuracy": 0.516952532907858,
+    "macro avg": {
+      "precision": 0.2537404080099716,
+      "recall": 0.22717032980945653,
+      "f1-score": 0.21363452526153717,
+      "support": 2507.0
+    },
+    "weighted avg": {
+      "precision": 0.4484658750803819,
+      "recall": 0.516952532907858,
+      "f1-score": 0.46356177457983205,
+      "support": 2507.0
+    }
+  },
+  "feature_importances": {
+    "batting_average": 0.06722897291183472,
+    "strike_rate": 0.056657470762729645,
+    "dot_ball_pct": 0.07142269611358643,
+    "boundary_pct": 0.06885261088609695,
+    "dismissal_rate": 0.07479467242956161,
+    "is_rhb": 0.11254443973302841,
+    "bowler_is_pace": 0.05215448886156082,
+    "bowler_is_spin": 0.06841917335987091,
+    "phase_code": 0.08303014189004898,
+    "over_num": 0.05966566130518913,
+    "ball_in_over": 0.04819260910153389,
+    "zone_id": 0.16614331305027008,
+    "batter_zone_weight": 0.0708937719464302
+  },
+  "batter_statistics": {
+    "ab de villiers": {
+      "name": "AB de Villiers",
+      "batting_average": 23.28,
+      "strike_rate": 125.32,
+      "dot_ball_pct": 38.19,
+      "boundary_pct": 14.96,
+      "dismissal_rate": 0.0538,
+      "is_rhb": 1,
+      "zone_weights": {
+        "1": 0.0406,
+        "2": 0.0626,
+        "3": 0.2167,
+        "4": 0.1784,
+        "5": 0.1205,
+        "6": 0.2213,
+        "7": 0.0962,
+        "8": 0.0637
+      },
+      "total_balls": 1003,
+      "total_runs": 1257
+    },
+    "shane watson": {
+      "name": "Shane Watson",
+      "batting_average": 29.2,
+      "strike_rate": 141.29,
+      "dot_ball_pct": 41.29,
+      "boundary_pct": 19.46,
+      "dismissal_rate": 0.0484,
+      "is_rhb": 1,
+      "zone_weights": {
+        "1": 0.029,
+        "2": 0.0794,
+        "3": 0.2308,
+        "4": 0.1791,
+        "5": 0.1387,
+        "6": 0.1463,
+        "7": 0.1337,
+        "8": 0.0631
+      },
+      "total_balls": 930,
+      "total_runs": 1314
+    },
+    "martin guptill": {
+      "name": "Martin Guptill",
+      "batting_average": 38.74,
+      "strike_rate": 125.17,
+      "dot_ball_pct": 42.07,
+      "boundary_pct": 16.75,
+      "dismissal_rate": 0.0323,
+      "is_rhb": 1,
+      "zone_weights": {
+        "1": 0.0232,
+        "2": 0.0938,
+        "3": 0.181,
+        "4": 0.181,
+        "5": 0.1634,
+        "6": 0.1821,
+        "7": 0.1236,
+        "8": 0.0519
+      },
+      "total_balls": 1331,
+      "total_runs": 1666
+    },
+    "brendon mccullum": {
+      "name": "Brendon McCullum",
+      "batting_average": 38.2,
+      "strike_rate": 132.69,
+      "dot_ball_pct": 41.0,
+      "boundary_pct": 18.18,
+      "dismissal_rate": 0.0347,
+      "is_rhb": 1,
+      "zone_weights": {
+        "1": 0.0417,
+        "2": 0.1168,
+        "3": 0.166,
+        "4": 0.1376,
+        "5": 0.1276,
+        "6": 0.2485,
+        "7": 0.1251,
+        "8": 0.0367
+      },
+      "total_balls": 1612,
+      "total_runs": 2139
+    },
+    "chris gayle": {
+      "name": "Chris Gayle",
+      "batting_average": 36.05,
+      "strike_rate": 133.27,
+      "dot_ball_pct": 47.39,
+      "boundary_pct": 19.81,
+      "dismissal_rate": 0.037,
+      "is_rhb": 0,
+      "zone_weights": {
+        "1": 0.0386,
+        "2": 0.0612,
+        "3": 0.1888,
+        "4": 0.1715,
+        "5": 0.1928,
+        "6": 0.2088,
+        "7": 0.1064,
+        "8": 0.0319
+      },
+      "total_balls": 1055,
+      "total_runs": 1406
+    },
+    "david warner": {
+      "name": "David Warner",
+      "batting_average": 30.58,
+      "strike_rate": 137.5,
+      "dot_ball_pct": 43.71,
+      "boundary_pct": 19.6,
+      "dismissal_rate": 0.045,
+      "is_rhb": 0,
+      "zone_weights": {
+        "1": 0.0382,
+        "2": 0.0924,
+        "3": 0.242,
+        "4": 0.1656,
+        "5": 0.1507,
+        "6": 0.2028,
+        "7": 0.086,
+        "8": 0.0223
+      },
+      "total_balls": 1112,
+      "total_runs": 1529
+    },
+    "mahela jayawardene": {
+      "name": "Mahela Jayawardene",
+      "batting_average": 37.33,
+      "strike_rate": 128.49,
+      "dot_ball_pct": 39.93,
+      "boundary_pct": 17.81,
+      "dismissal_rate": 0.0344,
+      "is_rhb": 1,
+      "zone_weights": {
+        "1": 0.0584,
+        "2": 0.1256,
+        "3": 0.1795,
+        "4": 0.0848,
+        "5": 0.0694,
+        "6": 0.1982,
+        "7": 0.2015,
+        "8": 0.0826
+      },
+      "total_balls": 1162,
+      "total_runs": 1493
+    },
+    "kumar sangakkara": {
+      "name": "Kumar Sangakkara",
+      "batting_average": 34.55,
+      "strike_rate": 115.84,
+      "dot_ball_pct": 38.14,
+      "boundary_pct": 13.41,
+      "dismissal_rate": 0.0335,
+      "is_rhb": 0,
+      "zone_weights": {
+        "1": 0.0352,
+        "2": 0.0938,
+        "3": 0.2207,
+        "4": 0.167,
+        "5": 0.1729,
+        "6": 0.2031,
+        "7": 0.0732,
+        "8": 0.0342
+      },
+      "total_balls": 1193,
+      "total_runs": 1382
+    },
+    "virat kohli": {
+      "name": "Virat Kohli",
+      "batting_average": 52.62,
+      "strike_rate": 129.55,
+      "dot_ball_pct": 31.72,
+      "boundary_pct": 16.19,
+      "dismissal_rate": 0.0246,
+      "is_rhb": 1,
+      "zone_weights": {
+        "1": 0.0306,
+        "2": 0.0833,
+        "3": 0.2226,
+        "4": 0.1435,
+        "5": 0.154,
+        "6": 0.2036,
+        "7": 0.1129,
+        "8": 0.0496
+      },
+      "total_balls": 1056,
+      "total_runs": 1368
+    }
+  }
+}

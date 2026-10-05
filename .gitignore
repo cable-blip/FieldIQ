@@ -28,6 +28,8 @@ Thumbs.db
 data/raw/*
 data/processed/*
 data/features/*
+data/interim/*
+scratch/
 
 # Logs
 *.log

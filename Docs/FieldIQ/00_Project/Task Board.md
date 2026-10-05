@@ -2,11 +2,7 @@
 
 ## Ready
 
-- [[ML-002 - Advanced Trajectory-Physics ML Model and Multi-File Folder Dataset Ingestion Engine]]
-
 ## In Progress
-
-
 
 ## Backend Review
 
@@ -16,6 +12,8 @@
 
 ## Completed
 
+- [[ML-003 - Pitch Physics, Environmental Engine, Ground Geometry and Multi-Over Gameplan Sequencing]]
+- [[ML-002 - Advanced Trajectory-Physics ML Model and Multi-File Folder Dataset Ingestion Engine]]
 - [[DATA-004 - Frontend Dataset Mapping UI]]
 - [[UI-001 - 3D Cricket Field Prototype]]
 - [[INTEG-002 - Deterministic Matchup Engine and 3D Field Integration]]
@@ -46,13 +44,3 @@ Obsidian task note
 → Each owner runs their tests
 → Human reviews both diffs
 → Human approves commits and merge
-
-If the API must change, update [[Backend API Contract]] before the frontend
-changes. If the UI needs a missing response field, record it on the task note
-instead of silently changing the backend.
-
-## Current git state (2026-08-25)
-
-`main` is clean. DATA-004 backend, frontend, and merge commits are already on
-`main`. Do not recreate `task/DATA-004-backend` or `task/DATA-004-frontend`
-worktrees unless a follow-up task is opened.
