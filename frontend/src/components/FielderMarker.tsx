@@ -27,14 +27,14 @@ export const FielderMarker: React.FC<FielderMarkerProps> = ({
 
   // Map role to color
   const getColor = () => {
-    if (safeName === 'Wicketkeeper') return '#d4af37'; // Gold
+    if (safeName === 'Wicketkeeper' || safeName === 'Wicket Keeper') return '#d4af37'; // Gold
     if (safeName === 'Bowler') return '#ffffff'; // White
     if (role === 'wicket_taking') return '#ff3b30'; // Red
     return '#007aff'; // Blue
   };
 
   const getCoverageRadius = () => {
-    if (safeName.includes('Slip') || safeName === 'Gully' || safeName === 'Short Leg' || safeName === 'Wicketkeeper') return 4.5;
+    if (safeName.includes('Slip') || safeName === 'Gully' || safeName === 'Short Leg' || safeName.toLowerCase().includes('keeper')) return 4.5;
     if (role === 'wicket_taking') return 8.0;
     if (safeName.startsWith('Deep') || safeName.startsWith('Long') || safeName === 'Third Man' || safeName === 'Fine Leg') return 22.0;
     return 12.5;

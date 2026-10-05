@@ -251,6 +251,7 @@ Zero regressions across all 23 test suites.
   - Asserts initial form options dynamically populate from `GET /api/v1/players`.
   - Asserts form submission triggers `POST /api/v1/analysis`.
   - Asserts the Three.js `<canvas>` element actually mounts and renders in the DOM (`expect(container.querySelector('canvas')).toBeInTheDocument()`).
+  - **Test Boundary & JSDOM Ceiling:** `expect(container.querySelector('canvas')).toBeInTheDocument()` confirms the `<canvas>` DOM element mounts within the React component tree; it does not confirm WebGL context initialization or that the Three.js scene graph rendered geometry without shader/camera errors in a headless environment. A live visual check in an active browser is recommended before considering 3D rendering itself verified.
   - Asserts display-only server legality banner renders.
   - Asserts Matchup Intelligence Tier and Model Confidence disclosure cards render with exact backend values.
   - Asserts 11 field placements render in the coordinate table.
