@@ -31,6 +31,7 @@ from backend.app.services.profiles import (
     get_sample_fielders,
     get_keeper,
     resolve_bowler_profile,
+    resolve_batter_profile,
     MatchFormat as ServiceMatchFormat,
     FieldPlacement as ServicePlacement,
     FielderProfile,
@@ -120,11 +121,13 @@ def create_analysis_request(
     ground_id = request.ground_preset_id or "standard"
     ground = GroundGeometryEngine.get_preset_by_id(ground_id)
 
-    # Resolve batter profile (dynamic from real dataset if present)
-    batter = load_batter_profile_from_real_data(request.batter_name)
+    # Resolve batter profile (dynamic from real dataset if present, or curated sample)
+    batter = resolve_batter_profile(request.batter_name)
     if batter is None:
-        batters = get_sample_batters()
-        batter = next((b for b in batters if b.name.lower() == request.batter_name.lower()), batters[0])
+        raise HTTPException(
+            status_code=404,
+            detail=f"Batter '{request.batter_name}' not found in active dataset or sample profiles. Valid batters: {get_all_available_batters()}"
+        )
 
     bowler = resolve_bowler_profile(request.bowler_name)
 
@@ -370,10 +373,12 @@ def evaluate_custom_field(
         )
 
     # Resolve batter & bowler
-    batter = load_batter_profile_from_real_data(request.batter_name)
+    batter = resolve_batter_profile(request.batter_name)
     if batter is None:
-        batters = get_sample_batters()
-        batter = next((b for b in batters if b.name.lower() == request.batter_name.lower()), batters[0])
+        raise HTTPException(
+            status_code=404,
+            detail=f"Batter '{request.batter_name}' not found in active dataset or sample profiles. Valid batters: {get_all_available_batters()}"
+        )
 
     bowler = resolve_bowler_profile(request.bowler_name)
 
@@ -551,25 +556,31 @@ def log_live_delivery(request: LiveDeliveryRequest) -> LiveDeliveryResponse:
         request.environmental_conditions.model_dump() if request.environmental_conditions else {}
     )
 
-    result = LiveMatchEngine.log_delivery(
-        session_id="default",
-        batter_name=request.batter_name,
-        bowler_name=request.bowler_name,
-        match_format=fmt,
-        over=request.over,
-        ball=request.ball,
-        runs_batter=request.runs_batter,
-        extras=request.extras,
-        extra_type=request.extra_type,
-        shot_sector=request.shot_sector,
-        shot_band=request.shot_band,
-        is_wicket=request.is_wicket,
-        wicket_kind=request.wicket_kind or "",
-        dismissed_player=request.dismissed_player or "",
-        tactical_objective=request.tactical_objective.value,
-        ground_preset_id=request.ground_preset_id or "standard",
-        environmental_conditions=env
-    )
+    try:
+        result = LiveMatchEngine.log_delivery(
+            session_id="default",
+            batter_name=request.batter_name,
+            bowler_name=request.bowler_name,
+            match_format=fmt,
+            over=request.over,
+            ball=request.ball,
+            runs_batter=request.runs_batter,
+            extras=request.extras,
+            extra_type=request.extra_type,
+            shot_sector=request.shot_sector,
+            shot_band=request.shot_band,
+            is_wicket=request.is_wicket,
+            wicket_kind=request.wicket_kind or "",
+            dismissed_player=request.dismissed_player or "",
+            tactical_objective=request.tactical_objective.value,
+            ground_preset_id=request.ground_preset_id or "standard",
+            environmental_conditions=env
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
 
     return LiveDeliveryResponse(**result)
 
@@ -619,18 +630,24 @@ def reset_live_match(request: LiveMatchResetRequest) -> LiveDeliveryResponse:
         request.environmental_conditions.model_dump() if request.environmental_conditions else {}
     )
 
-    result = LiveMatchEngine.reset_session(
-        session_id="default",
-        batter_name=request.batter_name or "Virat Kohli",
-        bowler_name=request.bowler_name or "Generic Right-Arm Fast (New Ball)",
-        match_format=fmt,
-        starting_over=request.starting_over,
-        starting_ball=request.starting_ball,
-        starting_runs=request.starting_runs,
-        starting_wickets=request.starting_wickets,
-        tactical_objective=request.tactical_objective.value,
-        ground_preset_id=request.ground_preset_id or "standard",
-        environmental_conditions=env
-    )
+    try:
+        result = LiveMatchEngine.reset_session(
+            session_id="default",
+            batter_name=request.batter_name or "Virat Kohli",
+            bowler_name=request.bowler_name or "Generic Right-Arm Fast (New Ball)",
+            match_format=fmt,
+            starting_over=request.starting_over,
+            starting_ball=request.starting_ball,
+            starting_runs=request.starting_runs,
+            starting_wickets=request.starting_wickets,
+            tactical_objective=request.tactical_objective.value,
+            ground_preset_id=request.ground_preset_id or "standard",
+            environmental_conditions=env
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
 
     return LiveDeliveryResponse(**result)

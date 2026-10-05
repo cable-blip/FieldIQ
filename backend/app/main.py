@@ -23,10 +23,11 @@ def health_check() -> dict[str, str]:
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc: Exception) -> JSONResponse:
     """
-    Return a clean 404 for unrecognized routes.
+    Return a clean 404 for unrecognized routes and not-found resources.
     Does NOT expose internal paths, route tables, or stack traces.
     """
+    detail_msg = getattr(exc, "detail", None) or "The requested endpoint does not exist."
     return JSONResponse(
         status_code=404,
-        content={"error": "not_found", "message": "The requested endpoint does not exist."},
+        content={"error": "not_found", "message": str(detail_msg)},
     )

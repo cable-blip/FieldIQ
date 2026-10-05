@@ -8,7 +8,9 @@ from backend.app.services.profiles import (
     get_sample_batters,
     get_sample_bowlers,
     get_sample_fielders,
-    get_keeper
+    get_keeper,
+    resolve_bowler_profile,
+    resolve_batter_profile
 )
 from backend.app.services.real_data_loader import load_batter_profile_from_real_data
 from backend.app.services.optimizer import recommend_field
@@ -49,18 +51,11 @@ class GameplanSequencingEngine:
         ground = GroundGeometryEngine.get_preset_by_id(ground_preset_id)
 
         # Resolve batter and bowler
-        batters_dict = {b.name.lower(): b for b in get_sample_batters()}
-        bowlers_dict = {b.name.lower(): b for b in get_sample_bowlers()}
-
-        batter = batters_dict.get(batter_name.lower())
+        batter = resolve_batter_profile(batter_name)
         if not batter:
-            batter = load_batter_profile_from_real_data(batter_name)
-        if not batter:
-            batter = get_sample_batters()[0]
+            raise ValueError(f"Batter '{batter_name}' not found in active dataset or sample profiles.")
 
-        bowler = bowlers_dict.get(bowler_name.lower())
-        if not bowler:
-            bowler = get_sample_bowlers()[0]
+        bowler = resolve_bowler_profile(bowler_name)
 
         fielders = get_sample_fielders()
         keeper = get_keeper()

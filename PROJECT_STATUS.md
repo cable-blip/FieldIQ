@@ -62,7 +62,7 @@
 
 ```
 Command: python -m pytest tests/ -v
-Result:  88 passed, 1 warning in 37.37s
+Result:  91 passed, 1 warning in 52.91s
 ```
 
 ### Test Breakdown (all passing):
@@ -83,14 +83,14 @@ Result:  88 passed, 1 warning in 37.37s
 | test_h2h_stats_engine.py | 4 | Tiered fallbacks: direct, type, insufficient_data |
 | test_h2h_tactical_integration.py | 4 | Rich H2H, strict Tier 2 fallback, unknown bowler, 9-batter validation |
 | test_health.py | 1 | Health check endpoint |
-| test_live_delivery_remapping.py | 5 | Live delivery logging, zone elevation, undo/reset |
+| test_live_delivery_remapping.py | 8 | Phase 5B: live delivery logging, zone elevation, undo/reset, deterministic additive step constants, real bowler resolution, unknown batter 404 guard |
 | test_matchup_stats.py | 2 | Matchup history initialization and retrieval |
 | test_ml_decomposed_training.py | 6 | Decomposed math sum=1.0, 3-split stability spread, promotion gates, stratified schema, factorized inference |
 | test_ml_model_training.py | 6 | Feature extraction, GameId split, model metadata |
 | test_ml_prediction_engine.py | 4 | ML manager, kinematics, Monte Carlo evaluation |
 | test_optimizer_integration.py | 4 | Real bowlers (>=330), Virat Kohli recommendation, boundary prevention, custom evaluation |
 | test_simulator.py | 2 | Candidate fields generation |
-| **TOTAL** | **88** | **Zero failures** |
+| **TOTAL** | **91** | **Zero failures** |
 
 ---
 
@@ -191,6 +191,40 @@ Result:  88 passed, 1 warning in 37.37s
     ```
   - Test 1: Loads options dynamically on mount (`GET /api/v1/players`), populates datalist with 330 real bowlers, and asserts form inputs.
   - Test 2: Submits form with Kohli vs Asif, renders full 11-player field placement table, displays Powerplay legality verification banner (`LEGAL FIELD CONFIGURATION`), displays H2H Tier 2 fallback data coverage card (232 balls, strike rate 124.1), and displays active baseline model confidence card (recall 2.0%, precision 16.7%).
+
+---
+
+## Live Ball-by-Ball Engine & Silent Substitution Elimination (Phase 5B Verified)
+
+### 1. Codebase-Wide Elimination of `bowlers[0]` / `batters[0]`
+- **Systematic Discovery:** A full backend sweep searched for all occurrences of `get_sample_bowlers()`, `bowlers[0]`, `get_sample_batters()`, and `batters[0]`.
+- **Eradication Across All Call Sites:**
+  - `backend/app/services/live_match_engine.py`: Replaced `next(..., bowlers[0])` with `resolve_bowler_profile(session.bowler_name)`. Replaced silent fallback on batter with `resolve_batter_profile(session.batter_name)` raising `ValueError` on unseen batters.
+  - `backend/app/services/optimizer.py`: `quick_recommend` updated to resolve profiles dynamically and raise `ValueError` on unknown batters rather than defaulting to `batters[0]` / `bowlers[0]`.
+  - `backend/app/services/gameplan_engine.py`: Replaced dictionary fallback to `sample_bowlers[0]` with `resolve_bowler_profile` and `resolve_batter_profile`.
+  - `backend/app/routers/dataset.py`: Updated `GET /api/v1/dataset/summary` to return all 330 real bowlers via `get_all_available_bowlers()` instead of 8 sample bowlers.
+  - `backend/app/routers/analysis.py`: Replaced silent fallback to `batters[0]` in both `analyze_matchup_route` and `evaluate_custom_field_route` with `resolve_batter_profile(request.batter_name)`. Unknown batters now return HTTP 404 with standard safe error JSON preserving message details.
+- **Verification:** Grepping for `bowlers[0]` across all Python files in `backend/` now returns **zero matches**.
+
+### 2. Bayesian / Additive Step Zone Danger Constants (Discredited Lore Resolved)
+- **Document Audit:** Multipliers ($\times 1.18, \times 0.92, \times 0.85$) from the legacy PDF-generator script were audited against the repository. Regex search across `backend/`, `tests/`, and `Docs/` confirmed they never existed in code.
+- **Ground Truth Constants:** The live match engine implements a verified additive step model:
+  - Boundary (4 runs): `cur + 0.40` (cap 4.8); adjacent radial band `+0.20` (cap 4.5).
+  - Boundary (6 runs): `cur + 0.65` (cap 4.8); adjacent radial band `+0.20` (cap 4.5).
+  - Singles (1..3 runs): `cur + (0.12 * runs)` (cap 3.2).
+  - Dot ball (0 runs, legal): `max(0.15, cur - 0.08)`.
+- **Deterministic Testing:** Verified by 3 new unit tests in `tests/test_live_delivery_remapping.py` asserting exact floats and caps.
+
+### 3. Verification Suite
+```
+python -m pytest tests/test_live_delivery_remapping.py -v
+Result: 8 passed in 12.30s
+
+python -m pytest tests/ -v
+Result: 91 passed, 1 warning in 52.91s
+```
+Zero regressions across all 23 test suites.
+
 
 
 

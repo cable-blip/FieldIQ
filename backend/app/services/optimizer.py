@@ -23,7 +23,9 @@ from backend.app.services.profiles import (
     get_keeper,
     get_phase_from_over,
     get_sample_batters,
-    get_sample_bowlers
+    get_sample_bowlers,
+    resolve_bowler_profile,
+    resolve_batter_profile
 )
 from backend.app.services.position_map import get_position, get_all_positions, FieldPosition
 from backend.app.services.matchup_engine import analyze_matchup, get_max_tactical_positions, format_matchup_summary
@@ -295,11 +297,10 @@ def quick_recommend(batter_name: str, bowler_name: str, over: int, fmt_str: str 
     """
     Convenience function that looks up sample profiles by name and calls recommend_field.
     """
-    batters = get_sample_batters()
-    bowlers = get_sample_bowlers()
-    
-    batter = next((b for b in batters if b.name == batter_name), batters[0])
-    bowler = next((b for b in bowlers if b.name == bowler_name), bowlers[0])
+    batter = resolve_batter_profile(batter_name)
+    if batter is None:
+        raise ValueError(f"Batter '{batter_name}' not found in active dataset or sample profiles.")
+    bowler = resolve_bowler_profile(bowler_name)
     
     fielder_pool = get_sample_fielders()
     

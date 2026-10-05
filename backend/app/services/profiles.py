@@ -430,6 +430,23 @@ def resolve_bowler_profile(bowler_name: str) -> BowlerProfile:
         )
 
 
+def resolve_batter_profile(batter_name: str) -> Optional[BatterProfile]:
+    """
+    Resolves a BatterProfile for a given name:
+    1. Checks real dataset first (load_batter_profile_from_real_data)
+    2. Checks get_sample_batters() for curated synthetic profiles
+    3. Returns None if completely unknown (never silently substitutes batters[0]).
+    """
+    from backend.app.services.real_data_loader import load_batter_profile_from_real_data
+    real = load_batter_profile_from_real_data(batter_name)
+    if real is not None:
+        return real
+    for b in get_sample_batters():
+        if b.name.strip().lower() == batter_name.strip().lower():
+            return b
+    return None
+
+
 def get_sample_fielders() -> list[FielderProfile]:
     return [
         FielderProfile(name="Fielder_A", jump=0.70, catching=0.92, arm=0.65, close_in_skill=0.95, boundary_skill=0.50, preferred_positions=['Slip', '2nd Slip', 'Gully']),

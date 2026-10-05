@@ -8,8 +8,14 @@ from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, UploadFile, File, HTTPException, status
 import pandas as pd
 
-from backend.app.services.real_data_loader import DATA_DIR, get_available_batters_from_df
+from backend.app.services.real_data_loader import (
+    DATA_DIR,
+    get_available_batters_from_df,
+    get_all_available_bowlers,
+    refresh_real_data_cache
+)
 from backend.app.services.matchup_stats import initialize_matchup_stats
+from backend.app.services.ml_prediction_engine import HistoricalMatchDataMiner, MLModelManager
 from backend.app.services.profiles import get_sample_bowlers, get_sample_batters
 
 router = APIRouter(prefix="/api/v1/dataset", tags=["dataset"])
@@ -91,7 +97,10 @@ def get_dataset_summary() -> Dict[str, Any]:
         except Exception:
             pass
 
-    sample_bowlers = [b.name for b in get_sample_bowlers()]
+    available_bowlers = get_all_available_bowlers()
+    if not available_bowlers:
+        available_bowlers = [b.name for b in get_sample_bowlers()]
+
     if not unique_batters:
         unique_batters = [b.name for b in get_sample_batters()]
 
@@ -100,9 +109,9 @@ def get_dataset_summary() -> Dict[str, Any]:
         "total_deliveries": total_deliveries,
         "total_matches": total_matches,
         "unique_batters_count": len(unique_batters),
-        "unique_bowlers_count": len(sample_bowlers),
+        "unique_bowlers_count": len(available_bowlers),
         "batters": unique_batters,
-        "bowlers": sample_bowlers,
+        "bowlers": available_bowlers,
         "last_updated": datetime.now(timezone.utc).isoformat()
     }
 
@@ -245,7 +254,10 @@ async def upload_dataset(
             json.dump(all_matches_json, f, indent=2)
 
     # Re-train and re-initialize statistical models
+    refresh_real_data_cache()
+    HistoricalMatchDataMiner.reset_cache()
     initialize_matchup_stats()
+    MLModelManager.reset()
 
     # Retrieve updated summary
     summary = get_dataset_summary()
@@ -261,6 +273,8 @@ async def upload_dataset(
 @router.post("/retrain", status_code=status.HTTP_200_OK)
 def retrain_models() -> Dict[str, Any]:
     try:
+        refresh_real_data_cache()
+        HistoricalMatchDataMiner.reset_cache()
         initialize_matchup_stats()
         summary = get_dataset_summary()
         return {
