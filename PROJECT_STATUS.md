@@ -287,7 +287,9 @@ Zero regressions across all 23 test suites.
 - **Dataset ruled out:** The committed `data/real_batters_deliveries.csv` (10,454 rows, 330 distinct `BowlerName`) is unchanged by this. Commit `5e6ab73` brought git in line with the on-disk file this document already described. The previously committed version was an older 5,617-row, 6-batter file with no `BowlerName` column.
 - **Fix:** `/players` returns only real dataset players. Synthetic samples are returned only as an explicit fallback when no real data is loaded, labelled by new `bowler_source` / `batter_source` fields (`real_dataset` | `sample_fallback`).
 - **Tests hardened:** Bowler list must **exactly equal** the distinct `BowlerName` set in the CSV, contain no duplicates, contain no synthetic sample names, and report `bowler_source == "real_dataset"`. Negative control: the new test **fails** against the pre-fix route.
-- **Open item (not fixed):** `POST /api/v1/live/reset` still defaults `bowler_name` to the synthetic `"Generic Right-Arm Fast (New Ball)"` when none is supplied. Flagged for review.
+- **Sub-Finding (Tactical Granularity Gap & Dead Rules):**
+  - **Dead Rules in `matchup_engine.py`:** 3 of the 6 tactical rules in `matchup_engine.py` are structurally unreachable for any of the 330 real bowlers. Because `resolve_bowler_profile()` only ever emits two fixed generic archetypes (`RIGHT_ARM_FAST` with `OUTSIDE_OFF`/`GOOD` and `OFF_SPIN` with `AT_STUMPS`/`GOOD`), Rule 2 (Leg-Spin edge trap), Rule 3 (short-ball pull trap), and Rule 6 (lofted drive full-length trap) can never execute against real data. They passed tests only because test fixtures directly injected synthetic sample bowlers.
+  - **Stage B Bowler Blindness:** In `optimizer.py:219`, `optimize_remaining_field()` only consumes `batter.zone_weights` and ignores the bowler completely. Swapping bowlers of the same category produces identical field coordinates.
 - **Verification:**
   ```
   python -m pytest tests/ -q                                                         -> 91 passed, 1 warning in 72.08s
