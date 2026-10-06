@@ -78,13 +78,19 @@ def get_occupied_zones(position_names: List[str]) -> Set[str]:
             pass
     return zones
 
-def build_zone_danger_list(batter: BatterProfile, reserved_zones: Optional[Set[str]] = None) -> List[ZoneDanger]:
-    """Builds a sorted list of ZoneDanger objects from the batter's zone_chart."""
+def build_zone_danger_list(
+    batter: BatterProfile,
+    reserved_zones: Optional[Set[str]] = None,
+    zone_chart: Optional[dict[str, float]] = None
+) -> List[ZoneDanger]:
+    """Builds a sorted list of ZoneDanger objects from the batter's zone_chart or an empirical matchup chart."""
     if reserved_zones is None:
         reserved_zones = set()
 
+    chart_to_use = zone_chart if zone_chart is not None else batter.zone_chart
+
     danger_list = []
-    for zone_key, runs in batter.zone_chart.items():
+    for zone_key, runs in chart_to_use.items():
         parts = zone_key.rsplit('_', 1)
         if len(parts) == 2:
             direction, band = parts
@@ -121,14 +127,20 @@ def get_best_position_for_zone(zone_key: str, occupied_positions: Set[str], batt
             return pos  # Return the original (unmirored) position
     return None
 
-def optimize_remaining_field(batter: BatterProfile, available_fielders: List[FielderProfile], reserved_positions: List[str], max_outside_circle: int) -> List[FieldPlacement]:
+def optimize_remaining_field(
+    batter: BatterProfile,
+    available_fielders: List[FielderProfile],
+    reserved_positions: List[str],
+    max_outside_circle: int,
+    zone_chart: Optional[dict[str, float]] = None
+) -> List[FieldPlacement]:
     """Main optimizer function (Stage B).
 
     Assigns remaining fielders to run-saving positions using a greedy,
-    danger-first algorithm.
+    danger-first algorithm, optionally conditioned on a matchup zone chart.
     """
     reserved_zones = get_occupied_zones(reserved_positions)
-    danger_list = build_zone_danger_list(batter, reserved_zones)
+    danger_list = build_zone_danger_list(batter, reserved_zones, zone_chart=zone_chart)
 
     assigned_fielders: Set[str] = set()
     occupied_positions: Set[str] = set(reserved_positions)

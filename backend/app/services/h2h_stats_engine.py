@@ -60,6 +60,13 @@ class H2HStatsEngine:
         if "bowler_type" not in self.df.columns:
             self.df["bowler_type"] = self.df["BowlerName"].apply(bowler_style)
 
+        # Pre-attach bowler_discipline if not present
+        if "bowler_discipline" not in self.df.columns and "BowlerName" in self.df.columns:
+            from backend.app.services.bowler_style import resolve_bowler_discipline
+            self.df["bowler_discipline"] = self.df["BowlerName"].apply(
+                lambda b: resolve_bowler_discipline(b)[0]
+            )
+
         # Pre-attach phase if Over present
         if "phase" not in self.df.columns and "Over" in self.df.columns:
             def _calc_phase(over_val):
@@ -153,6 +160,66 @@ class H2HStatsEngine:
             "dot_pct": dot_pct,
             "data_coverage_note": note,
         }
+
+    def get_matchup_zone_chart(
+        self,
+        batter: str,
+        bowler: str,
+        bowler_type: Optional[str] = None,
+        phase: Optional[str] = None,
+    ) -> tuple[Optional[dict[str, float]], str]:
+        """
+        Computes matchup-conditioned zone danger weights from real delivery wagon wheels,
+        following the tiered data-coverage fallback contract:
+          1. Direct H2H (>= min_balls_direct balls faced vs exact bowler) -> "direct_h2h"
+          2. Batter vs Bowler Discipline in Phase (>= min_balls_type_fallback) -> "vs_bowler_type_phase"
+          3. Batter vs Bowler Discipline overall (>= min_balls_type_fallback) -> "vs_bowler_type"
+          4. Insufficient data -> (None, "insufficient_data")
+        """
+        from backend.app.services.real_data_loader import load_deliveries_from_dataframe
+
+        # Tier 1: Direct matchup
+        direct_sub = self.df[(self.df["Batter"] == batter) & (self.df["BowlerName"] == bowler)]
+        if len(direct_sub) >= self.min_balls_direct:
+            try:
+                chart, _ = load_deliveries_from_dataframe(direct_sub, batter)
+                return chart, "direct_h2h"
+            except Exception:
+                pass
+
+        # Normalize bowler discipline/type string
+        disc = str(bowler_type).strip() if bowler_type else ""
+        if disc.startswith("BowlerType."):
+            disc = disc.replace("BowlerType.", "")
+
+        # Tier 2: Batter vs Bowler Discipline in Phase
+        if phase and disc and "bowler_discipline" in self.df.columns:
+            phase_sub = self.df[
+                (self.df["Batter"] == batter)
+                & (self.df["bowler_discipline"] == disc)
+                & (self.df["phase"] == phase)
+            ]
+            if len(phase_sub) >= self.min_balls_type_fallback:
+                try:
+                    chart, _ = load_deliveries_from_dataframe(phase_sub, batter)
+                    return chart, "vs_bowler_type_phase"
+                except Exception:
+                    pass
+
+        # Tier 3: Batter vs Bowler Discipline overall
+        if disc and "bowler_discipline" in self.df.columns:
+            disc_sub = self.df[
+                (self.df["Batter"] == batter)
+                & (self.df["bowler_discipline"] == disc)
+            ]
+            if len(disc_sub) >= self.min_balls_type_fallback:
+                try:
+                    chart, _ = load_deliveries_from_dataframe(disc_sub, batter)
+                    return chart, "vs_bowler_type"
+                except Exception:
+                    pass
+
+        return None, "insufficient_data"
 
     def get_recent_form(
         self,

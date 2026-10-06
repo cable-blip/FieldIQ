@@ -110,6 +110,7 @@ def generate_explanation(
     phase: MatchPhase,
     metrics_dict: dict,
     h2h_data: Optional[dict] = None,
+    zone_source: Optional[str] = None,
 ) -> List[str]:
     """
     Generates human-readable explanations for the field setup.
@@ -143,6 +144,13 @@ def generate_explanation(
                 f"H2H Intelligence [insufficient_data]: {h2h_data.get('data_coverage_note', 'Insufficient direct matchup data')}. "
                 "Applying baseline tactical domain heuristics without fabricating statistics."
             )
+
+    # Add Stage B empirical zone weighting note
+    if zone_source and zone_source != "insufficient_data":
+        target_name = bowler.name if zone_source == "direct_h2h" else getattr(bowler.bowler_type, 'name', str(bowler.bowler_type)).replace('_', ' ').title()
+        explanations.append(
+            f"Stage B Zone Weighting [{zone_source}]: Field ring and boundaries shaped by empirical scoring distribution vs {target_name}."
+        )
     
     # Map for fast lookup
     rec_dict = {}
@@ -216,8 +224,15 @@ def recommend_field(
     max_zone_fielders = 9 - len(tactical_placements)
     zone_fielders = remaining_fielders[:max_zone_fielders]
     
+    matchup_zone_chart, zone_source = h2h_engine.get_matchup_zone_chart(
+        batter=batter.name,
+        bowler=bowler.name,
+        bowler_type=getattr(bowler.bowler_type, 'name', str(bowler.bowler_type)),
+        phase=phase.name if hasattr(phase, 'name') else str(phase),
+    )
+
     zone_placements = optimize_remaining_field(
-        batter, zone_fielders, reserved_position_names, remaining_budget
+        batter, zone_fielders, reserved_position_names, remaining_budget, zone_chart=matchup_zone_chart
     )
     
     # 6. Merge into full field
@@ -276,7 +291,7 @@ def recommend_field(
     
     # 9. Generate explanations
     explanations = generate_explanation(
-        tactical_placements, zone_placements, tactical_recs, batter, bowler, phase, metrics_dict, h2h_data
+        tactical_placements, zone_placements, tactical_recs, batter, bowler, phase, metrics_dict, h2h_data, zone_source=zone_source
     )
     
     # 10. Return FieldResult

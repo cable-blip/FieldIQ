@@ -309,8 +309,25 @@ Zero regressions across all 23 test suites.
   - Wired **Rule 1 Left-Arm Pace Geometry**: Left-arm fast bowlers (e.g. Mitchell Starc, Trent Boult) elevate Gully priority over 2nd Slip (0.85 vs 0.75) due to delivery angle cutting across right-handers.
   - Verified downstream safety of `insufficient_data` bowlers: `quick_recommend` and `/api/v1/analysis` produce a legal 11-player field, cleanly expose `bowler_provenance["bowler_type"] = "insufficient_data"` and `data_coverage = "insufficient_data"`, and never crash or fabricate attributes.
   - Verified by expanded test suite `tests/test_bowler_discipline_granularity.py` (8 tests passing).
+- **Step 3 Closed (Stage B Matchup-Conditioned Zone Weighting in Optimizer):**
+  - **Root Cause Closed:** In `optimizer.py:219`, `optimize_remaining_field()` previously consumed only static `batter.zone_chart` across all bowlers, creating identical Stage B ring and boundary placements for every bowler of the same category.
+  - **Empirical Tiered Matchup Weighting:** Integrated `h2h_engine.get_matchup_zone_chart(batter, bowler, bowler_type, phase)`:
+    - **Tier 1 (Direct H2H, >=15 balls):** Derives zone danger weights directly from historical head-to-head delivery wagon wheels (e.g., Kohli vs Tahir, Sangakkara vs Vettori).
+    - **Tier 2 (Discipline in Phase, >=30 balls):** Derives zone weights from batter vs bowler discipline in match phase.
+    - **Tier 3 (Discipline Overall, >=30 balls):** Derives zone weights from batter vs discipline overall (e.g., Kohli vs `LEFT_ARM_FAST` [88 balls] vs `RIGHT_ARM_FAST` [523 balls]).
+    - **Tier 4 (Insufficient Data):** Safely falls back to `batter.zone_chart` without fabricating data or crashing.
+  - **Before vs After Verification on Real Matchup (Virat Kohli, Powerplay Over 3, T20):**
+    - **Before:**
+      - vs Mohammad Asif (RAF): `['1st Slip', '2nd Slip', 'Gully', 'Long On', 'Deep Extra Cover', 'Extra Cover', 'Point', 'Backward Point', 'Square Leg', 'Wicketkeeper', 'Bowler']`
+      - vs Mitchell Starc (LAF): `['1st Slip', 'Gully', '2nd Slip', 'Long On', 'Deep Extra Cover', 'Extra Cover', 'Point', 'Backward Point', 'Square Leg', 'Wicketkeeper', 'Bowler']`
+      *(Stage B run-saving fielders were 100% identical).*
+    - **After:**
+      - vs Mohammad Asif (RAF): `['1st Slip', '2nd Slip', 'Gully', 'Long On', 'Deep Extra Cover', 'Extra Cover', 'Point', 'Backward Point', 'Square Leg', 'Wicketkeeper', 'Bowler']`
+      - vs Mitchell Starc (LAF): `['1st Slip', 'Gully', '2nd Slip', 'Deep Point', 'Third Man', 'Leg Slip', 'Short Leg', 'Silly Mid On', 'Extra Cover', 'Wicketkeeper', 'Bowler']`
+      *(Entire field adapts: Starc's left-arm angle places Deep Point and Third Man on the boundary and reinforces squarer catchers, while Asif guards Long On and Backward Point).*
+  - Verified by dedicated test suite `tests/test_stage_b_matchup_weighting.py` (4 tests passing). All fields pass ICC legality constraints.
 - **Verification:**
   ```
-  python -m pytest tests/ -q -> 100 passed, 1 warning in 60.20s
-  npm test                    -> 10 passed across 4 files in 4.36s
+  python -m pytest tests/ -q -> 104 passed, 1 warning in 62.82s
+  npm test                    -> 10 passed across 4 files in 4.76s
   ```
