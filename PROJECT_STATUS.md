@@ -294,16 +294,23 @@ Zero regressions across all 23 test suites.
   - Removed `"Generic Right-Arm Fast (New Ball)"` default from `LiveMatchResetRequest`, `LiveDeliveryRequest`, and `LiveMatchSession`. Both `batter_name` and `bowler_name` are now required fields (`Field(..., min_length=1)`).
   - Omitting `bowler_name` in `/api/v1/match/reset` or `/api/v1/match/delivery` now immediately returns HTTP 422 Unprocessable Entity.
   - Verified by new regression test `test_omitted_bowler_returns_422_not_silent_fallback` in `tests/test_live_delivery_remapping.py`.
-- **Step 2 Closed (Objective Arm & Spin Discipline Granularity):**
+- **Step 2 Closed (Objective Arm & Spin Discipline Granularity & Handedness Inversion):**
   - Added `BOWLER_DISCIPLINE` registry and `resolve_bowler_discipline()` in `bowler_style.py`, with exact fallback contract:
     - **Curated Categorical:** 100 bowlers (30.3% of 330) with unambiguous public records mapped to `LEFT_ARM_FAST`, `RIGHT_ARM_FAST`, `RIGHT_ARM_MEDIUM`, `LEG_SPIN`, `OFF_SPIN`, `LEFT_ARM_ORTHODOX`, `LEFT_ARM_WRIST_SPIN` (`provenance_metadata["bowler_type"] = "curated_categorical"`).
     - **Unspecified Fallback:** 76 bowlers (23.0% of 330) whose general Pace/Spin style is known but arm/subdiscipline is unreviewed resolve to baseline (`provenance_metadata["bowler_type"] = "unspecified_fallback"`). Never guesses.
     - **Insufficient Data:** 154 bowlers (46.7% of 330) unreviewed or ambiguous associate players resolve with `provenance_metadata["bowler_type"] = "insufficient_data"`.
-  - Reactivated dead **Rule 2** (leg-spin edge trap now fires for real leg-spinners like Imran Tahir, Amit Mishra, Shahid Afridi).
+  - Reactivated dead **Rule 2** (spin edge trap) and **Rule 4** (sweep bat-pad trap) with explicit **Batter Handedness Conditioning**:
+    - **Turning away from batter (Rule 2 -> 1st Slip):**
+      - RHB: `LEG_SPIN` and `LEFT_ARM_ORTHODOX` turn from leg to off (creates outside edge).
+      - LHB: `OFF_SPIN` and `LEFT_ARM_WRIST_SPIN` turn from off to leg (creates outside edge).
+    - **Turning into pads (Rule 4 -> Leg Slip):**
+      - RHB: `OFF_SPIN` and `LEFT_ARM_WRIST_SPIN` turn into pads on the sweep.
+      - LHB: `LEG_SPIN` and `LEFT_ARM_ORTHODOX` turn into pads on the sweep.
   - Wired **Rule 1 Left-Arm Pace Geometry**: Left-arm fast bowlers (e.g. Mitchell Starc, Trent Boult) elevate Gully priority over 2nd Slip (0.85 vs 0.75) due to delivery angle cutting across right-handers.
-  - Verified by new test suite `tests/test_bowler_discipline_granularity.py` (5 tests passing).
+  - Verified downstream safety of `insufficient_data` bowlers: `quick_recommend` and `/api/v1/analysis` produce a legal 11-player field, cleanly expose `bowler_provenance["bowler_type"] = "insufficient_data"` and `data_coverage = "insufficient_data"`, and never crash or fabricate attributes.
+  - Verified by expanded test suite `tests/test_bowler_discipline_granularity.py` (8 tests passing).
 - **Verification:**
   ```
-  python -m pytest tests/ -q -> 97 passed, 1 warning in 47.27s
-  npm test                    -> 10 passed across 4 files in 31.45s
+  python -m pytest tests/ -q -> 100 passed, 1 warning in 60.20s
+  npm test                    -> 10 passed across 4 files in 4.36s
   ```
