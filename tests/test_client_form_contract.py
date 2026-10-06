@@ -6,7 +6,7 @@ Phase 5A Client Contract Tests.
 Verifies the HTTP client contract for the Phase 5A MinimalFormView:
 1. Verifies GET /api/v1/players provides dynamic options for all form dropdowns:
    - 9 confirmed batters
-   - >= 330 real bowlers from real_batters_deliveries.csv
+   - exactly the distinct real bowlers in real_batters_deliveries.csv (330), no synthetic archetypes
    - Authoritative tactical_objectives from schema enum
    - Authoritative match_formats from schema enum
 2. Verifies POST /api/v1/analysis accepts the exact JSON payload produced by MinimalFormView
@@ -33,9 +33,27 @@ def test_client_options_endpoint_contract():
     assert "Virat Kohli" in data["batters"]
     assert "AB de Villiers" in data["batters"]
 
-    # 2. Bowlers (all 330 real bowlers dynamically extracted, not 8 synthetic archetypes)
+    # 2. Bowlers: EXACTLY the distinct real bowlers in the dataset, nothing added.
+    # A ">= 330" bound previously let 8 synthetic sample bowlers slip in (338) unnoticed (Finding 7).
+    import pandas as pd
+    from backend.app.services.profiles import get_sample_bowlers
+    from backend.app.services.real_data_loader import DATA_DIR
+
+    csv_bowlers = set(
+        pd.read_csv(DATA_DIR / "real_batters_deliveries.csv")["BowlerName"]
+        .dropna().astype(str).str.strip()
+    ) - {""}
     assert "bowlers" in data
-    assert len(data["bowlers"]) >= 330, f"Expected >= 330 real bowlers, got {len(data['bowlers'])}"
+    assert data.get("bowler_source") == "real_dataset"
+    assert set(data["bowlers"]) == csv_bowlers, (
+        f"Bowler list drifted from dataset: extra={sorted(set(data['bowlers']) - csv_bowlers)}, "
+        f"missing={sorted(csv_bowlers - set(data['bowlers']))}"
+    )
+    assert len(data["bowlers"]) == len(set(data["bowlers"])), "Duplicate bowler names returned"
+    synthetic = {b.name for b in get_sample_bowlers()}
+    assert not (synthetic & set(data["bowlers"])), (
+        f"Synthetic sample bowlers leaked into real list: {sorted(synthetic & set(data['bowlers']))}"
+    )
     assert "Mohammad Asif" in data["bowlers"]
     assert "Dale Steyn" in data["bowlers"]
     assert "Morne Morkel" in data["bowlers"]

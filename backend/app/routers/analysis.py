@@ -68,17 +68,22 @@ router = APIRouter(prefix="/api/v1", tags=["analysis"])
 
 @router.get("/players", status_code=status.HTTP_200_OK)
 def get_players_list():
-    sample_bowlers = [b.name for b in get_sample_bowlers()]
+    # Real dataset players only. Synthetic sample archetypes are NOT merged in
+    # (Finding 7: a prior union silently added 8 "Generic ..." bowlers, 330 -> 338).
+    # Samples are returned only as an explicit, labelled fallback when no real data exists.
     real_bowlers = get_all_available_bowlers()
-    all_bowlers = sorted(list(set(sample_bowlers + real_bowlers)))
     real_batters = get_all_available_batters()
+    bowlers_list = real_bowlers if real_bowlers else [b.name for b in get_sample_bowlers()]
     batters_list = real_batters if real_batters else [b.name for b in get_sample_batters()]
     return {
         "batters": batters_list,
-        "bowlers": all_bowlers if all_bowlers else sample_bowlers,
+        "bowlers": bowlers_list,
+        "batter_source": "real_dataset" if real_batters else "sample_fallback",
+        "bowler_source": "real_dataset" if real_bowlers else "sample_fallback",
         "tactical_objectives": [obj.value for obj in TacticalObjective],
         "match_formats": [fmt.value for fmt in MatchFormat],
     }
+
 
 
 @router.get("/grounds/presets", response_model=List[GroundDimensionPresetSchema], status_code=status.HTTP_200_OK)

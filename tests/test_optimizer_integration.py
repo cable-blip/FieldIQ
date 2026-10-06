@@ -59,8 +59,11 @@ def test_get_players_list() -> None:
     assert "Virat Kohli" in body["batters"]
     assert "AB de Villiers" in body["batters"]
 
-    # Must contain full set of real bowlers from dataset (330 real bowlers), not just 8 sample archetypes
-    assert len(body["bowlers"]) >= 330, f"Expected >= 330 bowlers, got {len(body['bowlers'])}"
+    # Must contain exactly the real dataset bowlers -- no synthetic archetypes merged in (Finding 7)
+    from backend.app.services.profiles import get_sample_bowlers
+    from backend.app.services.real_data_loader import get_all_available_bowlers
+    assert body["bowlers"] == get_all_available_bowlers()
+    assert not ({b.name for b in get_sample_bowlers()} & set(body["bowlers"]))
     assert "Mohammad Asif" in body["bowlers"]
     assert "Dale Steyn" in body["bowlers"]
     assert "Morne Morkel" in body["bowlers"]

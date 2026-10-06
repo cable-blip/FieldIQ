@@ -272,3 +272,24 @@ Zero regressions across all 23 test suites.
   91 passed, 1 warning in 74.55s
   ```
   Zero regressions across all backend endpoints and ML pipelines.
+
+### 4. 3D Rendering — Visual Verification Status
+- **Status: PENDING human visual check.** Headless Chrome/Edge screenshot attempts produced no output file (confirmed by `Test-Path` = False). No visual confirmation of the WebGL scene (turf, pitch, rope, stumps, fielder pins, orbit controls) has been obtained yet. Phase 5C's 3D rendering is not considered verified until this check is done.
+
+---
+
+## Finding 7: Synthetic Bowlers Merged Into Real Player List (330 → 338)
+
+- **Symptom:** `GET /api/v1/players` returned 338 bowlers, not 330.
+- **Root cause:** The Phase 5A fix (commit `cdfb6629`) changed `get_players_list()` to `sorted(set(sample_bowlers + real_bowlers))`, a **union** of the 330 real bowlers with the 8 synthetic archetypes, instead of replacing the synthetic list. Extra names: `Generic Right-Arm Fast (Death)`, `Generic Right-Arm Fast (New Ball)`, `Left-Arm Fast`, `Left-Arm Orthodox`, `Leg-Spinner`, `Off-Spinner`, `Right-Arm Medium`, `Short-Ball Enforcer`.
+- **Why it went undetected:** Both regression guards (`test_client_form_contract.py`, `test_optimizer_integration.py`) asserted `len(bowlers) >= 330`, which passes for 338. This is the same tolerance problem as the Phase 2 Tier-2 test and the original 5A `/players` test.
+- **Correction to earlier reports:** The Phase 5A and 5C reports said the dropdown offered "330 real bowlers". It actually offered 338 (330 real + 8 synthetic) from `cdfb6629` until this fix. The live count was never printed until after Phase 5C, and the first report of 338 did not flag the discrepancy.
+- **Dataset ruled out:** The committed `data/real_batters_deliveries.csv` (10,454 rows, 330 distinct `BowlerName`) is unchanged by this. Commit `5e6ab73` brought git in line with the on-disk file this document already described. The previously committed version was an older 5,617-row, 6-batter file with no `BowlerName` column.
+- **Fix:** `/players` returns only real dataset players. Synthetic samples are returned only as an explicit fallback when no real data is loaded, labelled by new `bowler_source` / `batter_source` fields (`real_dataset` | `sample_fallback`).
+- **Tests hardened:** Bowler list must **exactly equal** the distinct `BowlerName` set in the CSV, contain no duplicates, contain no synthetic sample names, and report `bowler_source == "real_dataset"`. Negative control: the new test **fails** against the pre-fix route.
+- **Open item (not fixed):** `POST /api/v1/live/reset` still defaults `bowler_name` to the synthetic `"Generic Right-Arm Fast (New Ball)"` when none is supplied. Flagged for review.
+- **Verification:**
+  ```
+  python -m pytest tests/ -q                                                         -> 91 passed, 1 warning in 72.08s
+  python -m pytest tests/test_client_form_contract.py tests/test_optimizer_integration.py -q -> 7 passed (final versions of both tests)
+  ```
