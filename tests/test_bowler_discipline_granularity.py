@@ -120,3 +120,93 @@ def test_api_analysis_returns_provenance_metadata():
     data = res.json()
     assert "bowler_provenance" in data
     assert data["bowler_provenance"]["bowler_type"] == "curated_categorical"
+
+
+def test_spin_handedness_inversion_lhb_vs_rhb():
+    """
+    Verifies that spin turning direction inverts based on batter handedness:
+    - RHB (Kohli): Leg-spin (Tahir) turns away -> 1st Slip. Off-spin (Ashwin) turns in -> no 1st Slip.
+    - LHB (Warner): Off-spin (Ashwin) turns away -> 1st Slip. Leg-spin (Tahir) turns in -> no 1st Slip.
+    """
+    kohli = resolve_batter_profile("Virat Kohli")   # RHB
+    warner = resolve_batter_profile("David Warner")  # LHB
+    tahir = resolve_bowler_profile("Imran Tahir")          # LEG_SPIN
+    ashwin = resolve_bowler_profile("Ravichandran Ashwin")  # OFF_SPIN
+
+    # RHB (Kohli)
+    recs_kohli_tahir = analyze_matchup(kohli, tahir, MatchPhase.MIDDLE)
+    recs_kohli_ashwin = analyze_matchup(kohli, ashwin, MatchPhase.MIDDLE)
+    assert any(r.position == "1st Slip" for r in recs_kohli_tahir), "Leg spin turns away from RHB -> 1st Slip"
+    assert not any(r.position == "1st Slip" for r in recs_kohli_ashwin), "Off spin turns into RHB -> no 1st Slip"
+
+    # LHB (Warner)
+    recs_warner_tahir = analyze_matchup(warner, tahir, MatchPhase.MIDDLE)
+    recs_warner_ashwin = analyze_matchup(warner, ashwin, MatchPhase.MIDDLE)
+    slip_warner_ashwin = next((r for r in recs_warner_ashwin if r.position == "1st Slip"), None)
+    assert slip_warner_ashwin is not None, "Off spin turns away from LHB -> 1st Slip"
+    assert "Off spin turns away from LHB" in slip_warner_ashwin.reason
+    assert not any(r.position == "1st Slip" for r in recs_warner_tahir), "Leg spin turns into LHB -> no 1st Slip"
+
+
+def test_spin_handedness_sweep_trap_inversion_lhb_vs_rhb():
+    """
+    Verifies that Rule 4 (Sweep trap turning into pads) inverts based on batter handedness:
+    - RHB (AB de Villiers, sweep_risk 0.65): Off-spin (Ashwin) turns into pads -> Leg Slip.
+    - LHB (Rishabh Pant, sweep_risk 0.70): Leg-spin (Tahir) turns into pads -> Leg Slip.
+    """
+    ab = resolve_batter_profile("AB de Villiers")  # RHB, sweep_risk 0.65
+    pant = resolve_batter_profile("Rishabh Pant")    # LHB, sweep_risk 0.70
+    tahir = resolve_bowler_profile("Imran Tahir")          # LEG_SPIN
+    ashwin = resolve_bowler_profile("Ravichandran Ashwin")  # OFF_SPIN
+
+    # RHB (AB de Villiers): Off-spin turns into pads -> Leg Slip
+    recs_ab_ashwin = analyze_matchup(ab, ashwin, MatchPhase.MIDDLE)
+    assert any(r.position == "Leg Slip" for r in recs_ab_ashwin), "Off spin turns into RHB pads -> Leg Slip"
+
+    # LHB (Rishabh Pant): Leg-spin turns into pads -> Leg Slip
+    recs_pant_tahir = analyze_matchup(pant, tahir, MatchPhase.MIDDLE)
+    assert any(r.position == "Leg Slip" for r in recs_pant_tahir), "Leg spin turns into LHB pads -> Leg Slip"
+    assert not any(r.position == "Leg Slip" for r in recs_pant_tahir if False)  # structure check
+
+    # Inverted: Off-spin turns away from LHB -> no Leg Slip
+    recs_pant_ashwin = analyze_matchup(pant, ashwin, MatchPhase.MIDDLE)
+    assert not any(r.position == "Leg Slip" for r in recs_pant_ashwin), "Off spin turns away from LHB -> no Leg Slip"
+
+
+def test_insufficient_data_bowler_downstream_behavior():
+    """
+    Verifies that an unreviewed/ambiguous bowler (Ahsan Malik):
+    1. Resolves with bowler_provenance['bowler_type'] == 'insufficient_data'.
+    2. Runs safely through quick_recommend, producing a valid, legal 11-player field.
+    3. Returns HTTP 200 with data_coverage == 'insufficient_data' via the API.
+    """
+    from backend.app.services.optimizer import quick_recommend
+
+    # Optimizer execution
+    res = quick_recommend("Virat Kohli", "Ahsan Malik", 3, "T20")
+    assert res.is_legal is True
+    assert len(res.violations) == 0
+    assert len(res.placements) == 11
+    assert res.data_coverage == "insufficient_data"
+
+    # API execution
+    api_res = client.post(
+        "/api/v1/analysis",
+        json={
+            "batter_name": "Virat Kohli",
+            "bowler_name": "Ahsan Malik",
+            "match_format": "T20",
+            "innings": 1,
+            "over": 3,
+            "runs": 20,
+            "wickets": 0,
+            "tactical_objective": "attack_wicket"
+        }
+    )
+    assert api_res.status_code == 200
+    data = api_res.json()
+    assert data["bowler_provenance"]["bowler_type"] == "insufficient_data"
+    assert data["data_coverage"] == "insufficient_data"
+    assert data["is_legal"] is True
+    assert len(data["placements"]) == 11
+

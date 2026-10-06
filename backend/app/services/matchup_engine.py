@@ -46,6 +46,34 @@ def is_spin_bowler(bowler: BowlerProfile) -> bool:
     )
 
 
+def is_spin_turning_away(bowler_type: BowlerType, handedness: Handedness) -> bool:
+    """
+    Returns True if the bowler's stock delivery turns away from the batter,
+    creating outside-edge risk to slip fielders:
+      - RHB: Right-arm leg spin (LEG_SPIN) and slow left-arm orthodox (LEFT_ARM_ORTHODOX)
+             turn from leg to off (away from the bat).
+      - LHB: Right-arm off spin (OFF_SPIN) and left-arm wrist spin (LEFT_ARM_WRIST_SPIN)
+             turn from off to leg (away from the left-hander's bat).
+    """
+    if handedness == Handedness.LHB:
+        return bowler_type in (BowlerType.OFF_SPIN, BowlerType.LEFT_ARM_WRIST_SPIN)
+    return bowler_type in (BowlerType.LEG_SPIN, BowlerType.LEFT_ARM_ORTHODOX)
+
+
+def is_spin_turning_into_pads(bowler_type: BowlerType, handedness: Handedness) -> bool:
+    """
+    Returns True if the bowler's stock delivery turns into the batter's pads/body,
+    creating bat-pad / leg-slip dismissal opportunities on the sweep or defensive shot:
+      - RHB: Right-arm off spin (OFF_SPIN) and left-arm wrist spin (LEFT_ARM_WRIST_SPIN)
+             turn from off to leg (into the pads).
+      - LHB: Right-arm leg spin (LEG_SPIN) and slow left-arm orthodox (LEFT_ARM_ORTHODOX)
+             turn from leg to off (into the left-hander's pads).
+    """
+    if handedness == Handedness.LHB:
+        return bowler_type in (BowlerType.LEG_SPIN, BowlerType.LEFT_ARM_ORTHODOX)
+    return bowler_type in (BowlerType.OFF_SPIN, BowlerType.LEFT_ARM_WRIST_SPIN)
+
+
 def get_max_tactical_positions(phase: MatchPhase) -> int:
     """
     Returns the max number of tactical positions to reserve.
@@ -136,8 +164,12 @@ def analyze_matchup(
 
     # --- RULE 2: Edge Risk vs Spin ---
     if getattr(batter, 'edge_vs_pace', 0.0) >= 0.3 and is_spin_bowler(bowler):
-        if bowler.bowler_type in (BowlerType.LEG_SPIN, BowlerType.LEFT_ARM_WRIST_SPIN):
-            add_or_update('1st Slip', batter.edge_vs_pace * 0.75, "Leg spin turns away, creates edges", 'caught_edge', [])
+        if is_spin_turning_away(bowler.bowler_type, batter.handedness):
+            if batter.handedness == Handedness.LHB:
+                reason = "Off spin turns away from LHB, creates edges" if bowler.bowler_type == BowlerType.OFF_SPIN else "Left-arm wrist spin turns away from LHB, creates edges"
+            else:
+                reason = "Leg spin turns away, creates edges" if bowler.bowler_type == BowlerType.LEG_SPIN else "Left-arm orthodox turns away from RHB, creates edges"
+            add_or_update('1st Slip', batter.edge_vs_pace * 0.75, reason, 'caught_edge', [])
 
     # --- RULE 3: Pull/Hook Miscue ---
     # Condition: batter.pull_mistime_vs_short_ball >= 0.3 AND bowler is pace AND bowler.attack_channel == SHORT_PITCHED or length_preference == SHORT
@@ -165,7 +197,7 @@ def analyze_matchup(
         if risk == 'HIGH':
             add_or_update('Short Leg', val * 0.90, "Sweep top-edge/bat-pad trap", 'caught_close')
             add_or_update('Deep Square Leg', val * 0.75, "Miscued sweep landing zone", 'caught_top_edge')
-            if bowler.bowler_type in (BowlerType.OFF_SPIN, BowlerType.LEFT_ARM_ORTHODOX):
+            if is_spin_turning_into_pads(bowler.bowler_type, batter.handedness):
                 add_or_update('Leg Slip', val * 0.60, "Ball turning into pads", 'caught_close')
         elif risk == 'MEDIUM':
             add_or_update('Short Leg', val * 0.70, "Sweep top-edge/bat-pad trap", 'caught_close')
