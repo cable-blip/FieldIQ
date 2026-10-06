@@ -118,6 +118,143 @@ def bowler_style(name: str) -> str:
     return BOWLER_STYLE.get(name, "Unknown")
 
 
+BOWLER_DISCIPLINE: dict[str, str] = {
+    # Left-Arm Fast / Seam (unambiguous public records)
+    "Mitchell Starc": "LEFT_ARM_FAST",
+    "Trent Boult": "LEFT_ARM_FAST",
+    "Zaheer Khan": "LEFT_ARM_FAST",
+    "Mohammad Amir": "LEFT_ARM_FAST",
+    "Sohail Tanvir": "LEFT_ARM_FAST",
+    "Wayne Parnell": "LEFT_ARM_FAST",
+    "Dirk Nannes": "LEFT_ARM_FAST",
+    "Mitchell McClenaghan": "LEFT_ARM_FAST",
+    "Ryan Sidebottom": "LEFT_ARM_FAST",
+    "Wahab Riaz": "LEFT_ARM_FAST",
+    "Mohammad Irfan": "LEFT_ARM_FAST",
+    "Lonwabo Tsotsobe": "LEFT_ARM_FAST",
+    "Beuran Hendricks": "LEFT_ARM_FAST",
+    "Syed Rasel": "LEFT_ARM_FAST",
+    "David Willey": "LEFT_ARM_FAST",
+    "James Faulkner": "LEFT_ARM_FAST",
+    "RP Singh": "LEFT_ARM_FAST",
+    "Ashish Nehra": "LEFT_ARM_FAST",
+    "Isuru Udana": "LEFT_ARM_FAST",
+    "Irfan Pathan": "LEFT_ARM_FAST",
+
+    # Right-Arm Fast / Seam / Medium
+    "Mohammad Asif": "RIGHT_ARM_FAST",
+    "Dale Steyn": "RIGHT_ARM_FAST",
+    "Morne Morkel": "RIGHT_ARM_FAST",
+    "Lasith Malinga": "RIGHT_ARM_FAST",
+    "Brett Lee": "RIGHT_ARM_FAST",
+    "Jasprit Bumrah": "RIGHT_ARM_FAST",
+    "Pat Cummins": "RIGHT_ARM_FAST",
+    "Stuart Broad": "RIGHT_ARM_FAST",
+    "Steven Finn": "RIGHT_ARM_FAST",
+    "Tim Southee": "RIGHT_ARM_FAST",
+    "Kagiso Rabada": "RIGHT_ARM_FAST",
+    "Shaun Tait": "RIGHT_ARM_FAST",
+    "Umar Gul": "RIGHT_ARM_FAST",
+    "Kemar Roach": "RIGHT_ARM_FAST",
+    "James Anderson": "RIGHT_ARM_FAST",
+    "Nuwan Kulasekara": "RIGHT_ARM_FAST",
+    "Bhuvneshwar Kumar": "RIGHT_ARM_FAST",
+    "Chris Woakes": "RIGHT_ARM_FAST",
+    "Kyle Mills": "RIGHT_ARM_FAST",
+    "Tim Bresnan": "RIGHT_ARM_FAST",
+    "Darren Sammy": "RIGHT_ARM_MEDIUM",
+    "Angelo Mathews": "RIGHT_ARM_MEDIUM",
+    "Dwayne Bravo": "RIGHT_ARM_MEDIUM",
+    "Kieron Pollard": "RIGHT_ARM_MEDIUM",
+    "Shane Watson": "RIGHT_ARM_FAST",
+    "Jacques Kallis": "RIGHT_ARM_FAST",
+    "Albie Morkel": "RIGHT_ARM_FAST",
+    "Shoaib Akhtar": "RIGHT_ARM_FAST",
+    "Peter Siddle": "RIGHT_ARM_FAST",
+    "Doug Bracewell": "RIGHT_ARM_FAST",
+    "Boyd Rankin": "RIGHT_ARM_FAST",
+    "Shaun Pollock": "RIGHT_ARM_FAST",
+    "Marchant de Lange": "RIGHT_ARM_FAST",
+    "Ian Butler": "RIGHT_ARM_FAST",
+    "Mohammad Sami": "RIGHT_ARM_FAST",
+    "Clint McKay": "RIGHT_ARM_FAST",
+    "Ryan Harris": "RIGHT_ARM_FAST",
+    "Rusty Theron": "RIGHT_ARM_FAST",
+    "Chris Morris": "RIGHT_ARM_FAST",
+    "Mohit Sharma": "RIGHT_ARM_FAST",
+    "Ben Stokes": "RIGHT_ARM_FAST",
+    "Hardik Pandya": "RIGHT_ARM_FAST",
+    "Andrew Tye": "RIGHT_ARM_MEDIUM",
+    "Daniel Christian": "RIGHT_ARM_MEDIUM",
+    "Paul Collingwood": "RIGHT_ARM_MEDIUM",
+    "Jacob Oram": "RIGHT_ARM_MEDIUM",
+    "Jerome Taylor": "RIGHT_ARM_FAST",
+    "Mashrafe Mortaza": "RIGHT_ARM_FAST",
+    "Fidel Edwards": "RIGHT_ARM_FAST",
+    "Thisara Perera": "RIGHT_ARM_MEDIUM",
+
+    # Leg-Spin / Wrist-Spin
+    "Shahid Afridi": "LEG_SPIN",
+    "Imran Tahir": "LEG_SPIN",
+    "Amit Mishra": "LEG_SPIN",
+    "Piyush Chawla": "LEG_SPIN",
+    "Samuel Badree": "LEG_SPIN",
+    "Cameron Boyce": "LEG_SPIN",
+    "Brad Hogg": "LEFT_ARM_WRIST_SPIN",
+    "Malinga Bandara": "LEG_SPIN",
+
+    # Off-Spin
+    "Ravichandran Ashwin": "OFF_SPIN",
+    "Harbhajan Singh": "OFF_SPIN",
+    "Graeme Swann": "OFF_SPIN",
+    "Saeed Ajmal": "OFF_SPIN",
+    "Muttiah Muralitharan": "OFF_SPIN",
+    "Sunil Narine": "OFF_SPIN",
+    "Mohammad Hafeez": "OFF_SPIN",
+    "Nathan McCullum": "OFF_SPIN",
+    "James Tredwell": "OFF_SPIN",
+    "Prosper Utseya": "OFF_SPIN",
+    "Johan Botha": "OFF_SPIN",
+    "Tillakaratne Dilshan": "OFF_SPIN",
+
+    # Left-Arm Orthodox
+    "Daniel Vettori": "LEFT_ARM_ORTHODOX",
+    "Ravindra Jadeja": "LEFT_ARM_ORTHODOX",
+    "Shakib Al Hasan": "LEFT_ARM_ORTHODOX",
+    "Rangana Herath": "LEFT_ARM_ORTHODOX",
+    "Abdur Razzak": "LEFT_ARM_ORTHODOX",
+    "Ray Price": "LEFT_ARM_ORTHODOX",
+    "Robin Peterson": "LEFT_ARM_ORTHODOX",
+    "Sulieman Benn": "LEFT_ARM_ORTHODOX",
+    "Xavier Doherty": "LEFT_ARM_ORTHODOX",
+    "Danny Briggs": "LEFT_ARM_ORTHODOX",
+}
+
+
+def resolve_bowler_discipline(name: str) -> tuple[str, str]:
+    """
+    Resolves canonical BowlerType enum member name and provenance metadata.
+    Returns (enum_name, provenance):
+      - ('LEFT_ARM_FAST', 'curated_categorical') if specifically verified in BOWLER_DISCIPLINE
+      - ('RIGHT_ARM_FAST', 'unspecified_fallback') if general Pace, but arm/discipline unreviewed
+      - ('OFF_SPIN', 'unspecified_fallback') if general Spin, but sub-discipline unreviewed
+      - ('RIGHT_ARM_FAST', 'insufficient_data') if Unknown style
+    Never guesses arm or discipline for unreviewed players.
+    """
+    clean_name = str(name).strip()
+    for b_name, b_type in BOWLER_DISCIPLINE.items():
+        if b_name.lower() == clean_name.lower():
+            return b_type, "curated_categorical"
+
+    style = bowler_style(clean_name)
+    if style == "Pace":
+        return "RIGHT_ARM_FAST", "unspecified_fallback"
+    elif style == "Spin":
+        return "OFF_SPIN", "unspecified_fallback"
+    else:
+        return "RIGHT_ARM_FAST", "insufficient_data"
+
+
 BOWLER_TYPE_MAP: dict[str, str] = {
     # Enum member names from BowlerType
     "RIGHT_ARM_FAST": "Pace",
@@ -136,6 +273,7 @@ BOWLER_TYPE_MAP: dict[str, str] = {
     "SLOW_LEFT_ARM": "Spin",
     "WRIST_SPIN": "Spin",
 }
+
 
 
 def normalize_bowler_type(val: any) -> str:

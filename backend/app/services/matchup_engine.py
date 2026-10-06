@@ -118,12 +118,20 @@ def analyze_matchup(
         comp_types = [BowlerType.RIGHT_ARM_FAST, BowlerType.LEFT_ARM_FAST, BowlerType.RIGHT_ARM_MEDIUM]
         
         if risk == 'HIGH':
-            add_or_update('1st Slip', batter.edge_vs_pace * 0.95, "High edge risk vs pace outside off", 'caught_edge', comp_types)
-            add_or_update('2nd Slip', batter.edge_vs_pace * 0.80, "Supporting slip for high edge probability", 'caught_edge', comp_types)
-            add_or_update('Gully', batter.edge_vs_pace * 0.70, "Square edge catching position", 'caught_edge', comp_types)
+            if bowler.bowler_type == BowlerType.LEFT_ARM_FAST:
+                # Left-arm pace natural angle across RHB drives thicker edges squarer towards gully
+                add_or_update('1st Slip', batter.edge_vs_pace * 0.90, "Left-arm pace angle creates outside edge", 'caught_edge', comp_types)
+                add_or_update('Gully', batter.edge_vs_pace * 0.85, "Left-arm pace natural angle across batter into gully", 'caught_edge', comp_types)
+                add_or_update('2nd Slip', batter.edge_vs_pace * 0.75, "Supporting slip for angled edge", 'caught_edge', comp_types)
+            else:
+                add_or_update('1st Slip', batter.edge_vs_pace * 0.95, "High edge risk vs pace outside off", 'caught_edge', comp_types)
+                add_or_update('2nd Slip', batter.edge_vs_pace * 0.80, "Supporting slip for high edge probability", 'caught_edge', comp_types)
+                add_or_update('Gully', batter.edge_vs_pace * 0.70, "Square edge catching position", 'caught_edge', comp_types)
         elif risk == 'MEDIUM':
             add_or_update('1st Slip', batter.edge_vs_pace * 0.85, "Medium edge risk vs pace", 'caught_edge', comp_types)
-            if bowler.attack_channel == AttackChannel.OUTSIDE_OFF:
+            if bowler.bowler_type == BowlerType.LEFT_ARM_FAST:
+                add_or_update('Gully', batter.edge_vs_pace * 0.75, "Left-arm angle creates square edge to gully", 'caught_edge', comp_types)
+            elif bowler.attack_channel == AttackChannel.OUTSIDE_OFF:
                 add_or_update('Gully', batter.edge_vs_pace * 0.60, "Square edge catching position", 'caught_edge', comp_types)
 
     # --- RULE 2: Edge Risk vs Spin ---

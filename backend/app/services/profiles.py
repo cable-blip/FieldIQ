@@ -384,50 +384,59 @@ def get_sample_bowlers() -> list[BowlerProfile]:
 
 def resolve_bowler_profile(bowler_name: str) -> BowlerProfile:
     """
-    Resolves a BowlerProfile for any bowler name.
+    Resolves a BowlerProfile for any bowler name:
     1. Checks if it matches an existing sample bowler name.
-    2. Uses bowler_style() to determine Pace or Spin classification from real-world curation.
-    3. Retains the actual player name so H2HStatsEngine queries match the real player!
+    2. Uses resolve_bowler_discipline() for curated arm & discipline categorization.
+    3. Falls back to general Pace/Spin baseline for unreviewed bowlers with explicit provenance.
+    4. Retains actual player name so H2HStatsEngine queries match the real player!
     """
     for b in get_sample_bowlers():
         if b.name.strip().lower() == bowler_name.strip().lower():
             return b
 
-    from backend.app.services.bowler_style import bowler_style
+    from backend.app.services.bowler_style import resolve_bowler_discipline, bowler_style
+    b_type_name, provenance = resolve_bowler_discipline(bowler_name)
+    b_type = BowlerType[b_type_name]
     style = bowler_style(bowler_name)
+
     if style == "Spin":
-        return BowlerProfile(
-            name=bowler_name,
-            bowler_type=BowlerType.OFF_SPIN,
-            pace_class=PaceClass.SLOW,
-            attack_channel=AttackChannel.AT_STUMPS,
-            length_preference=LengthPreference.GOOD,
-            dismissal_modes=["caught_miscue", "bowled", "lbw"],
-            new_ball_strength=0.50,
-            death_bowling_strength=0.60
-        )
-    elif style == "Pace":
-        return BowlerProfile(
-            name=bowler_name,
-            bowler_type=BowlerType.RIGHT_ARM_FAST,
-            pace_class=PaceClass.FAST,
-            attack_channel=AttackChannel.OUTSIDE_OFF,
-            length_preference=LengthPreference.GOOD,
-            dismissal_modes=["caught_edge", "bowled"],
-            new_ball_strength=0.80,
-            death_bowling_strength=0.80
-        )
+        p_class = PaceClass.SLOW
+        att_channel = AttackChannel.AT_STUMPS
+        modes = ["caught_miscue", "bowled", "lbw"]
+        new_ball = 0.50
+        death = 0.60
+    elif b_type == BowlerType.RIGHT_ARM_MEDIUM:
+        p_class = PaceClass.MEDIUM
+        att_channel = AttackChannel.OUTSIDE_OFF
+        modes = ["caught_edge", "bowled"]
+        new_ball = 0.60
+        death = 0.60
     else:
-        return BowlerProfile(
-            name=bowler_name,
-            bowler_type=BowlerType.RIGHT_ARM_MEDIUM,
-            pace_class=PaceClass.MEDIUM,
-            attack_channel=AttackChannel.OUTSIDE_OFF,
-            length_preference=LengthPreference.GOOD,
-            dismissal_modes=["caught_edge"],
-            new_ball_strength=0.60,
-            death_bowling_strength=0.60
-        )
+        p_class = PaceClass.FAST
+        att_channel = AttackChannel.OUTSIDE_OFF
+        modes = ["caught_edge", "bowled"]
+        new_ball = 0.80
+        death = 0.80
+
+    return BowlerProfile(
+        name=bowler_name,
+        bowler_type=b_type,
+        pace_class=p_class,
+        attack_channel=att_channel,
+        length_preference=LengthPreference.GOOD,
+        dismissal_modes=modes,
+        new_ball_strength=new_ball,
+        death_bowling_strength=death,
+        provenance_metadata={
+            "bowler_type": provenance,
+            "pace_class": "curated_categorical" if provenance == "curated_categorical" else "unspecified_fallback",
+            "attack_channel": "baseline_default",
+            "length_preference": "baseline_default",
+            "dismissal_modes": "baseline_default",
+            "new_ball_strength": "synthetic_estimate",
+            "death_bowling_strength": "synthetic_estimate"
+        }
+    )
 
 
 def resolve_batter_profile(batter_name: str) -> Optional[BatterProfile]:
