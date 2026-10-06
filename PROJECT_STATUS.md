@@ -290,8 +290,11 @@ Zero regressions across all 23 test suites.
 - **Sub-Finding (Tactical Granularity Gap & Dead Rules):**
   - **Dead Rules in `matchup_engine.py`:** 3 of the 6 tactical rules in `matchup_engine.py` are structurally unreachable for any of the 330 real bowlers. Because `resolve_bowler_profile()` only ever emits two fixed generic archetypes (`RIGHT_ARM_FAST` with `OUTSIDE_OFF`/`GOOD` and `OFF_SPIN` with `AT_STUMPS`/`GOOD`), Rule 2 (Leg-Spin edge trap), Rule 3 (short-ball pull trap), and Rule 6 (lofted drive full-length trap) can never execute against real data. They passed tests only because test fixtures directly injected synthetic sample bowlers.
   - **Stage B Bowler Blindness:** In `optimizer.py:219`, `optimize_remaining_field()` only consumes `batter.zone_weights` and ignores the bowler completely. Swapping bowlers of the same category produces identical field coordinates.
+- **Step 1 Closed (Live Session Silent Fallback Eradicated):**
+  - Removed `"Generic Right-Arm Fast (New Ball)"` default from `LiveMatchResetRequest`, `LiveDeliveryRequest`, and `LiveMatchSession`. Both `batter_name` and `bowler_name` are now required fields (`Field(..., min_length=1)`).
+  - Omitting `bowler_name` in `/api/v1/match/reset` or `/api/v1/match/delivery` now immediately returns HTTP 422 Unprocessable Entity.
+  - Verified by new regression test `test_omitted_bowler_returns_422_not_silent_fallback` in `tests/test_live_delivery_remapping.py`.
 - **Verification:**
   ```
-  python -m pytest tests/ -q                                                         -> 91 passed, 1 warning in 72.08s
-  python -m pytest tests/test_client_form_contract.py tests/test_optimizer_integration.py -q -> 7 passed (final versions of both tests)
+  python -m pytest tests/ -v -> 92 passed, 1 warning in 45.92s
   ```

@@ -219,8 +219,8 @@ class GameplanResponseSchema(BaseModel):
 
 
 class LiveDeliveryRequest(BaseModel):
-    batter_name: str = Field(default="Virat Kohli", min_length=1, max_length=100)
-    bowler_name: str = Field(default="Generic Right-Arm Fast (New Ball)", min_length=1, max_length=100)
+    batter_name: str = Field(..., min_length=1, max_length=100)
+    bowler_name: str = Field(..., min_length=1, max_length=100)
     match_format: MatchFormat = MatchFormat.ODI
     over: int = Field(default=0, ge=0, le=100)
     ball: int = Field(default=0, ge=0, le=6)
@@ -282,8 +282,8 @@ class LiveDeliveryResponse(BaseModel):
 
 
 class LiveMatchResetRequest(BaseModel):
-    batter_name: Optional[str] = "Virat Kohli"
-    bowler_name: Optional[str] = "Generic Right-Arm Fast (New Ball)"
+    batter_name: str = Field(..., min_length=1, max_length=100)
+    bowler_name: str = Field(..., min_length=1, max_length=100)
     match_format: MatchFormat = MatchFormat.ODI
     starting_over: int = 0
     starting_ball: int = 0
@@ -291,4 +291,4 @@ class LiveMatchResetRequest(BaseModel):
     starting_wickets: int = 0
     tactical_objective: TacticalObjective = TacticalObjective.ATTACK_WICKET
     ground_preset_id: Optional[str] = "standard"
-    environmental_conditions: Optional[EnvironmentalConditionsSchema] = None
+    environmental_conditions: Optional[EnvironmentalConditionsSchema] = None

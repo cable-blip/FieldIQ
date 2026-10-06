@@ -638,8 +638,8 @@ def reset_live_match(request: LiveMatchResetRequest) -> LiveDeliveryResponse:
     try:
         result = LiveMatchEngine.reset_session(
             session_id="default",
-            batter_name=request.batter_name or "Virat Kohli",
-            bowler_name=request.bowler_name or "Generic Right-Arm Fast (New Ball)",
+            batter_name=request.batter_name,
+            bowler_name=request.bowler_name,
             match_format=fmt,
             starting_over=request.starting_over,
             starting_ball=request.starting_ball,

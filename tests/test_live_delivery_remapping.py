@@ -168,6 +168,7 @@ def test_undo_and_reset_delivery():
     # Reset
     res_reset = client.post("/api/v1/match/reset", json={
         "batter_name": "Steve Smith",
+        "bowler_name": "Mohammad Asif",
         "starting_over": 10,
         "starting_ball": 0,
         "starting_runs": 55,
@@ -351,3 +352,33 @@ def test_unknown_batter_returns_404_not_silent_fallback():
     body_delivery = res_delivery.json()
     err_delivery = str(body_delivery.get("message") or body_delivery.get("detail", ""))
     assert "not found" in err_delivery.lower()
+
+
+def test_omitted_bowler_returns_422_not_silent_fallback():
+    """
+    Verifies that omitting bowler_name in /match/reset or /match/delivery returns
+    HTTP 422 Unprocessable Entity rather than silently defaulting to a synthetic archetype.
+    """
+    # 1. /api/v1/match/reset without bowler_name
+    res_reset = client.post(
+        "/api/v1/match/reset",
+        json={
+            "batter_name": "Virat Kohli",
+            "match_format": "T20"
+        }
+    )
+    assert res_reset.status_code == 422, f"Expected 422, got {res_reset.status_code}"
+
+    # 2. /api/v1/match/delivery without bowler_name
+    res_delivery = client.post(
+        "/api/v1/match/delivery",
+        json={
+            "batter_name": "Virat Kohli",
+            "match_format": "T20",
+            "over": 1,
+            "ball": 1,
+            "shot_sector": "Cover",
+            "shot_band": "Mid"
+        }
+    )
+    assert res_delivery.status_code == 422, f"Expected 422, got {res_delivery.status_code}"
