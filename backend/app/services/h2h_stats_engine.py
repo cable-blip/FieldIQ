@@ -161,29 +161,114 @@ class H2HStatsEngine:
             "data_coverage_note": note,
         }
 
+    def _apply_empirical_shrinkage(
+        self,
+        sample_chart: dict[str, float],
+        prior_chart: dict[str, float],
+        n_sample: int,
+        k: float = 40.0,
+    ) -> dict[str, float]:
+        """
+        Applies empirical Bayesian shrinkage:
+          lambda = n_sample / (n_sample + k)
+          shrunk[zone] = lambda * sample[zone] + (1 - lambda) * prior[zone]
+        Guarantees small samples (e.g. 15-20 balls) do not collapse unhit zones to neutral defaults,
+        while large samples smoothly transition to data-driven empirical weights.
+        """
+        if not prior_chart or n_sample <= 0:
+            return sample_chart
+        lmbda = float(n_sample) / float(n_sample + k)
+        shrunk = {}
+        for zk in prior_chart:
+            # If the zone wasn't in sample_chart or was neutral default 0.5, use prior
+            sample_val = sample_chart.get(zk, prior_chart[zk])
+            shrunk[zk] = round(lmbda * sample_val + (1.0 - lmbda) * prior_chart[zk], 3)
+        return shrunk
+
+    def get_bowler_conceded_chart(
+        self,
+        bowler_name: str,
+        prior_chart: dict[str, float],
+        min_balls_bowler: int = 25,
+        k: float = 40.0,
+    ) -> tuple[Optional[dict[str, float]], int]:
+        """
+        Derives the bowler's individual conceded scoring-zone distribution across all batters in the dataset,
+        normalized for batter handedness (RHB vs LHB).
+        """
+        from backend.app.services.real_data_loader import (
+            ZONE_TO_DIRECTION_RHB,
+            ZONE_TO_DIRECTION_LHB,
+            band_from_runs,
+            DIRECTIONS,
+            BANDS,
+        )
+        b_df = self.df[self.df["BowlerName"] == bowler_name]
+        n = len(b_df)
+        if n < min_balls_bowler:
+            return None, n
+
+        LHB_SET = {"Kumar Sangakkara", "David Warner", "Chris Gayle"}
+
+        zone_runs = {f"{d}_{b}": [] for d in DIRECTIONS for b in BANDS}
+        for _, row in b_df.iterrows():
+            runs = int(row["RunsBatter"]) if pd.notna(row.get("RunsBatter")) else 0
+            z_val = row.get("Zone")
+            direction = None
+            try:
+                z_num = int(float(z_val))
+                if 1 <= z_num <= 8:
+                    if row.get("Batter") in LHB_SET:
+                        direction = ZONE_TO_DIRECTION_LHB.get(z_num)
+                    else:
+                        direction = ZONE_TO_DIRECTION_RHB.get(z_num)
+            except Exception:
+                pass
+
+            if direction:
+                band = band_from_runs(runs)
+                zone_runs[f"{direction}_{band}"].append(float(runs))
+
+        lmbda = float(n) / float(n + k)
+        shrunk = {}
+        for zk in prior_chart:
+            runs_list = zone_runs.get(zk, [])
+            sample_val = (sum(runs_list) / len(runs_list)) if runs_list else prior_chart[zk]
+            shrunk[zk] = round(lmbda * sample_val + (1.0 - lmbda) * prior_chart[zk], 3)
+
+        return shrunk, n
+
     def get_matchup_zone_chart(
         self,
         batter: str,
         bowler: str,
         bowler_type: Optional[str] = None,
         phase: Optional[str] = None,
+        batter_prior_chart: Optional[dict[str, float]] = None,
     ) -> tuple[Optional[dict[str, float]], str]:
         """
         Computes matchup-conditioned zone danger weights from real delivery wagon wheels,
-        following the tiered data-coverage fallback contract:
-          1. Direct H2H (>= min_balls_direct balls faced vs exact bowler) -> "direct_h2h"
-          2. Batter vs Bowler Discipline in Phase (>= min_balls_type_fallback) -> "vs_bowler_type_phase"
-          3. Batter vs Bowler Discipline overall (>= min_balls_type_fallback) -> "vs_bowler_type"
-          4. Insufficient data -> (None, "insufficient_data")
+        applying Empirical Bayesian shrinkage toward the prior and blending the individual
+        bowler's conceded distribution when available.
         """
         from backend.app.services.real_data_loader import load_deliveries_from_dataframe
 
-        # Tier 1: Direct matchup
+        # Resolve batter prior chart if not passed
+        if not batter_prior_chart:
+            from backend.app.services.profiles import resolve_batter_profile
+            bp = resolve_batter_profile(batter)
+            batter_prior_chart = getattr(bp, "zone_chart", {}) if bp else {}
+
+        # Tier 1: Direct matchup (>= min_balls_direct balls faced)
         direct_sub = self.df[(self.df["Batter"] == batter) & (self.df["BowlerName"] == bowler)]
-        if len(direct_sub) >= self.min_balls_direct:
+        n_direct = len(direct_sub)
+        if n_direct >= self.min_balls_direct:
             try:
-                chart, _ = load_deliveries_from_dataframe(direct_sub, batter)
-                return chart, "direct_h2h"
+                raw_chart, _ = load_deliveries_from_dataframe(direct_sub, batter)
+                shrunk_chart = self._apply_empirical_shrinkage(
+                    raw_chart, batter_prior_chart, n_direct, k=40.0
+                )
+                return shrunk_chart, f"direct_h2h (n={n_direct})"
             except Exception:
                 pass
 
@@ -192,6 +277,9 @@ class H2HStatsEngine:
         if disc.startswith("BowlerType."):
             disc = disc.replace("BowlerType.", "")
 
+        # Compute bowler conceded profile across all batters if bowler has >= 25 balls
+        bowler_conceded_chart, n_bowler = self.get_bowler_conceded_chart(bowler, batter_prior_chart)
+
         # Tier 2: Batter vs Bowler Discipline in Phase
         if phase and disc and "bowler_discipline" in self.df.columns:
             phase_sub = self.df[
@@ -199,10 +287,20 @@ class H2HStatsEngine:
                 & (self.df["bowler_discipline"] == disc)
                 & (self.df["phase"] == phase)
             ]
-            if len(phase_sub) >= self.min_balls_type_fallback:
+            n_phase = len(phase_sub)
+            if n_phase >= self.min_balls_type_fallback:
                 try:
-                    chart, _ = load_deliveries_from_dataframe(phase_sub, batter)
-                    return chart, "vs_bowler_type_phase"
+                    raw_phase, _ = load_deliveries_from_dataframe(phase_sub, batter)
+                    shrunk_phase = self._apply_empirical_shrinkage(
+                        raw_phase, batter_prior_chart, n_phase, k=40.0
+                    )
+                    if bowler_conceded_chart is not None:
+                        blended = {
+                            zk: round(0.70 * shrunk_phase[zk] + 0.30 * bowler_conceded_chart[zk], 3)
+                            for zk in batter_prior_chart
+                        }
+                        return blended, f"vs_bowler_type_phase_blended (n_type={n_phase}, n_bowler={n_bowler})"
+                    return shrunk_phase, f"vs_bowler_type_phase (n={n_phase})"
                 except Exception:
                     pass
 
@@ -212,12 +310,30 @@ class H2HStatsEngine:
                 (self.df["Batter"] == batter)
                 & (self.df["bowler_discipline"] == disc)
             ]
-            if len(disc_sub) >= self.min_balls_type_fallback:
+            n_type = len(disc_sub)
+            if n_type >= self.min_balls_type_fallback:
                 try:
-                    chart, _ = load_deliveries_from_dataframe(disc_sub, batter)
-                    return chart, "vs_bowler_type"
+                    raw_disc, _ = load_deliveries_from_dataframe(disc_sub, batter)
+                    shrunk_disc = self._apply_empirical_shrinkage(
+                        raw_disc, batter_prior_chart, n_type, k=40.0
+                    )
+                    if bowler_conceded_chart is not None:
+                        blended = {
+                            zk: round(0.70 * shrunk_disc[zk] + 0.30 * bowler_conceded_chart[zk], 3)
+                            for zk in batter_prior_chart
+                        }
+                        return blended, f"vs_bowler_type_blended (n_type={n_type}, n_bowler={n_bowler})"
+                    return shrunk_disc, f"vs_bowler_type (n={n_type})"
                 except Exception:
                     pass
+
+        # Tier 4: Bowler Conceded Only (bowler has >= 25 balls, but batter lacks discipline history)
+        if bowler_conceded_chart is not None and batter_prior_chart:
+            blended = {
+                zk: round(0.70 * batter_prior_chart[zk] + 0.30 * bowler_conceded_chart[zk], 3)
+                for zk in batter_prior_chart
+            }
+            return blended, f"bowler_concede_blended (n_bowler={n_bowler})"
 
         return None, "insufficient_data"
 

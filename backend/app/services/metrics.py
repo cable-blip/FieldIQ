@@ -84,8 +84,13 @@ def compute_placement_effectiveness(placement: FieldPlacement) -> float:
     return max(0.0, min(1.0, score))
 
 
-def compute_ers(placements: List[FieldPlacement], batter: BatterProfile) -> float:
-    """Computes Expected Runs Saved."""
+def compute_ers(
+    placements: List[FieldPlacement],
+    batter: BatterProfile,
+    zone_chart: Optional[dict[str, float]] = None,
+) -> float:
+    """Computes Expected Runs Saved using effective zone chart."""
+    chart = zone_chart if zone_chart is not None else batter.zone_chart
     ers = 0.0
     for placement in placements:
         # Exclude Wicketkeeper and Bowler
@@ -97,10 +102,10 @@ def compute_ers(placements: List[FieldPlacement], batter: BatterProfile) -> floa
             continue
             
         zones = position.zone_coverage
-        valid_zones = [z for z in zones if z in batter.zone_chart]
+        valid_zones = [z for z in zones if z in chart]
         
         if valid_zones:
-            avg_rpb = sum(batter.zone_chart[z] for z in valid_zones) / len(valid_zones)
+            avg_rpb = sum(chart[z] for z in valid_zones) / len(valid_zones)
         else:
             avg_rpb = 0.0
             
@@ -193,12 +198,14 @@ def compute_all_metrics(
     tactical_recommendations: List[TacticalRecommendation], 
     batter: BatterProfile, 
     bowler: BowlerProfile, 
-    phase: MatchPhase
+    phase: MatchPhase,
+    zone_chart: Optional[dict[str, float]] = None,
 ) -> Dict[str, Any]:
     """
-    Computes all three metrics and returns a detailed breakdown dictionary.
+    Computes all three metrics and returns a detailed breakdown dictionary using the effective zone chart.
     """
-    ers_total = compute_ers(placements, batter)
+    chart = zone_chart if zone_chart is not None else batter.zone_chart
+    ers_total = compute_ers(placements, batter, zone_chart=chart)
     ewo_total = compute_ewo(placements, tactical_recommendations, batter, bowler)
     cds_total = compute_cds(ers_total, ewo_total, phase)
     
@@ -213,9 +220,9 @@ def compute_all_metrics(
             position = get_position(placement.position_name)
             if position:
                 zones = position.zone_coverage
-                valid_zones = [z for z in zones if z in batter.zone_chart]
+                valid_zones = [z for z in zones if z in chart]
                 if valid_zones:
-                    avg_rpb = sum(batter.zone_chart[z] for z in valid_zones) / len(valid_zones)
+                    avg_rpb = sum(chart[z] for z in valid_zones) / len(valid_zones)
                     effectiveness = compute_placement_effectiveness(placement)
                     ers_cont = avg_rpb * effectiveness * CATCH_FACTOR
         

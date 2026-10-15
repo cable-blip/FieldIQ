@@ -130,6 +130,7 @@ class FieldResult:
     violations: list[str]
     data_coverage: str = "insufficient_data"
     h2h_stats: Optional[dict] = None
+    effective_zone_chart: Optional[dict[str, float]] = None
 
 
 # ---------------------------------------------------------------------------

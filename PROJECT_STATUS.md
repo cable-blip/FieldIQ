@@ -312,22 +312,36 @@ Zero regressions across all 23 test suites.
 - **Step 3 Closed (Stage B Matchup-Conditioned Zone Weighting in Optimizer):**
   - **Root Cause Closed:** In `optimizer.py:219`, `optimize_remaining_field()` previously consumed only static `batter.zone_chart` across all bowlers, creating identical Stage B ring and boundary placements for every bowler of the same category.
   - **Empirical Tiered Matchup Weighting:** Integrated `h2h_engine.get_matchup_zone_chart(batter, bowler, bowler_type, phase)`:
-    - **Tier 1 (Direct H2H, >=15 balls):** Derives zone danger weights directly from historical head-to-head delivery wagon wheels (e.g., Kohli vs Tahir, Sangakkara vs Vettori).
-    - **Tier 2 (Discipline in Phase, >=30 balls):** Derives zone weights from batter vs bowler discipline in match phase.
-    - **Tier 3 (Discipline Overall, >=30 balls):** Derives zone weights from batter vs discipline overall (e.g., Kohli vs `LEFT_ARM_FAST` [88 balls] vs `RIGHT_ARM_FAST` [523 balls]).
-    - **Tier 4 (Insufficient Data):** Safely falls back to `batter.zone_chart` without fabricating data or crashing.
-  - **Before vs After Verification on Real Matchup (Virat Kohli, Powerplay Over 3, T20):**
-    - **Before:**
-      - vs Mohammad Asif (RAF): `['1st Slip', '2nd Slip', 'Gully', 'Long On', 'Deep Extra Cover', 'Extra Cover', 'Point', 'Backward Point', 'Square Leg', 'Wicketkeeper', 'Bowler']`
-      - vs Mitchell Starc (LAF): `['1st Slip', 'Gully', '2nd Slip', 'Long On', 'Deep Extra Cover', 'Extra Cover', 'Point', 'Backward Point', 'Square Leg', 'Wicketkeeper', 'Bowler']`
-      *(Stage B run-saving fielders were 100% identical).*
-    - **After:**
-      - vs Mohammad Asif (RAF): `['1st Slip', '2nd Slip', 'Gully', 'Long On', 'Deep Extra Cover', 'Extra Cover', 'Point', 'Backward Point', 'Square Leg', 'Wicketkeeper', 'Bowler']`
-      - vs Mitchell Starc (LAF): `['1st Slip', 'Gully', '2nd Slip', 'Deep Point', 'Third Man', 'Leg Slip', 'Short Leg', 'Silly Mid On', 'Extra Cover', 'Wicketkeeper', 'Bowler']`
-      *(Entire field adapts: Starc's left-arm angle places Deep Point and Third Man on the boundary and reinforces squarer catchers, while Asif guards Long On and Backward Point).*
-  - Verified by dedicated test suite `tests/test_stage_b_matchup_weighting.py` (4 tests passing). All fields pass ICC legality constraints.
+    - **Tier 1 (Direct H2H, >=15 balls):** Derives zone danger weights directly from historical head-to-head delivery wagon wheels with Empirical Bayesian shrinkage.
+    - **Tier 2 (Discipline in Phase, >=30 balls):** Derives zone weights from batter vs bowler discipline in match phase, blended 70/30 with bowler conceded distribution when $n_{\text{bowler}} \ge 25$.
+    - **Tier 3 (Discipline Overall, >=30 balls):** Derives zone weights from batter vs discipline overall (e.g., Kohli vs `LEFT_ARM_FAST` [88 balls] vs `RIGHT_ARM_FAST` [523 balls]), blended 70/30 with bowler conceded distribution when $n_{\text{bowler}} \ge 25$.
+    - **Tier 4 (Bowler Conceded Blended):** When batter has $<30$ balls vs discipline but bowler has $\ge 25$ balls across all batters, blends prior with bowler's conceded distribution.
+    - **Tier 5 (Insufficient Data):** Safely falls back to `batter.zone_chart` without fabricating data or crashing.
+  - **Empirical Bayesian Shrinkage Formulation:**
+    - To eliminate small-sample noise and phantom close-in fielders (e.g. Imran Tahir's 19 balls vs Kohli elevating mid-pitch catchers):
+      $$\lambda = \frac{n}{n + k}, \quad k = 40.0$$
+      $$\text{effective\_weight}_z = \lambda \cdot \text{sample\_weight}_z + (1 - \lambda) \cdot \text{prior\_weight}_z$$
+    - Unhit sample zones inherit the batter's established prior instead of an arbitrary 0.5. At $n=19$, prior retains 68% weight, preserving boundary danger and removing Silly Point/Silly Mid On.
+    - Verified by 1-ball perturbation test: 88 balls vs 87 balls produces identical stable field output.
+  - **Bowler Conceded Distribution Blending & Same-Type Baseline Boundary:**
+    - Aggregated from `data/real_batters_deliveries.csv` across all 9 batters ($n \ge 25$ deliveries) and normalized for batter handedness.
+    - Differentiates bowlers of the same discipline who have dataset history (e.g. Dale Steyn [102 balls], Stuart Broad [143 balls], Mohammad Asif [37 balls]).
+    - **Documented Baseline Boundary:** Unreviewed bowlers of the same discipline with no direct H2H and $<25$ balls resolve strictly to the identical baseline `vs_bowler_type_phase`. Verified by explicit test assertion.
+  - **Numerical Zone Weight Transparency (Virat Kohli vs Mohammad Asif vs Mitchell Starc):**
+    - Right-arm fast accounts for 523 out of Kohli's 1,056 total deliveries (~49.5%).
+    - Top danger zones:
+      - `Mid On_Deep`: Overall 5.067, vs RAF 5.000 (Rank #1 in both)
+      - `Mid Off_Deep`: Overall 4.741, vs RAF 4.400 (Rank #2 in both)
+      - `Mid Wicket_Deep`: Overall 4.400, vs RAF 4.200 (Rank #3 in both)
+      - `Cover_Deep`: Overall 4.051, vs RAF 4.091 (Rank #4 in both)
+    - Because the top 4 danger zones rank identically, greedy placement places fielders at `Long On`, `Deep Extra Cover`, `Extra Cover`, `Point`, `Backward Point`, `Square Leg` for both. In contrast, vs Left-Arm Fast (88 balls), the off-side distribution shifts dramatically towards `Point_Deep` (4.275) and `Third Man_Deep` (3.921), placing Deep Point and Third Man on the boundary.
+  - **End-to-End Metric and Analysis Consistency:**
+    - `compute_ers()` and `compute_all_metrics()` in `metrics.py` now consume `zone_chart=effective_zone_chart`.
+    - `AnalysisResponse` includes `effective_zone_chart` for frontend transparency.
+    - `LiveMatchSession._initialize_zone_chart()` initializes from `get_matchup_zone_chart()`.
+  - Verified by expanded test suite `tests/test_stage_b_matchup_weighting.py` (8 tests passing).
 - **Verification:**
   ```
-  python -m pytest tests/ -q -> 104 passed, 1 warning in 62.82s
+  python -m pytest tests/ -q -> 108 passed, 1 warning in 57.97s
   npm test                    -> 10 passed across 4 files in 4.76s
   ```

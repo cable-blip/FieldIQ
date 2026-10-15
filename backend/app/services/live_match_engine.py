@@ -77,6 +77,24 @@ class LiveMatchSession:
             raise ValueError(f"Batter '{self.batter_name}' not found in active dataset or sample profiles.")
         
         base_chart = getattr(batter, 'zone_chart', {})
+        if self.bowler_name:
+            try:
+                from backend.app.services.h2h_stats_engine import get_h2h_stats_engine
+                from backend.app.services.bowler_style import resolve_bowler_discipline
+                h2h_engine = get_h2h_stats_engine()
+                b_disc, _ = resolve_bowler_discipline(self.bowler_name)
+                matchup_chart, _ = h2h_engine.get_matchup_zone_chart(
+                    batter=self.batter_name,
+                    bowler=self.bowler_name,
+                    bowler_type=b_disc,
+                    phase=None,
+                    batter_prior_chart=base_chart,
+                )
+                if matchup_chart:
+                    base_chart = matchup_chart
+            except Exception:
+                pass
+
         chart: Dict[str, float] = {}
         for d in DIRECTIONS:
             for b in BANDS:

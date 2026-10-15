@@ -71,13 +71,13 @@ def test_stage_b_direct_h2h_matchup_weighting():
         phase="MIDDLE"
     )
 
-    assert source == "direct_h2h"
+    assert "direct_h2h" in source
     assert chart is not None
     assert len(chart) == 24  # 8 directions x 3 bands
 
     # Verify that optimizer includes the direct_h2h explanation
     res = quick_recommend("Virat Kohli", "Imran Tahir", 8, "T20")
-    assert any("[direct_h2h]" in exp for exp in res.tactical_explanations)
+    assert any("[direct_h2h" in exp for exp in res.tactical_explanations)
 
 
 def test_stage_b_unreviewed_bowler_safe_fallback():
@@ -128,3 +128,137 @@ def test_api_analysis_endpoint_reflects_matchup_weighted_stage_b():
     positions = [p["position_name"] for p in data["placements"]]
     assert "Gully" in positions
     assert ("Deep Point" in positions) or ("Third Man" in positions)
+
+
+def test_stage_b_bayesian_shrinkage_prevents_noise():
+    """
+    Verifies that Empirical Bayesian shrinkage prevents small samples (Tahir n=19)
+    from collapsing unhit zones to neutral 0.5, which previously produced erratic
+    close-in fielders (Silly Point, Silly Mid On, Silly Mid Off).
+    """
+    res = quick_recommend("Virat Kohli", "Imran Tahir", 8, "T20")
+    positions = [p.position_name for p in res.placements]
+
+    # Rule 2 leg-spin slip trap is preserved
+    assert "1st Slip" in positions
+
+    # Shrunk distribution must NOT produce bizarre close-in positions
+    assert "Silly Point" not in positions
+    assert "Silly Mid On" not in positions
+    assert "Silly Mid Off" not in positions
+
+    # Must prioritize legitimate boundary and ring positions
+    assert "Long On" in positions
+    assert ("Deep Extra Cover" in positions) or ("Deep Midwicket" in positions)
+
+
+def test_one_ball_perturbation_stability():
+    """
+    Verifies that removing 1 delivery from an 88-ball sample does NOT cause
+    the recommended field configuration to flip erratically.
+    """
+    import pandas as pd
+    from backend.app.services.real_data_loader import load_deliveries_from_dataframe, DATA_DIR
+    from backend.app.services.field_engine import optimize_remaining_field
+
+    df = pd.read_csv(DATA_DIR / "real_batters_deliveries.csv")
+    from backend.app.services.bowler_style import resolve_bowler_discipline
+    df["discipline"] = df["BowlerName"].apply(lambda b: resolve_bowler_discipline(b)[0])
+
+    kohli = resolve_batter_profile("Virat Kohli")
+    fielders = get_sample_fielders()[:6]
+
+    sub_laf = df[(df["Batter"] == "Virat Kohli") & (df["discipline"] == "LEFT_ARM_FAST")]
+    n_full = len(sub_laf)
+    assert n_full >= 30
+
+    # 1. Full sample with shrinkage
+    raw_full, _ = load_deliveries_from_dataframe(sub_laf, "Virat Kohli")
+    l_full = n_full / (n_full + 40.0)
+    chart_full = {
+        zk: round(l_full * raw_full.get(zk, kohli.zone_chart[zk]) + (1 - l_full) * kohli.zone_chart[zk], 3)
+        for zk in kohli.zone_chart
+    }
+    recs_full = optimize_remaining_field(kohli, fielders, ["1st Slip", "Gully", "2nd Slip"], 2, zone_chart=chart_full)
+
+    # 2. Perturbed sample (dropped 1 delivery)
+    sub_perturbed = sub_laf.iloc[:-1]
+    n_pert = len(sub_perturbed)
+    raw_pert, _ = load_deliveries_from_dataframe(sub_perturbed, "Virat Kohli")
+    l_pert = n_pert / (n_pert + 40.0)
+    chart_pert = {
+        zk: round(l_pert * raw_pert.get(zk, kohli.zone_chart[zk]) + (1 - l_pert) * kohli.zone_chart[zk], 3)
+        for zk in kohli.zone_chart
+    }
+    recs_pert = optimize_remaining_field(kohli, fielders, ["1st Slip", "Gully", "2nd Slip"], 2, zone_chart=chart_pert)
+
+    pos_full = [p.position_name for p in recs_full]
+    pos_pert = [p.position_name for p in recs_pert]
+
+    # Placements MUST be identical under 1-ball perturbation
+    assert pos_full == pos_pert
+
+
+def test_bowler_conceded_distribution_blending_and_same_type_boundary():
+    """
+    Verifies that:
+    1. Bowlers with >= 25 deliveries in the dataset (Dale Steyn [102b], Stuart Broad [143b])
+       blend their conceded scoring-zone distributions into the matchup zone weights.
+    2. Two bowlers of the same discipline without direct H2H and with < 25 balls
+       in the dataset resolve to the exact same baseline (documenting the same-type boundary).
+    """
+    h2h_engine = get_h2h_stats_engine()
+    kohli = resolve_batter_profile("Virat Kohli")
+
+    # Steyn has 102 balls conceded across batters in the dataset
+    chart_steyn, src_steyn = h2h_engine.get_matchup_zone_chart(
+        batter="Virat Kohli",
+        bowler="Dale Steyn",
+        bowler_type="RIGHT_ARM_FAST",
+        phase="POWERPLAY",
+        batter_prior_chart=kohli.zone_chart
+    )
+    assert "blended" in src_steyn
+
+    # Hypothetical unreviewed bowlers of the same type without dataset deliveries
+    # resolve to the documented same-type baseline
+    chart_bowler_a, src_a = h2h_engine.get_matchup_zone_chart(
+        batter="Virat Kohli",
+        bowler="Unreviewed Bowler A",
+        bowler_type="RIGHT_ARM_FAST",
+        phase="POWERPLAY",
+        batter_prior_chart=kohli.zone_chart
+    )
+    chart_bowler_b, src_b = h2h_engine.get_matchup_zone_chart(
+        batter="Virat Kohli",
+        bowler="Unreviewed Bowler B",
+        bowler_type="RIGHT_ARM_FAST",
+        phase="POWERPLAY",
+        batter_prior_chart=kohli.zone_chart
+    )
+
+    # Documented limit: without direct history or bowler deliveries, same-type bowlers are identical
+    assert src_a == src_b
+    assert "vs_bowler_type_phase" in src_a
+    assert chart_bowler_a == chart_bowler_b
+
+
+def test_metrics_and_live_engine_use_effective_matchup_zone_chart():
+    """
+    Verifies that:
+    1. FieldResult.effective_zone_chart matches the chart used to place fielders.
+    2. compute_ers uses effective_zone_chart, not the static batter baseline.
+    3. LiveMatchSession initializes its dynamic tracking from the matchup-conditioned chart.
+    """
+    res = quick_recommend("Virat Kohli", "Mitchell Starc", 3, "T20")
+    assert res.effective_zone_chart is not None
+    # Must differ from static batter.zone_chart
+    kohli = resolve_batter_profile("Virat Kohli")
+    assert res.effective_zone_chart != kohli.zone_chart
+
+    # Live session initialization
+    from backend.app.services.live_match_engine import LiveMatchSession
+    session = LiveMatchSession(batter_name="Virat Kohli", bowler_name="Mitchell Starc")
+    # Live session zone chart must have loaded the Starc-conditioned chart
+    assert session.live_zone_chart != kohli.zone_chart
+

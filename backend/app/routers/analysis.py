@@ -332,7 +332,7 @@ def create_analysis_request(
         model_confidence=model_confidence_info,
         bowler_provenance=getattr(bowler, "provenance_metadata", None),
         alternative_fields=alt_schemas,
-        zone_chart=batter.zone_chart if (batter and getattr(batter, 'zone_chart', None)) else {},
+        zone_chart=getattr(result, "effective_zone_chart", None) or (batter.zone_chart if (batter and getattr(batter, 'zone_chart', None)) else {}),
         ml_probabilities=ml_probs_schema,
         simulation_metrics=sim_metrics_schema,
         pitch_multipliers=pitch_mults,

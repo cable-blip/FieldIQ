@@ -229,6 +229,7 @@ def recommend_field(
         bowler=bowler.name,
         bowler_type=getattr(bowler.bowler_type, 'name', str(bowler.bowler_type)),
         phase=phase.name if hasattr(phase, 'name') else str(phase),
+        batter_prior_chart=batter.zone_chart,
     )
 
     zone_placements = optimize_remaining_field(
@@ -286,8 +287,10 @@ def recommend_field(
         # Re-validate after fix
         is_legal, violations = validate_field(full_field, phase, fmt)
         
-    # 8. Compute metrics
-    metrics_dict = compute_all_metrics(full_field, tactical_recs, batter, bowler, phase)
+    # 8. Compute metrics using the effective matchup zone chart
+    metrics_dict = compute_all_metrics(
+        full_field, tactical_recs, batter, bowler, phase, zone_chart=matchup_zone_chart
+    )
     
     # 9. Generate explanations
     explanations = generate_explanation(
@@ -295,6 +298,7 @@ def recommend_field(
     )
     
     # 10. Return FieldResult
+    effective_chart = matchup_zone_chart if matchup_zone_chart is not None else batter.zone_chart
     return FieldResult(
         placements=full_field,
         ers=metrics_dict['ers'],
@@ -304,7 +308,8 @@ def recommend_field(
         is_legal=is_legal,
         violations=violations,
         data_coverage=h2h_data.get("source", "insufficient_data"),
-        h2h_stats=h2h_data
+        h2h_stats=h2h_data,
+        effective_zone_chart=effective_chart,
     )
 
 
