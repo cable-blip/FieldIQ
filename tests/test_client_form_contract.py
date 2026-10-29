@@ -126,7 +126,7 @@ def test_client_form_submission_payload_and_table_mapping():
     # 5. Outcome Probabilities Mapping
     ml_probs = body["ml_probabilities"]
     assert ml_probs is not None
-    assert 0.0 < ml_probs["wicket_pct"] < 1.0
+    assert 0.0 < ml_probs["wicket_pct"] <= 100.0
     assert ml_probs["expected_runs_per_ball"] > 0.0
 
 

@@ -205,7 +205,7 @@
 
 .dataset-telemetry-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 12px;
   padding: 0 24px 20px 24px;
 }

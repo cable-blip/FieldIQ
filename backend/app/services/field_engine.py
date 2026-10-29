@@ -8,6 +8,7 @@ from backend.app.services.position_map import get_all_positions, get_position, F
 DIRECTIONS = ['Mid Off', 'Cover', 'Point', 'Third Man', 'Fine Leg', 'Square Leg', 'Mid Wicket', 'Mid On']
 BANDS = ['Inner', 'Mid', 'Deep']
 CIRCLE_RADIUS = 27.4  # 30-yard circle in meters
+GENERIC_FILL_EXCLUDED_POSITIONS = {'Silly Point', 'Silly Mid On', 'Silly Mid Off', 'Short Leg'}
 
 @dataclass
 class ZoneDanger:
@@ -81,7 +82,8 @@ def get_occupied_zones(position_names: List[str]) -> Set[str]:
 def build_zone_danger_list(
     batter: BatterProfile,
     reserved_zones: Optional[Set[str]] = None,
-    zone_chart: Optional[dict[str, float]] = None
+    zone_chart: Optional[dict[str, float]] = None,
+    tactical_objective: str = "attack_wicket"
 ) -> List[ZoneDanger]:
     """Builds a sorted list of ZoneDanger objects from the batter's zone_chart or an empirical matchup chart."""
     if reserved_zones is None:
@@ -117,6 +119,8 @@ def get_best_position_for_zone(zone_key: str, occupied_positions: Set[str], batt
             continue
         if pos.name in ('Wicketkeeper', 'Bowler'):
             continue
+        if pos.name in GENERIC_FILL_EXCLUDED_POSITIONS:
+            continue
 
         # For LHB, mirror the position to check zone coverage
         check_pos = pos
@@ -132,7 +136,8 @@ def optimize_remaining_field(
     available_fielders: List[FielderProfile],
     reserved_positions: List[str],
     max_outside_circle: int,
-    zone_chart: Optional[dict[str, float]] = None
+    zone_chart: Optional[dict[str, float]] = None,
+    tactical_objective: str = "attack_wicket"
 ) -> List[FieldPlacement]:
     """Main optimizer function (Stage B).
 
@@ -141,6 +146,12 @@ def optimize_remaining_field(
     """
     reserved_zones = get_occupied_zones(reserved_positions)
     danger_list = build_zone_danger_list(batter, reserved_zones, zone_chart=zone_chart)
+
+    # Condition danger list prioritization on tactical objective
+    if tactical_objective == "prevent_boundary":
+        danger_list.sort(key=lambda z: (z.band == 'Deep', z.runs_per_ball), reverse=True)
+    elif tactical_objective == "stop_singles":
+        danger_list.sort(key=lambda z: (z.band in ('Inner', 'Mid'), z.runs_per_ball), reverse=True)
 
     assigned_fielders: Set[str] = set()
     occupied_positions: Set[str] = set(reserved_positions)
@@ -216,12 +227,18 @@ def optimize_remaining_field(
                 outside_circle_count += 1
 
     # Place remaining unassigned fielders at open positions
+    # Close-in specialist positions are tactical commitments, not generic
+    # vacancies. They must come from an explicit matchup/rules recommendation;
+    # using them as filler made sparse/noisy zone charts create phantom close
+    # catchers such as Silly Mid On.
     remaining_fielders = [f for f in available_fielders if f.name not in assigned_fielders]
     for fielder in remaining_fielders:
         for pos in get_all_positions().values():
             if pos.name in occupied_positions:
                 continue
             if pos.name in ('Wicketkeeper', 'Bowler'):
+                continue
+            if pos.name in GENERIC_FILL_EXCLUDED_POSITIONS:
                 continue
             if _is_outside_circle(pos) and outside_circle_count >= max_outside_circle:
                 continue

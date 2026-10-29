@@ -1,0 +1,451 @@
+{
+  "active_model_id": "fieldiq_xgb_baseline_v1",
+  "active_model_version": "1.0.0",
+  "active_dataset_version": "2.0.0",
+  "last_updated": "2026-10-22T18:58:04.996128+00:00",
+  "models": {
+    "fieldiq_xgb_baseline_v1": {
+      "model_id": "fieldiq_xgb_baseline_v1",
+      "model_version": "1.0.0",
+      "architecture": "XGBoost Multi-Class Classifier (single)",
+      "dataset_version": "2.0.0",
+      "feature_version": "1.0.0",
+      "training_period": "2005-2016",
+      "evaluation_period": "2005-2016",
+      "metrics": {
+        "test_log_loss": 1.3233,
+        "test_accuracy": 0.517,
+        "wicket_recall": 0.0198,
+        "wicket_precision": 0.1667,
+        "boundary_f1": 0.1761
+      },
+      "calibration": {
+        "status": "uncalibrated_baseline",
+        "method": "raw_softmax"
+      },
+      "promotion_gates": {
+        "passed": true,
+        "decision": "Initial established baseline model."
+      },
+      "promotion_status": "promoted",
+      "created_at": "2026-09-17T13:54:45.000000+00:00",
+      "promoted_at": "2026-09-17T13:54:45.000000+00:00",
+      "artifact_paths": [
+        "models/fieldiq_xgb_model.joblib",
+        "models/model_metadata.json"
+      ],
+      "limitations": [
+        "Low wicket recall (0.02) due to extreme class imbalance (~4% wickets).",
+        "Uncalibrated raw probability outputs.",
+        "Trained on random ball split rather than strict match-level holdouts."
+      ]
+    },
+    "fieldiq_decomposed_v3_candidate": {
+      "model_id": "fieldiq_decomposed_v3_candidate",
+      "model_version": "3.0.0-candidate",
+      "architecture": "Three-Model Decomposed Factorized Architecture",
+      "dataset_version": "2.0.0",
+      "feature_version": "2.0.0",
+      "training_period": "2005-2016",
+      "evaluation_period": "2005-2016",
+      "metrics": {
+        "test_log_loss": 1.3483,
+        "wicket_recall": 0.1298,
+        "wicket_precision": 0.1638,
+        "boundary_f1": 0.3569,
+        "wicket_pr_auc": 0.0828,
+        "boundary_pr_auc": 0.2879
+      },
+      "calibration": {
+        "status": "calibrated",
+        "method": "isotonic_regression_on_validation"
+      },
+      "promotion_gates": {
+        "passed": false,
+        "failed_gates": [
+          "wicket_recall (0.1298 < 0.20)",
+          "log_loss (1.3483 > 1.3233)"
+        ],
+        "decision": "Rejected promotion: log loss higher than baseline; wicket recall below 0.20 threshold."
+      },
+      "promotion_status": "rejected",
+      "created_at": "2026-10-04T19:10:59.000000+00:00",
+      "promoted_at": null,
+      "artifact_paths": [
+        "models/v3_decomposed/wicket_binary_model.joblib",
+        "models/v3_decomposed/boundary_binary_model.joblib",
+        "models/v3_decomposed/remainder_run_model.joblib",
+        "models/v3_decomposed/metadata.json"
+      ],
+      "limitations": [
+        "Compounding independent estimation error across sequentially trained models.",
+        "Wicket recall below minimum promotion benchmark."
+      ]
+    },
+    "candidate_empirical_baseline": {
+      "model_id": "candidate_empirical_baseline",
+      "model_version": "2.1.0-empirical_baseline",
+      "architecture": "Empirical Frequency Baseline",
+      "dataset_version": "2.0.0",
+      "feature_version": "2.1.0",
+      "training_period": "2005-2016",
+      "evaluation_period": "2005-2016",
+      "metrics": {
+        "test_log_loss": 1.4723,
+        "test_brier_score": 0.7209,
+        "wicket_recall": 0.0,
+        "wicket_precision": 0.0,
+        "wicket_f1": 0.0,
+        "wicket_pr_auc": 0.0327,
+        "boundary_recall": 0.0,
+        "boundary_precision": 0.0,
+        "boundary_f1": 0.0,
+        "boundary_pr_auc": 0.1741
+      },
+      "calibration": {
+        "wicket_ece": 0.0068,
+        "boundary_ece": 0.0019,
+        "valid_distribution": true
+      },
+      "promotion_status": "rejected",
+      "created_at": "2026-10-22T18:58:04.822908+00:00",
+      "artifact_paths": [
+        "models/candidates/candidate_empirical_baseline.joblib"
+      ],
+      "limitations": [
+        "Evaluated on historical 2005-2016 match sample.",
+        "Subject to promotion gating review."
+      ],
+      "promoted_at": null,
+      "promotion_gates": {
+        "passed": false,
+        "failed_gates": [
+          "log_loss (1.4723 > 1.3500)",
+          "wicket_recall (0.0000 < 0.1500)",
+          "boundary_f1 (0.0000 < 0.3000)"
+        ],
+        "gate_evaluations": {
+          "log_loss": {
+            "observed": 1.4723,
+            "threshold": 1.35,
+            "passed": false
+          },
+          "wicket_recall": {
+            "observed": 0.0,
+            "threshold": 0.15,
+            "passed": false
+          },
+          "boundary_f1": {
+            "observed": 0.0,
+            "threshold": 0.3,
+            "passed": false
+          }
+        },
+        "decision": "Rejected promotion: log_loss (1.4723 > 1.3500), wicket_recall (0.0000 < 0.1500), boundary_f1 (0.0000 < 0.3000)"
+      }
+    },
+    "candidate_logistic_regression": {
+      "model_id": "candidate_logistic_regression",
+      "model_version": "2.1.0-logistic_regression",
+      "architecture": "Multinomial Logistic Regression",
+      "dataset_version": "2.0.0",
+      "feature_version": "2.1.0",
+      "training_period": "2005-2016",
+      "evaluation_period": "2005-2016",
+      "metrics": {
+        "test_log_loss": 1.4222,
+        "test_brier_score": 0.6922,
+        "wicket_recall": 0.0,
+        "wicket_precision": 0.0,
+        "wicket_f1": 0.0,
+        "wicket_pr_auc": 0.0437,
+        "boundary_recall": 0.2146,
+        "boundary_precision": 0.2534,
+        "boundary_f1": 0.2324,
+        "boundary_pr_auc": 0.2341
+      },
+      "calibration": {
+        "wicket_ece": 0.008,
+        "boundary_ece": 0.0258,
+        "valid_distribution": true
+      },
+      "promotion_status": "rejected",
+      "created_at": "2026-10-22T18:58:04.837054+00:00",
+      "artifact_paths": [
+        "models/candidates/candidate_logistic_regression.joblib"
+      ],
+      "limitations": [
+        "Evaluated on historical 2005-2016 match sample.",
+        "Subject to promotion gating review."
+      ],
+      "promoted_at": null,
+      "promotion_gates": {
+        "passed": false,
+        "failed_gates": [
+          "log_loss (1.4222 > 1.3500)",
+          "wicket_recall (0.0000 < 0.1500)",
+          "boundary_f1 (0.2324 < 0.3000)"
+        ],
+        "gate_evaluations": {
+          "log_loss": {
+            "observed": 1.4222,
+            "threshold": 1.35,
+            "passed": false
+          },
+          "wicket_recall": {
+            "observed": 0.0,
+            "threshold": 0.15,
+            "passed": false
+          },
+          "boundary_f1": {
+            "observed": 0.2324,
+            "threshold": 0.3,
+            "passed": false
+          }
+        },
+        "decision": "Rejected promotion: log_loss (1.4222 > 1.3500), wicket_recall (0.0000 < 0.1500), boundary_f1 (0.2324 < 0.3000)"
+      }
+    },
+    "candidate_random_forest": {
+      "model_id": "candidate_random_forest",
+      "model_version": "2.1.0-random_forest",
+      "architecture": "Balanced Random Forest",
+      "dataset_version": "2.0.0",
+      "feature_version": "2.1.0",
+      "training_period": "2005-2016",
+      "evaluation_period": "2005-2016",
+      "metrics": {
+        "test_log_loss": 1.6813,
+        "test_brier_score": 0.7728,
+        "wicket_recall": 0.6122,
+        "wicket_precision": 0.0525,
+        "wicket_f1": 0.0968,
+        "wicket_pr_auc": 0.0562,
+        "boundary_recall": 0.7241,
+        "boundary_precision": 0.2153,
+        "boundary_f1": 0.3319,
+        "boundary_pr_auc": 0.264
+      },
+      "calibration": {
+        "wicket_ece": 0.1115,
+        "boundary_ece": 0.1014,
+        "valid_distribution": true
+      },
+      "promotion_status": "rejected",
+      "created_at": "2026-10-22T18:58:04.863576+00:00",
+      "artifact_paths": [
+        "models/candidates/candidate_random_forest.joblib"
+      ],
+      "limitations": [
+        "Evaluated on historical 2005-2016 match sample.",
+        "Subject to promotion gating review."
+      ],
+      "promoted_at": null,
+      "promotion_gates": {
+        "passed": false,
+        "failed_gates": [
+          "log_loss (1.6813 > 1.3500)"
+        ],
+        "gate_evaluations": {
+          "log_loss": {
+            "observed": 1.6813,
+            "threshold": 1.35,
+            "passed": false
+          },
+          "wicket_recall": {
+            "observed": 0.6122,
+            "threshold": 0.15,
+            "passed": true
+          },
+          "boundary_f1": {
+            "observed": 0.3319,
+            "threshold": 0.3,
+            "passed": true
+          }
+        },
+        "decision": "Rejected promotion: log_loss (1.6813 > 1.3500)"
+      }
+    },
+    "candidate_xgboost_multiclass_v2": {
+      "model_id": "candidate_xgboost_multiclass_v2",
+      "model_version": "2.1.0-xgboost_multiclass",
+      "architecture": "XGBoost Multi-Class (V2 Features)",
+      "dataset_version": "2.0.0",
+      "feature_version": "2.1.0",
+      "training_period": "2005-2016",
+      "evaluation_period": "2005-2016",
+      "metrics": {
+        "test_log_loss": 1.3806,
+        "test_brier_score": 0.6617,
+        "wicket_recall": 0.1837,
+        "wicket_precision": 0.0947,
+        "wicket_f1": 0.125,
+        "wicket_pr_auc": 0.0781,
+        "boundary_recall": 0.3218,
+        "boundary_precision": 0.3218,
+        "boundary_f1": 0.3218,
+        "boundary_pr_auc": 0.2741
+      },
+      "calibration": {
+        "wicket_ece": 0.0163,
+        "boundary_ece": 0.0378,
+        "valid_distribution": true
+      },
+      "promotion_status": "rejected",
+      "created_at": "2026-10-22T18:58:04.891556+00:00",
+      "artifact_paths": [
+        "models/candidates/candidate_xgboost_multiclass_v2.joblib"
+      ],
+      "limitations": [
+        "Evaluated on historical 2005-2016 match sample.",
+        "Subject to promotion gating review."
+      ],
+      "promoted_at": null,
+      "promotion_gates": {
+        "passed": false,
+        "failed_gates": [
+          "log_loss (1.3806 > 1.3500)"
+        ],
+        "gate_evaluations": {
+          "log_loss": {
+            "observed": 1.3806,
+            "threshold": 1.35,
+            "passed": false
+          },
+          "wicket_recall": {
+            "observed": 0.1837,
+            "threshold": 0.15,
+            "passed": true
+          },
+          "boundary_f1": {
+            "observed": 0.3218,
+            "threshold": 0.3,
+            "passed": true
+          }
+        },
+        "decision": "Rejected promotion: log_loss (1.3806 > 1.3500)"
+      }
+    },
+    "candidate_calibrated_xgboost_v2": {
+      "model_id": "candidate_calibrated_xgboost_v2",
+      "model_version": "2.1.0-calibrated_xgboost",
+      "architecture": "Calibrated XGBoost (Sigmoid)",
+      "dataset_version": "2.0.0",
+      "feature_version": "2.1.0",
+      "training_period": "2005-2016",
+      "evaluation_period": "2005-2016",
+      "metrics": {
+        "test_log_loss": 1.3486,
+        "test_brier_score": 0.6552,
+        "wicket_recall": 0.1224,
+        "wicket_precision": 0.1224,
+        "wicket_f1": 0.1224,
+        "wicket_pr_auc": 0.0664,
+        "boundary_recall": 0.2605,
+        "boundary_precision": 0.356,
+        "boundary_f1": 0.3009,
+        "boundary_pr_auc": 0.2747
+      },
+      "calibration": {
+        "wicket_ece": 0.0102,
+        "boundary_ece": 0.0233,
+        "valid_distribution": true
+      },
+      "promotion_status": "rejected",
+      "created_at": "2026-10-22T18:58:04.919776+00:00",
+      "artifact_paths": [
+        "models/candidates/candidate_calibrated_xgboost_v2.joblib"
+      ],
+      "limitations": [
+        "Evaluated on historical 2005-2016 match sample.",
+        "Subject to promotion gating review."
+      ],
+      "promoted_at": null,
+      "promotion_gates": {
+        "passed": false,
+        "failed_gates": [
+          "wicket_recall (0.1224 < 0.1500)"
+        ],
+        "gate_evaluations": {
+          "log_loss": {
+            "observed": 1.3486,
+            "threshold": 1.35,
+            "passed": true
+          },
+          "wicket_recall": {
+            "observed": 0.1224,
+            "threshold": 0.15,
+            "passed": false
+          },
+          "boundary_f1": {
+            "observed": 0.3009,
+            "threshold": 0.3,
+            "passed": true
+          }
+        },
+        "decision": "Rejected promotion: wicket_recall (0.1224 < 0.1500)"
+      }
+    },
+    "candidate_decomposed_v4": {
+      "model_id": "candidate_decomposed_v4",
+      "model_version": "2.1.0-decomposed_factorized",
+      "architecture": "Decomposed Factorized Architecture",
+      "dataset_version": "2.0.0",
+      "feature_version": "2.1.0",
+      "training_period": "2005-2016",
+      "evaluation_period": "2005-2016",
+      "metrics": {
+        "test_log_loss": 1.4123,
+        "test_brier_score": 0.674,
+        "wicket_recall": 0.1224,
+        "wicket_precision": 0.0923,
+        "wicket_f1": 0.1053,
+        "wicket_pr_auc": 0.0633,
+        "boundary_recall": 0.7663,
+        "boundary_precision": 0.2155,
+        "boundary_f1": 0.3364,
+        "boundary_pr_auc": 0.2616
+      },
+      "calibration": {
+        "wicket_ece": 0.0098,
+        "boundary_ece": 0.1221,
+        "valid_distribution": true
+      },
+      "promotion_status": "rejected",
+      "created_at": "2026-10-22T18:58:04.973007+00:00",
+      "artifact_paths": [
+        "models/candidates/candidate_decomposed_v4.joblib"
+      ],
+      "limitations": [
+        "Evaluated on historical 2005-2016 match sample.",
+        "Subject to promotion gating review."
+      ],
+      "promoted_at": null,
+      "promotion_gates": {
+        "passed": false,
+        "failed_gates": [
+          "log_loss (1.4123 > 1.3500)",
+          "wicket_recall (0.1224 < 0.1500)"
+        ],
+        "gate_evaluations": {
+          "log_loss": {
+            "observed": 1.4123,
+            "threshold": 1.35,
+            "passed": false
+          },
+          "wicket_recall": {
+            "observed": 0.1224,
+            "threshold": 0.15,
+            "passed": false
+          },
+          "boundary_f1": {
+            "observed": 0.3364,
+            "threshold": 0.3,
+            "passed": true
+          }
+        },
+        "decision": "Rejected promotion: log_loss (1.4123 > 1.3500), wicket_recall (0.1224 < 0.1500)"
+      }
+    }
+  }
+}

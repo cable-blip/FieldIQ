@@ -70,6 +70,7 @@ class BatterProfile:
     charge_vs_spin: float
     lofted_drive_risk: float
     notes: str = ''
+    intelligence_metadata: dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class BowlerProfile:

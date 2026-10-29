@@ -2,6 +2,13 @@
 01_download_cricsheet.py
 ------------------------
 Handles reproducible Cricsheet dataset acquisition and integrity verification.
+Downloads match-level and ball-by-ball metadata only.
+
+NOTE: Cricsheet data does NOT contain wagon-wheel shot direction (sectors 1-8)
+or spatial coordinates. Directional spatial intelligence requires wagon-wheel sources
+(e.g., rishsriv/t20i_data or tracking feeds). This script acquires situational
+and dismissal context only.
+
 Generates SHA-256 checksum and immutable download log.
 """
 import hashlib

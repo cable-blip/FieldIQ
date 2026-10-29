@@ -1,8 +1,16 @@
+"""
+generate_data.py
+----------------
+Generates a synthetic delivery dataset for testing baseline non-spatial schemas.
+
+WARNING: This script generates SYNTHETIC mock outcomes and has NO spatial/zone coordinates.
+It must NEVER overwrite `data/real_batters_deliveries.csv`. Outputs to `synthetic_test_deliveries.csv`.
+"""
 import pandas as pd
 import numpy as np
 from pathlib import Path
 
-DATA_DIR = Path("C:/Projects/cricket-tactical-intelligence/data")
+DATA_DIR = Path(__file__).resolve().parent
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 batters = [
@@ -82,5 +90,5 @@ for b_idx, batter in enumerate(batters):
         })
 
 df = pd.DataFrame(rows)
-df.to_csv(DATA_DIR / "real_batters_deliveries.csv", index=False)
-print(f"Generated {len(df)} deliveries across {len(batters)} batters and {len(bowlers)} bowlers.")
+df.to_csv(DATA_DIR / "synthetic_test_deliveries.csv", index=False)
+print(f"Generated {len(df)} synthetic deliveries across {len(batters)} batters and {len(bowlers)} bowlers to synthetic_test_deliveries.csv.")

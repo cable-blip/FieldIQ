@@ -80,12 +80,15 @@ def get_dataset_summary() -> Dict[str, Any]:
     total_deliveries = 0
     unique_batters: List[str] = []
     total_matches = 0
+    missing_zone_deliveries = 0
 
     if csv_path.exists():
         try:
             df = pd.read_csv(csv_path)
             total_deliveries = len(df)
             unique_batters = get_available_batters_from_df(df)
+            if "Zone" in df.columns:
+                missing_zone_deliveries = int((df["Zone"] == 0).sum())
         except Exception:
             pass
 
@@ -104,6 +107,15 @@ def get_dataset_summary() -> Dict[str, Any]:
     if not unique_batters:
         unique_batters = [b.name for b in get_sample_batters()]
 
+    provenance_info: Optional[Dict[str, Any]] = None
+    meta_path = DATA_DIR / "dataset_metadata.json"
+    if meta_path.exists():
+        try:
+            with open(meta_path, "r", encoding="utf-8") as f:
+                provenance_info = json.load(f)
+        except Exception:
+            provenance_info = None
+
     return {
         "status": "ready",
         "total_deliveries": total_deliveries,
@@ -112,6 +124,9 @@ def get_dataset_summary() -> Dict[str, Any]:
         "unique_bowlers_count": len(available_bowlers),
         "batters": unique_batters,
         "bowlers": available_bowlers,
+        "missing_zone_deliveries": missing_zone_deliveries,
+        "missing_zone_pct": round((missing_zone_deliveries / total_deliveries) * 100, 1) if total_deliveries > 0 else 0.0,
+        "provenance": provenance_info,
         "last_updated": datetime.now(timezone.utc).isoformat()
     }
 

@@ -3,6 +3,10 @@
 **Last verified:** 2026-10-05, by running commands directly in the terminal.
 **Verified by:** Antigravity agent — Phase 5C completion run.
 
+**Current work (2026-10-16):** Final-stage hardening has started. The main 3D operator view now supports human-in-the-loop what-if field evaluation: server-returned fielder capability data is preserved, coordinates can be edited in the UI, the 3D scene updates from the edited placements, and `/api/v1/analysis/evaluate` is called to recalculate legality and tactical scores. This slice is functional in the frontend build; full browser/WebGL and live API verification remain separate acceptance checks.
+
+**Current data-integrity hardening (2026-10-16):** Matchup zone charts now exclude `Zone == 0` and invalid directions, never infer shot direction from runs or row order, calculate direction-level runs per ball without run-band binning, and apply empirical shrinkage using each direction's observed count. Bowler effects are expressed as deviations from each batter's baseline with sample-volume weighting instead of a fixed 70/30 blend. A dataset-wide leave-one-ball-out stability test covers every direct matchup with at least 15 balls.
+
 
 ---
 
@@ -32,14 +36,21 @@
 
 ---
 
-## Data & Ingestion (confirmed by command)
+## Data & Ingestion (confirmed by command & audit)
 
-### Raw Cricsheet Snapshot
+### Provenance Audit & Resolution (2026-10-22)
+- **Dataset Origin:** Mixed / Derived historical dataset.
+- **Primary Spatial Source:** `rishsriv/t20i_data` (https://github.com/rishsriv/t20i_data), compiled from public ESPNcricinfo wagon-wheel records (510 T20Is, 2005–2016). Spatial sectors $z \in [1..8]$.
+- **Ball-by-Ball & Dismissal Enrichment:** Cricsheet (https://cricsheet.org) under CC BY-SA 4.0 license. Cricsheet contains match metadata, bowler names, dismissals, and dot balls, but does NOT contain wagon-wheel shot direction or distance coordinates.
+- **Spatial Coordinate Limitation:** Direction is inherited from the source wagon-wheel sector field. Distance bands (`Inner`, `Mid`, `Deep`) are categorical proxies derived from runs scored off the bat, not measured spatial coordinates, and must not be interpreted as exact fielder distances.
+- **Zone 0 Status:** 2,119 deliveries (20.3%) have `Zone == 0`, denoting unavailable spatial data. They are strictly excluded from directional spatial danger calculations and never synthetically populated.
+
+### Raw Cricsheet Snapshot (Ball-by-Ball Metadata Only)
 - **URL:** `https://cricsheet.org/downloads/t20s_json.zip`
 - **Archive:** `data/raw/cricsheet_t20s.zip` (22,750,261 bytes)
 - **SHA-256 Checksum:** `9e8e85f26ce8285bed8adf0ff137b9efefee520f78bac9691bbfd03c4dd2ea7e`
 - **Audit Log:** `data/raw/DOWNLOAD_LOG.txt`
-- **Documentation:** `data/README.md` (CC BY-SA 4.0 license, canonical schema, zone map)
+- **Documentation:** `data/README.md` (detailed provenance, canonical schema, limitations, zone map)
 
 ### Delivery Dataset (`data/real_batters_deliveries.csv`)
 - **Rows:** 10,454
@@ -48,7 +59,8 @@
 - **Distinct Bowlers:** 330
 - **Distinct Matches:** 267
 - **Wickets Count:** 393 (3.76% dismissal rate)
-- **Zone 0 Deliveries:** 2,119 (20.3%) unmapped direction deliveries excluded from wagon wheel weighting
+- **Valid Directional Rows (Zone 1–8):** 8,335 (79.7%)
+- **Zone 0 Deliveries (Spatial Data Unavailable):** 2,119 (20.3%)
 - **Validation Report:** `data/processed/validation_report.json` (Status: PASS)
 - **Deterministic Leak-Free Partitions:**
   - `data/features/train.csv` (7,403 deliveries)
@@ -340,8 +352,51 @@ Zero regressions across all 23 test suites.
     - `AnalysisResponse` includes `effective_zone_chart` for frontend transparency.
     - `LiveMatchSession._initialize_zone_chart()` initializes from `get_matchup_zone_chart()`.
   - Verified by expanded test suite `tests/test_stage_b_matchup_weighting.py` (8 tests passing).
-- **Verification:**
-  ```
-  python -m pytest tests/ -q -> 108 passed, 1 warning in 57.97s
-  npm test                    -> 10 passed across 4 files in 4.76s
-  ```
+- **Step 4 Closed (Human-in-the-Loop What-If 3D Tactical Field Evaluation, Selection Sync, Live Ball-by-Ball, Gameplan Timeline & Dataset Studio Lineage):**
+  - **Interactive What-If 3D Tactical Field Evaluation:**
+    - Editable X and Y coordinates in the authoritative 11 placements table with live two-way synchronization.
+    - Server-authoritative evaluation via `POST /api/v1/analysis/evaluate`: zero client-side legality or metric invention; renders server ERS, EWO, CDS, and ICC rule violations.
+    - Distinct status badges: `Server Recommendation` (emerald) vs `Human-Modified` (amber).
+    - `↺ Reset to recommendation` restores original recommended coordinates and resets modified status badges.
+    - Stale Evaluation Warning (`⚠ Stale Evaluation`): Triggered immediately if coordinates are modified following a server evaluation run, notifying the operator that values are unverified.
+    - Fielder Capability Guard: Disables evaluation button and flags missing capabilities if server-provided fielder capabilities are absent from placement data, strictly preventing synthetic attribute fabrication (Rule 4 compliance).
+  - **Selection Synchronization & Active Fielder Inspector Card:**
+    - Synchronized selection between 3D field markers and table rows with cyan glowing ring geometry (`<ringGeometry args={[1.6, 2.2, 32]} />`) and emissive highlight.
+    - Active Fielder Inspector Card displaying Selected Fielder #, Status badge, Position, Player name, Tactical Role, Reason, and exact coordinates.
+  - **Live Ball-by-Ball & Strategic Gameplan Integration:**
+    - Unified navigation tabs for `🎯 3D Tactical Field & What-If`, `⚡ Live Ball-by-Ball Engine`, and `📋 Multi-Over Strategic Gameplan`.
+    - Integrated `LiveDeliveryConsole` (`/api/v1/match/delivery`, `/api/v1/match/undo`, `/api/v1/match/reset`).
+    - Integrated `GameplanTimeline` (`/api/v1/analysis/gameplan`) with multi-over timeline cards that update 3D field placements on selection.
+  - **Dataset Studio Governance & Missing Zone Disclosure:**
+    - `DatasetStudioModal` displays real data governance telemetry: 2,119 deliveries (20.3%) have unrecorded / missing zones (`Zone == 0`), explicitly marked as unavailable rather than inferred or synthetically populated.
+  - **Verification:**
+    ```
+    python -m pytest tests/     -> 110 passed, 1 warning in 104s
+    cd frontend; npm test       -> 16 passed across 4 files in 6.57s
+    cd frontend; npm run build  -> 578 modules compiled cleanly (3.74s)
+    FastAPI (port 8001)         -> HEALTHY (GET /health -> 200 OK)
+    Vite Dev Server (port 5173) -> ACTIVE (proxies /api to 8001)
+    ```
+- **Step 5 Closed (Data-Derived Spatial Intelligence Layer, Empirical Bayes Shrinkage, & Removal of Static Heuristics):**
+  - **Strict Spatial Sector Validation (`backend/app/services/spatial_intelligence.py`):**
+    - `is_valid_spatial_zone(zone)` strictly validates $1 \le \text{zone} \le 8$, rejecting `0`, `None`, negatives, floats, strings, and out-of-range values.
+    - Separation of directional distribution $P(\text{zone} \mid \text{valid deliveries})$ from outcome distribution $P(\text{runs} \mid \text{zone}, \dots)$. Deliveries with `Zone == 0` (2,119 rows / 20.3%) are strictly classified as unavailable spatial data and isolated from directional calculations.
+  - **Empirical Bayes Shrinkage for Zone Danger:**
+    - Replaced unweighted sample means with Bayesian shrinkage: $\frac{\sum \text{runs} + k \cdot \mu_0}{n + k}$ shrinking toward batter baseline $\mu_0$ (or population prior 1.25 RPB, with $k = 12.0$).
+    - Explicit confidence tiers assigned per estimate: `OBSERVED` ($n \ge 15$), `DERIVED` ($5 \le n < 15$), `INSUFFICIENT_SAMPLE` ($1 \le n < 5$), `PRIOR_ONLY` ($n = 0$), and `UNAVAILABLE` (`Zone == 0`).
+  - **Elimination of Static Heuristics (`KNOWN_BATTER_RISKS`):**
+    - Entirely eliminated hardcoded `KNOWN_BATTER_RISKS` dictionary and synthetic cycling (`idx % len(choices)`).
+    - Player risk metrics (`edge_vs_pace`, `pull_mistime_vs_short_ball`, `sweep_risk_vs_spin`, `charge_vs_spin`, `lofted_drive_risk`, `handedness`) are 100% data-derived from delivery-level events (pace/spin splits, dismissal kinds, sector work) shrunk toward documented population priors.
+    - Every derived feature carries governance metadata (`sample_size`, `confidence_tier`, `is_fallback`, `methodology`).
+    - Handedness inferred from data career match metadata with transparent lookup fallback.
+  - **Data Ingestion Diagnostics (`scripts/ingest/03_validate_schema.py`):**
+    - Enhanced schema validation reporting with explicit counts: `missing_batter_count`, `missing_bowler_count`, `missing_runs_count`, `missing_dismissal_fields_count`, `duplicate_identifiers_count`, `valid_directional_rows` (8,335), `unavailable_spatial_rows` (2,119), `invalid_spatial_rows` (0).
+  - **Source Adapters & Model Governance:**
+    - Pluggable data source adapters in `backend/app/services/data_sources/` for CSV, JSON, and mixed-provenance datasets.
+    - Model registry and benchmark evaluation pipeline (`backend/app/services/model_registry.py`, `feature_pipeline.py`).
+  - **Verification:**
+    ```
+    python -m pytest tests/test_spatial_intelligence.py -> 42 passed in 24s
+    python -m pytest tests/                             -> 165 passed, 0 failed in 145.87s
+    cd frontend; npm test                               -> 16 passed across 4 files in 7.19s
+    ```

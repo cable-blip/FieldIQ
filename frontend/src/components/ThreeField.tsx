@@ -9,6 +9,15 @@ import './ThreeField.css';
 export interface FieldPlacement {
   position_name: string;
   name?: string;
+  fielder?: {
+    name: string;
+    jump: number;
+    catching: number;
+    arm: number;
+    close_in_skill: number;
+    boundary_skill: number;
+    preferred_positions: string[];
+  };
   x: number;
   y: number;
   role: string;
@@ -23,6 +32,8 @@ export interface ThreeFieldProps {
   pitchType?: string;
   windSpeedKph?: number;
   windAngleDegrees?: number;
+  selectedFielderIndex?: number | null;
+  onSelectFielder?: (index: number) => void;
 }
 
 // 3D Stumps & Bails component
@@ -208,7 +219,9 @@ export const ThreeField: React.FC<ThreeFieldProps> = ({
   venueId = 'lords',
   pitchType = 'green_seam',
   windSpeedKph = 18,
-  windAngleDegrees = 45
+  windAngleDegrees = 45,
+  selectedFielderIndex = null,
+  onSelectFielder
 }) => {
   const controlsRef = useRef<any>(null);
   const [showHeatmap, setShowHeatmap] = useState<boolean>(true);
@@ -373,6 +386,8 @@ export const ThreeField: React.FC<ThreeFieldProps> = ({
               y={f.y}
               role={f.role as any}
               showCoverage={showCoverage}
+              isSelected={selectedFielderIndex === idx}
+              onSelect={() => onSelectFielder && onSelectFielder(idx)}
               onUpdate={(newX, newY) => onUpdateFielder && onUpdateFielder(displayName, newX, newY)}
             />
           );

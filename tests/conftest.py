@@ -1,13 +1,14 @@
 import shutil
 import pytest
 from pathlib import Path
-from backend.app.services.real_data_loader import DATA_DIR
+from backend.app.services.real_data_loader import DATA_DIR, refresh_real_data_cache
 from backend.app.services.matchup_stats import initialize_matchup_stats
 
 @pytest.fixture(autouse=True)
 def isolate_dataset_files():
     """
     Backs up the data/ directory files before each test and restores them afterward.
+    Invalidates in-memory caches to prevent state leakage between tests.
     """
     backup_csv = DATA_DIR / "real_batters_deliveries.csv.bak"
     backup_json = DATA_DIR / "real_match_dataset.json.bak"
@@ -34,4 +35,5 @@ def isolate_dataset_files():
         except Exception:
             pass
 
+    refresh_real_data_cache()
     initialize_matchup_stats()

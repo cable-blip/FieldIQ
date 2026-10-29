@@ -4,7 +4,12 @@ from backend.app.main import app
 from backend.app.services.live_match_engine import LiveMatchEngine
 from backend.app.services.profiles import MatchFormat
 import pandas as pd
-from backend.app.services.real_data_loader import load_deliveries_from_dataframe, Handedness
+from backend.app.services.real_data_loader import (
+    BANDS,
+    DIRECTIONS,
+    Handedness,
+    load_deliveries_from_dataframe,
+)
 
 client = TestClient(app)
 
@@ -182,8 +187,9 @@ def test_undo_and_reset_delivery():
     assert reset_data["ball"] == 0
 
 
-def test_ingest_cricsheet_json_without_zone_synthesizes_valid_profile():
-    # Simulates a raw dataframe without an explicit 'zone' column
+def test_ingest_cricsheet_json_without_zone_preserves_missing_direction_data():
+    # Simulates a raw dataframe without an explicit 'zone' column. The loader
+    # must not invent shot direction from runs or wicket text.
     df_raw = pd.DataFrame([
         {"batter": "Test Star", "bowler": "Fast Guy", "runs_batter": 4, "is_wicket": 0},
         {"batter": "Test Star", "bowler": "Spin Guy", "runs_batter": 1, "is_wicket": 0},
@@ -196,6 +202,24 @@ def test_ingest_cricsheet_json_without_zone_synthesizes_valid_profile():
     assert len(zone_chart) == 24  # 8 directions * 3 bands
     assert hand == Handedness.RHB
     assert all(isinstance(v, float) for v in zone_chart.values())
+    assert set(zone_chart.values()) == {0.5}
+
+
+def test_zone_zero_is_excluded_and_direction_uses_runs_per_ball():
+    df = pd.DataFrame([
+        {"batter": "Virat Kohli", "zone": 7, "runs_batter": 0},
+        {"batter": "Virat Kohli", "zone": 7, "runs_batter": 1},
+        {"batter": "Virat Kohli", "zone": 7, "runs_batter": 0},
+        {"batter": "Virat Kohli", "zone": 6, "runs_batter": 4},
+        {"batter": "Virat Kohli", "zone": 0, "runs_batter": 6},
+    ])
+
+    zone_chart, _ = load_deliveries_from_dataframe(df, "Virat Kohli")
+
+    # Point = (0 + 1 + 0) / 3. The Zone 0 six must not leak into any sector.
+    assert zone_chart["Point_Deep"] == pytest.approx(1 / 3, abs=1e-3)
+    assert zone_chart["Cover_Deep"] == pytest.approx(4.0, abs=1e-3)
+    assert all(zone_chart[f"{direction}_{band}"] != 6.0 for direction in DIRECTIONS for band in BANDS)
 
 
 def test_deterministic_zone_danger_additive_step_constants():

@@ -62,6 +62,9 @@ from backend.app.services.real_data_loader import (
     DATA_DIR
 )
 from backend.app.services.live_match_engine import LiveMatchEngine
+from backend.app.services.model_registry import get_model_registry
+from backend.app.services.dataset_registry import load_dataset_metadata
+from backend.app.services.feature_pipeline import FEATURE_VERSION
 
 router = APIRouter(prefix="/api/v1", tags=["analysis"])
 
@@ -146,7 +149,8 @@ def create_analysis_request(
         fielder_pool=fielders,
         current_over=request.over,
         fmt=fmt,
-        keeper=keeper
+        keeper=keeper,
+        tactical_objective=request.tactical_objective.value
     )
 
     # Snap boundary fielders according to ground geometry
@@ -316,6 +320,37 @@ def create_analysis_request(
 
     coverage_tier = getattr(result, "data_coverage", "insufficient_data")
 
+    # Fetch active model governance and dataset provenance metadata
+    active_meta = get_model_registry().get_active_model_metadata()
+    active_model = active_meta.get("model_metadata", {})
+    dataset_meta = load_dataset_metadata()
+
+    spatial_cov_info = {
+        "valid_directional_deliveries": dataset_meta.get("valid_direction_count", 8335),
+        "unmapped_zone_0_deliveries": dataset_meta.get("unmapped_zone_count", 2119),
+        "spatial_coverage_pct": dataset_meta.get("spatial_coverage_pct", 79.73),
+        "wagon_wheel_source": dataset_meta.get("primary_spatial_source", "rishsriv/t20i_data"),
+        "enrichment_source": dataset_meta.get("ball_by_ball_source", "cricsheet"),
+        "spatial_limitation": "Deliveries with Zone == 0 represent unavailable spatial data and are strictly excluded from directional calculations."
+    }
+
+    uncertainty_info = {
+        "data_coverage": coverage_tier,
+        "confidence_level": model_confidence_info.get("level", "medium"),
+        "unmapped_shot_fraction": round(dataset_meta.get("unmapped_zone_count", 2119) / max(dataset_meta.get("row_count", 10454), 1), 4),
+        "batter_deliveries_sample": getattr(batter, "notes", ""),
+        "disclaimer": "Predictions are probabilistic estimates based on available historical samples and do not guarantee cricket outcomes with certainty."
+    }
+
+    field_opt_info = {
+        "objective": request.tactical_objective.value,
+        "objective_applied": True,
+        "tactical_utility_score": sim_metrics.tactical_utility_score,
+        "ers": round(result.ers, 2),
+        "ewo": round(result.ewo, 2),
+        "cds": round(result.cds, 2)
+    }
+
     return AnalysisResponse(
         status="available",
         data_driven=True if (load_batter_profile_from_real_data(request.batter_name) is not None) else False,
@@ -336,6 +371,14 @@ def create_analysis_request(
         ml_probabilities=ml_probs_schema,
         simulation_metrics=sim_metrics_schema,
         pitch_multipliers=pitch_mults,
+        model_version=active_meta.get("active_model_version", "1.0.0"),
+        dataset_version=active_meta.get("active_dataset_version", "2.0.0"),
+        feature_version=active_model.get("feature_version", FEATURE_VERSION),
+        model_status=active_model.get("promotion_gates", {}).get("decision", "active_baseline"),
+        calibration_status=active_model.get("calibration", {}).get("status", "uncalibrated_baseline"),
+        spatial_coverage=spatial_cov_info,
+        uncertainty=uncertainty_info,
+        field_optimization=field_opt_info,
         ground_preset=ground.to_dict(),
         accepted_request=request
     )
@@ -407,7 +450,7 @@ def evaluate_custom_field(
         phase=phase,
         placements=service_placements,
         match_format=request.match_format.value,
-        objective="attack_wicket",
+        objective=request.tactical_objective.value if hasattr(request, "tactical_objective") and request.tactical_objective else "attack_wicket",
         environmental_conditions=env,
         ground_preset_id=ground.id,
         over_num=request.over,
@@ -469,6 +512,37 @@ def evaluate_custom_field(
         "sparse_h2h" if eval_h2h.get("has_history") else "insufficient_data"
     )
 
+    # Fetch active model governance and dataset provenance metadata
+    active_meta = get_model_registry().get_active_model_metadata()
+    active_model = active_meta.get("model_metadata", {})
+    dataset_meta = load_dataset_metadata()
+
+    eval_spatial_cov = {
+        "valid_directional_deliveries": dataset_meta.get("valid_direction_count", 8335),
+        "unmapped_zone_0_deliveries": dataset_meta.get("unmapped_zone_count", 2119),
+        "spatial_coverage_pct": dataset_meta.get("spatial_coverage_pct", 79.73),
+        "wagon_wheel_source": dataset_meta.get("primary_spatial_source", "rishsriv/t20i_data"),
+        "enrichment_source": dataset_meta.get("ball_by_ball_source", "cricsheet"),
+        "spatial_limitation": "Deliveries with Zone == 0 represent unavailable spatial data and are strictly excluded from directional calculations."
+    }
+
+    eval_uncertainty = {
+        "data_coverage": eval_coverage,
+        "confidence_level": eval_confidence_info.get("level", "medium"),
+        "unmapped_shot_fraction": round(dataset_meta.get("unmapped_zone_count", 2119) / max(dataset_meta.get("row_count", 10454), 1), 4),
+        "disclaimer": "Predictions are probabilistic estimates based on available historical samples and do not guarantee cricket outcomes with certainty."
+    }
+
+    objective_val = request.tactical_objective.value if hasattr(request, "tactical_objective") and request.tactical_objective else "attack_wicket"
+    eval_field_opt = {
+        "objective": objective_val,
+        "objective_applied": True,
+        "tactical_utility_score": sim_metrics.tactical_utility_score,
+        "ers": round(ers, 2),
+        "ewo": round(ewo, 2),
+        "cds": round(cds, 2)
+    }
+
     return EvaluateFieldResponse(
         ers=round(ers, 2),
         ewo=round(ewo, 2),
@@ -480,7 +554,15 @@ def evaluate_custom_field(
         bowler_provenance=getattr(bowler, "provenance_metadata", None),
         ml_probabilities=ml_probs_schema,
         simulation_metrics=sim_metrics_schema,
-        pitch_multipliers=pitch_mults
+        pitch_multipliers=pitch_mults,
+        model_version=active_meta.get("active_model_version", "1.0.0"),
+        dataset_version=active_meta.get("active_dataset_version", "2.0.0"),
+        feature_version=active_model.get("feature_version", FEATURE_VERSION),
+        model_status=active_model.get("promotion_gates", {}).get("decision", "active_baseline"),
+        calibration_status=active_model.get("calibration", {}).get("status", "uncalibrated_baseline"),
+        spatial_coverage=eval_spatial_cov,
+        uncertainty=eval_uncertainty,
+        field_optimization=eval_field_opt
     )
 
 

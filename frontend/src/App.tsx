@@ -1,4 +1,3 @@
-import React from 'react';
 import { FieldIQ3DView } from './components/FieldIQ3DView';
 
 function App() {

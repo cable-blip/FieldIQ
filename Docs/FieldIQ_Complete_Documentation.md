@@ -85,39 +85,61 @@ Manages state across overs via `LiveMatchSession`. When a delivery is logged via
 - **Color Palette:** Cyberpunk broadcast aesthetic featuring neon greens/cyans on deep charcoal/dark glass backgrounds.
 - **Styling:** Glassmorphism cards with translucent borders ensuring the 3D field remains visible behind tactical panels.
 
-### 10. Data Ingestion
+### 10. Data Ingestion & Provenance
 
-Handles direct upload of modern Cricsheet JSON and Legacy CSV datasets via `/api/v1/dataset/upload`. The pipeline includes explicit column mapping, data isolation testing, and cache invalidation (`refresh_real_data_cache`) to organically refresh available players without downtime. Zone synthesis falls back to deterministic shot direction logic if sector data is missing.
+FieldIQ operates on a **derived historical dataset** (`data/real_batters_deliveries.csv`, 10,454 deliveries across 9 batters and 330 bowlers in 267 matches):
+- **Spatial Directional Source:** `rishsriv/t20i_data` (derived from ESPNcricinfo wagon wheels across 510 T20Is from 2005–2016), providing 8-sector shot directions ($z \in [1..8]$).
+- **Match Metadata & Dismissal Enrichment:** Cricsheet (`https://cricsheet.org`), providing bowler identities, dismissal kinds, and match situations. Cricsheet alone does not contain wagon wheels.
+- **Spatial Limitation:** Direction is inherited from the source wagon-wheel sector field. Distance bands (`Inner`, `Mid`, `Deep`) are categorical proxies derived from runs scored off the bat and are not measured spatial coordinates.
+- **Handling of Zone 0:** Deliveries with unrecorded or missing spatial data (`Zone == 0`, 2,119 rows / 20.3%) are strictly excluded from spatial danger calculations and are never synthetically imputed.
+- **Upload Pipeline:** Handles upload of Cricsheet JSON and tabular CSV datasets via `/api/v1/dataset/upload` with column mapping and cache invalidation (`refresh_real_data_cache`). Missing spatial data remains explicitly unavailable (`Zone = 0`).
 
-### 11. ML Pipeline
+### 11. Spatial Intelligence & Empirical Bayes Shrinkage
+
+FieldIQ enforces strict probabilistic separation and Bayesian smoothing across all directional computations (`backend/app/services/spatial_intelligence.py`):
+- **Strict Sector Validation:** `is_valid_spatial_zone(z)` requires $1 \le z \le 8$; rejects 0, `None`, negatives, and strings.
+- **Distribution Separation:** The directional shot distribution $P(\text{zone} \mid \text{valid deliveries})$ is isolated from outcome scoring $P(\text{runs} \mid \text{zone})$. Unrecorded deliveries (`Zone == 0`) are explicitly labeled as unavailable rather than zero-danger.
+- **Empirical Bayes Shrinkage:** Replaces raw sample means with smoothed danger estimates:
+  $$\text{shrunk\_rpb} = \frac{\sum \text{runs} + k \cdot \mu_0}{n + k}$$
+  shrinking small samples toward batter career baseline $\mu_0$ (or population prior 1.25 RPB with $k = 12.0$).
+- **Explicit Confidence Tiers:** Every estimate is accompanied by a confidence tier:
+  - `OBSERVED`: $n \ge 15$ deliveries
+  - `DERIVED`: $5 \le n < 15$ deliveries
+  - `INSUFFICIENT_SAMPLE`: $1 \le n < 5$ deliveries
+  - `PRIOR_ONLY`: $n = 0$ deliveries
+  - `UNAVAILABLE`: spatial data missing (`Zone == 0`)
+- **Elimination of Static Heuristics:** The hardcoded `KNOWN_BATTER_RISKS` lookup table has been fully replaced by data-derived batter risk profiles (`edge_vs_pace`, `pull_mistime_vs_short_ball`, `sweep_risk_vs_spin`, `charge_vs_spin`, `lofted_drive_risk`). Each feature is derived from ball-by-ball events with Bayesian shrinkage toward population priors and carries full governance metadata (`sample_size`, `confidence_tier`, `is_fallback`, `methodology`).
+
+### 12. ML Pipeline & Model Governance
 
 Powered by XGBoost (`fieldiq_xgb_model.joblib`), trained to map deliveries into a 7-class target (0-6 runs/wicket). `ml_feature_engineering.py` extracts continuous context vectors (over, batter strike rate, historical average). `ml_model_trainer.py` utilizes a strict `split_by_game_id` strategy ensuring validation sets contain entirely unseen matches.
+A comprehensive model registry (`backend/app/services/model_registry.py`) and evaluation benchmark pipeline (`scripts/train/benchmark_and_train_models.py`) track model performance, log-loss, calibration, and feature definitions.
 
-### 12. Tactical Metrics
+### 13. Tactical Metrics
 
 - **ERS (Expected Runs Saved):** $\sum (\text{Zone Threat} \times \text{Fielder Spatial Effectiveness})$
 - **EWO (Expected Wicket Opportunity):** Alignment of catcher quality, bowler style, and fielding position.
 - **CDS (Composite Defensive Score):** $\alpha \cdot ERS + \beta \cdot EWO$
   - Phase weights shift: $\beta$ (EWO) is heavily weighted during Powerplays, whereas $\alpha$ (ERS) dominates Death overs.
 
-### 13. ICC Rules Engine
+### 14. ICC Rules Engine
 
 Evaluates 7 distinct checks across match formats. Most critically limits fielders outside the 30-yard circle (e.g., max 2 in ODI Powerplay 1). Features an auto-fix strategy that attempts up to 5 positional swaps between boundary and ring roles to render a proposed field legal, appending a legality indicator flag to the final response.
 
-### 14. Testing
+### 15. Testing
 
-- **Backend:** 45 `pytest` tests validating core heuristics, ML integration (`test_ml_prediction_engine.py`), rules constraints, and Monte Carlo statistics bounds (`test_advanced_ml_engine.py`).
-- **Frontend:** Handled by Vitest, testing component mounts and Zustand state modifications.
+- **Backend:** 165 `pytest` tests validating core heuristics, ML integration (`test_ml_prediction_engine.py`), rules constraints, Monte Carlo bounds, Stage B matchup weighting, live delivery remapping, data source adapters, and spatial intelligence (`test_spatial_intelligence.py`).
+- **Frontend:** 16 Vitest tests validating component mounts, Zustand state modifications, and 3D field interactions.
 
-### 15. Project File Structure
+### 16. Project File Structure
 
 ```
-C:\Projects\cricket-tactical-intelligence\
+FieldIQ_V2\
 ├── backend\
 │   ├── app\
 │   │   ├── main.py
-│   │   ├── models\ (schemas.py)
-│   │   ├── routers\ (analysis.py, dataset.py, live_match.py)
+│   │   ├── schemas\ (analysis.py)
+│   │   ├── routers\ (analysis.py, dataset.py)
 │   │   └── services\ (metrics.py, optimizer.py, ... etc)
 │   └── tests\ (conftest.py, test_*.py)
 ├── frontend\

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FieldIQ3DView } from './FieldIQ3DView';
@@ -78,6 +78,7 @@ const mockAnalysisResponse = {
   bowler_provenance: {
     source: 'real_data',
     name: 'Mohammad Asif',
+    bowler_type: 'curated_categorical',
   },
   zone_chart: {
     zone_1: 0.12,
@@ -142,8 +143,13 @@ describe('FieldIQ3DView Component', () => {
     const submitBtn = screen.getByRole('button', { name: /generate 3d tactical field/i });
     await user.click(submitBtn);
 
-    // Verify server legality banner (display-only)
+    // Verify dataset lineage and provenance banner
     await screen.findByText('✓ LEGAL FIELD CONFIGURATION');
+    const lineageBanner = document.getElementById('dataset-lineage-banner');
+    expect(lineageBanner).toBeInTheDocument();
+    expect(screen.getByText('Derived historical dataset')).toBeInTheDocument();
+    expect(screen.getByText('Direction recorded; distance not measured')).toBeInTheDocument();
+    expect(screen.getByText('Decision-support output')).toBeInTheDocument();
     expect(screen.getByText('Complies with all ICC fielding regulations')).toBeInTheDocument();
 
     // Verify WebGL Canvas is actually rendered in DOM
@@ -156,6 +162,7 @@ describe('FieldIQ3DView Component', () => {
     expect(screen.getByText('vs_bowler_type_phase')).toBeInTheDocument();
     expect(screen.getByText('232')).toBeInTheDocument(); // Balls faced
     expect(screen.getByText('Aggregated against right-arm fast in Powerplay')).toBeInTheDocument();
+    expect(screen.getByText('curated_categorical')).toBeInTheDocument();
 
     // Verify Model Confidence Disclosure card rendered without masking limitations
     const confidenceCard = document.getElementById('model-confidence-card');
@@ -181,5 +188,213 @@ describe('FieldIQ3DView Component', () => {
         headers: { 'Content-Type': 'application/json' },
       })
     );
+  });
+
+  it('synchronizes selection between placement row and active fielder inspector card', async () => {
+    const user = userEvent.setup();
+    render(<FieldIQ3DView />);
+
+    await screen.findByRole('option', { name: 'Virat Kohli' });
+    const submitBtn = screen.getByRole('button', { name: /generate 3d tactical field/i });
+    await user.click(submitBtn);
+
+    await screen.findByText('11 Recommended Field Placements');
+
+    // Click on Point row
+    const pointCell = screen.getByText('Point');
+    await user.click(pointCell);
+
+    // Active inspector card should update with details
+    const inspector = document.getElementById('active-fielder-inspector');
+    expect(inspector).toBeInTheDocument();
+    expect(inspector).toHaveTextContent('Position: Point');
+    expect(inspector).toHaveTextContent('Coords: X = 22.0m, Y = -2.0m');
+  });
+
+  it('disables evaluation button when fielder capability data is absent', async () => {
+    const user = userEvent.setup();
+    render(<FieldIQ3DView />);
+
+    await screen.findByRole('option', { name: 'Virat Kohli' });
+    const submitBtn = screen.getByRole('button', { name: /generate 3d tactical field/i });
+    await user.click(submitBtn);
+
+    await screen.findByText('11 Recommended Field Placements');
+
+    const evalBtn = document.getElementById('evaluate-field-btn');
+    expect(evalBtn).toBeInTheDocument();
+    // Since mockAnalysisResponse has no fielder capability objects, evaluation is disabled
+    expect(evalBtn).toBeDisabled();
+  });
+
+  it('supports interactive coordinate editing, displays Human-Modified badge, and resets to recommendation', async () => {
+    const user = userEvent.setup();
+    render(<FieldIQ3DView />);
+
+    await screen.findByRole('option', { name: 'Virat Kohli' });
+    const submitBtn = screen.getByRole('button', { name: /generate 3d tactical field/i });
+    await user.click(submitBtn);
+
+    await screen.findByText('11 Recommended Field Placements');
+
+    const resetBtn = document.getElementById('reset-recommendation-btn') as HTMLButtonElement;
+    expect(resetBtn).toBeDisabled();
+
+    // Edit Point X coordinate
+    const pointXInput = screen.getByLabelText('Point X') as HTMLInputElement;
+    expect(pointXInput.value).toBe('22');
+
+    await user.clear(pointXInput);
+    await user.type(pointXInput, '25.5');
+
+    expect(pointXInput.value).toBe('25.5');
+
+    // Human-Modified badge should appear
+    expect(screen.getAllByText('Human-Modified').length).toBeGreaterThan(0);
+    expect(resetBtn).not.toBeDisabled();
+
+    // Click reset to recommendation
+    await user.click(resetBtn);
+
+    expect(pointXInput.value).toBe('22');
+    expect(resetBtn).toBeDisabled();
+  });
+
+  it('evaluates edited field via POST /api/v1/analysis/evaluate and displays stale evaluation warning upon subsequent edits', async () => {
+    const mockAnalysisWithCapabilities = {
+      ...mockAnalysisResponse,
+      placements: mockAnalysisResponse.placements.map((p, idx) => ({
+        ...p,
+        fielder: {
+          name: `Fielder ${idx + 1}`,
+          jump: 0.85,
+          catching: 0.9,
+          arm: 0.8,
+          close_in_skill: 0.75,
+          boundary_skill: 0.8,
+          preferred_positions: [p.position_name],
+        },
+      })),
+    };
+
+    const mockEvaluation = {
+      ers: 3.85,
+      ewo: 0.22,
+      cds: 85.0,
+      is_legal: true,
+      violations: [],
+      data_coverage: 'direct_h2h',
+    };
+
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === '/api/v1/players') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockPlayersData) });
+      }
+      if (url === '/api/v1/analysis') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockAnalysisWithCapabilities) });
+      }
+      if (url === '/api/v1/analysis/evaluate') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockEvaluation) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    const user = userEvent.setup();
+    render(<FieldIQ3DView />);
+
+    await screen.findByRole('option', { name: 'Virat Kohli' });
+    const submitBtn = screen.getByRole('button', { name: /generate 3d tactical field/i });
+    await user.click(submitBtn);
+
+    await screen.findByText('11 Recommended Field Placements');
+
+    // Point X edit
+    const pointXInput = screen.getByLabelText('Point X') as HTMLInputElement;
+    await user.clear(pointXInput);
+    await user.type(pointXInput, '24.0');
+
+    const evalBtn = document.getElementById('evaluate-field-btn') as HTMLButtonElement;
+    expect(evalBtn).not.toBeDisabled();
+
+    // Trigger evaluate edited field
+    await user.click(evalBtn);
+
+    // Verify evaluate request
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        '/api/v1/analysis/evaluate',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+    });
+
+    // Check evaluated result strip
+    await screen.findByText(/Server verified: Legal field/i);
+    expect(screen.getByText(/ERS 3.85/i)).toBeInTheDocument();
+
+    // Now edit coordinate again to test Stale Evaluation trigger
+    await user.clear(pointXInput);
+    await user.type(pointXInput, '26.0');
+
+    // Stale Evaluation banner should be displayed
+    await screen.findByText(/Stale Evaluation:/i);
+  });
+
+  it('supports workflow mode switching to Live Ball-by-Ball and Multi-Over Gameplan', async () => {
+    const user = userEvent.setup();
+    render(<FieldIQ3DView />);
+
+    // Switch to Live Engine
+    const liveTabBtn = screen.getByRole('button', { name: /⚡ Live Ball-by-Ball Engine/i });
+    await user.click(liveTabBtn);
+    expect(screen.getByText('DELIVERY OUTCOME')).toBeInTheDocument();
+
+    // Switch to Gameplan
+    const gameplanTabBtn = screen.getByRole('button', { name: /📋 Multi-Over Strategic Gameplan/i });
+    await user.click(gameplanTabBtn);
+    expect(screen.getByText('Multi-Over Strategic Bowling & Fielding Plan')).toBeInTheDocument();
+  });
+
+  it('opens Dataset Studio modal and displays real data governance disclosure with missing Zone 0 telemetry', async () => {
+    const mockSummary = {
+      status: 'ready',
+      total_deliveries: 10454,
+      total_matches: 1,
+      unique_batters_count: 9,
+      unique_bowlers_count: 330,
+      missing_zone_deliveries: 2119,
+      missing_zone_pct: 20.3,
+      batters: ['Virat Kohli'],
+      bowlers: ['Mohammad Asif'],
+      last_updated: '2026-10-22T18:00:00Z',
+    };
+
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === '/api/v1/players') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockPlayersData) });
+      }
+      if (url === '/api/v1/dataset/summary') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockSummary) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    const user = userEvent.setup();
+    render(<FieldIQ3DView />);
+
+    const studioBtn = screen.getByRole('button', { name: /📊 Dataset Studio & Lineage/i });
+    await user.click(studioBtn);
+
+    // Modal should be visible
+    expect(screen.getByText('Real-Life Dataset Studio')).toBeInTheDocument();
+    expect(screen.getByText('Zone 0 Missing (Unavailable)')).toBeInTheDocument();
+    expect(screen.getByText('2,119')).toBeInTheDocument();
+
+    // Close modal
+    const closeBtn = screen.getByRole('button', { name: /Close modal/i });
+    await user.click(closeBtn);
+    expect(screen.queryByText('Real-Life Dataset Studio')).not.toBeInTheDocument();
   });
 });

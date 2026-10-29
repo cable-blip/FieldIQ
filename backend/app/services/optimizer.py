@@ -174,6 +174,7 @@ def recommend_field(
     fmt: MatchFormat,
     keeper: Optional[FielderProfile] = None,
     bowler_fielder: Optional[FielderProfile] = None,
+    tactical_objective: str = "attack_wicket",
 ) -> FieldResult:
     """
     Main orchestrator that runs the two-stage optimizer to recommend a field.
@@ -233,7 +234,7 @@ def recommend_field(
     )
 
     zone_placements = optimize_remaining_field(
-        batter, zone_fielders, reserved_position_names, remaining_budget, zone_chart=matchup_zone_chart
+        batter, zone_fielders, reserved_position_names, remaining_budget, zone_chart=matchup_zone_chart, tactical_objective=tactical_objective
     )
     
     # 6. Merge into full field

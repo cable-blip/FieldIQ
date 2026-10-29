@@ -1,0 +1,986 @@
+{
+  "empirical_baseline": {
+    "model_id": "candidate_empirical_baseline",
+    "name": "Empirical Frequency Baseline",
+    "metrics": {
+      "evaluation_timestamp": "2026-10-22T18:57:56.532803+00:00",
+      "sample_count": 1499,
+      "valid_probability_distribution": true,
+      "max_probability_deviation_from_one": 0.0,
+      "test_log_loss": 1.4723,
+      "test_brier_score": 0.7209,
+      "wicket_metrics": {
+        "support": 49,
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0,
+        "pr_auc": 0.0327,
+        "expected_calibration_error": 0.0068,
+        "wilson_recall_ci_95": [
+          0.0,
+          0.0727
+        ]
+      },
+      "boundary_metrics": {
+        "support": 261,
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0,
+        "pr_auc": 0.1741,
+        "expected_calibration_error": 0.0019
+      },
+      "class_report": {
+        "dot": {
+          "precision": 0.37024683122081387,
+          "recall": 1.0,
+          "f1-score": 0.5404089581304771,
+          "support": 555.0
+        },
+        "single": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 511.0
+        },
+        "two": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 118.0
+        },
+        "three": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 5.0
+        },
+        "four": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 195.0
+        },
+        "six": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 66.0
+        },
+        "wicket": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 49.0
+        },
+        "accuracy": 0.37024683122081387,
+        "macro avg": {
+          "precision": 0.05289240446011627,
+          "recall": 0.14285714285714285,
+          "f1-score": 0.0772012797329253,
+          "support": 1499.0
+        },
+        "weighted avg": {
+          "precision": 0.13708271602905384,
+          "recall": 0.37024683122081387,
+          "f1-score": 0.2000847043111506,
+          "support": 1499.0
+        }
+      },
+      "stratified_evaluations": {
+        "by_batter": {
+          "AB de Villiers": {
+            "sample_count": 166,
+            "wickets_count": 8,
+            "log_loss": 1.5172,
+            "mean_expected_runs": 1.288
+          },
+          "Brendon McCullum": {
+            "sample_count": 97,
+            "wickets_count": 4,
+            "log_loss": 1.4831,
+            "mean_expected_runs": 1.288
+          },
+          "Chris Gayle": {
+            "sample_count": 158,
+            "wickets_count": 7,
+            "log_loss": 1.4418,
+            "mean_expected_runs": 1.288
+          },
+          "David Warner": {
+            "sample_count": 204,
+            "wickets_count": 10,
+            "log_loss": 1.4944,
+            "mean_expected_runs": 1.288
+          },
+          "Kumar Sangakkara": {
+            "sample_count": 268,
+            "wickets_count": 4,
+            "log_loss": 1.4301,
+            "mean_expected_runs": 1.288
+          },
+          "Mahela Jayawardene": {
+            "sample_count": 154,
+            "wickets_count": 6,
+            "log_loss": 1.5695,
+            "mean_expected_runs": 1.288
+          },
+          "Martin Guptill": {
+            "sample_count": 148,
+            "wickets_count": 2,
+            "log_loss": 1.4464,
+            "mean_expected_runs": 1.288
+          },
+          "Shane Watson": {
+            "sample_count": 133,
+            "wickets_count": 6,
+            "log_loss": 1.5792,
+            "mean_expected_runs": 1.288
+          },
+          "Virat Kohli": {
+            "sample_count": 171,
+            "wickets_count": 2,
+            "log_loss": 1.3421,
+            "mean_expected_runs": 1.288
+          }
+        },
+        "by_match_phase": {
+          "powerplay": {
+            "sample_count": 639,
+            "wickets_count": 24,
+            "log_loss": 1.4351
+          },
+          "middle": {
+            "sample_count": 725,
+            "wickets_count": 23,
+            "log_loss": 1.4826
+          },
+          "death": {
+            "sample_count": 135,
+            "wickets_count": 2,
+            "log_loss": 1.5931
+          }
+        }
+      }
+    }
+  },
+  "logistic_regression": {
+    "model_id": "candidate_logistic_regression",
+    "name": "Multinomial Logistic Regression",
+    "metrics": {
+      "evaluation_timestamp": "2026-10-22T18:57:59.023680+00:00",
+      "sample_count": 1499,
+      "valid_probability_distribution": true,
+      "max_probability_deviation_from_one": 0.0,
+      "test_log_loss": 1.4222,
+      "test_brier_score": 0.6922,
+      "wicket_metrics": {
+        "support": 49,
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0,
+        "pr_auc": 0.0437,
+        "expected_calibration_error": 0.008,
+        "wilson_recall_ci_95": [
+          0.0,
+          0.0727
+        ]
+      },
+      "boundary_metrics": {
+        "support": 261,
+        "recall": 0.2146,
+        "precision": 0.2534,
+        "f1": 0.2324,
+        "pr_auc": 0.2341,
+        "expected_calibration_error": 0.0258
+      },
+      "class_report": {
+        "dot": {
+          "precision": 0.49782923299565845,
+          "recall": 0.6198198198198198,
+          "f1-score": 0.5521669341894061,
+          "support": 555.0
+        },
+        "single": {
+          "precision": 0.41336633663366334,
+          "recall": 0.6536203522504892,
+          "f1-score": 0.5064442759666414,
+          "support": 511.0
+        },
+        "two": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 118.0
+        },
+        "three": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 5.0
+        },
+        "four": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 195.0
+        },
+        "six": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 66.0
+        },
+        "wicket": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 49.0
+        },
+        "accuracy": 0.4523015343562375,
+        "macro avg": {
+          "precision": 0.1301707956613317,
+          "recall": 0.18192002458147272,
+          "f1-score": 0.15123017287943538,
+          "support": 1499.0
+        },
+        "weighted avg": {
+          "precision": 0.32523377073541854,
+          "recall": 0.4523015343562375,
+          "f1-score": 0.3770818368873076,
+          "support": 1499.0
+        }
+      },
+      "stratified_evaluations": {
+        "by_batter": {
+          "AB de Villiers": {
+            "sample_count": 166,
+            "wickets_count": 8,
+            "log_loss": 1.445,
+            "mean_expected_runs": 1.239
+          },
+          "Brendon McCullum": {
+            "sample_count": 97,
+            "wickets_count": 4,
+            "log_loss": 1.4359,
+            "mean_expected_runs": 1.415
+          },
+          "Chris Gayle": {
+            "sample_count": 158,
+            "wickets_count": 7,
+            "log_loss": 1.264,
+            "mean_expected_runs": 1.268
+          },
+          "David Warner": {
+            "sample_count": 204,
+            "wickets_count": 10,
+            "log_loss": 1.426,
+            "mean_expected_runs": 1.391
+          },
+          "Kumar Sangakkara": {
+            "sample_count": 268,
+            "wickets_count": 4,
+            "log_loss": 1.3237,
+            "mean_expected_runs": 1.221
+          },
+          "Mahela Jayawardene": {
+            "sample_count": 154,
+            "wickets_count": 6,
+            "log_loss": 1.5848,
+            "mean_expected_runs": 1.274
+          },
+          "Martin Guptill": {
+            "sample_count": 148,
+            "wickets_count": 2,
+            "log_loss": 1.4915,
+            "mean_expected_runs": 1.456
+          },
+          "Shane Watson": {
+            "sample_count": 133,
+            "wickets_count": 6,
+            "log_loss": 1.5472,
+            "mean_expected_runs": 1.438
+          },
+          "Virat Kohli": {
+            "sample_count": 171,
+            "wickets_count": 2,
+            "log_loss": 1.3848,
+            "mean_expected_runs": 1.215
+          }
+        },
+        "by_match_phase": {
+          "powerplay": {
+            "sample_count": 639,
+            "wickets_count": 24,
+            "log_loss": 1.3552
+          },
+          "middle": {
+            "sample_count": 725,
+            "wickets_count": 23,
+            "log_loss": 1.4751
+          },
+          "death": {
+            "sample_count": 135,
+            "wickets_count": 2,
+            "log_loss": 1.4552
+          }
+        }
+      }
+    }
+  },
+  "random_forest": {
+    "model_id": "candidate_random_forest",
+    "name": "Balanced Random Forest",
+    "metrics": {
+      "evaluation_timestamp": "2026-10-22T18:57:59.417594+00:00",
+      "sample_count": 1499,
+      "valid_probability_distribution": true,
+      "max_probability_deviation_from_one": 0.0,
+      "test_log_loss": 1.6813,
+      "test_brier_score": 0.7728,
+      "wicket_metrics": {
+        "support": 49,
+        "recall": 0.6122,
+        "precision": 0.0525,
+        "f1": 0.0968,
+        "pr_auc": 0.0562,
+        "expected_calibration_error": 0.1115,
+        "wilson_recall_ci_95": [
+          0.4724,
+          0.7357
+        ]
+      },
+      "boundary_metrics": {
+        "support": 261,
+        "recall": 0.7241,
+        "precision": 0.2153,
+        "f1": 0.3319,
+        "pr_auc": 0.264,
+        "expected_calibration_error": 0.1014
+      },
+      "class_report": {
+        "dot": {
+          "precision": 0.7244897959183674,
+          "recall": 0.3837837837837838,
+          "f1-score": 0.5017667844522968,
+          "support": 555.0
+        },
+        "single": {
+          "precision": 0.5121951219512195,
+          "recall": 0.2465753424657534,
+          "f1-score": 0.332892998678996,
+          "support": 511.0
+        },
+        "two": {
+          "precision": 0.10526315789473684,
+          "recall": 0.2033898305084746,
+          "f1-score": 0.13872832369942195,
+          "support": 118.0
+        },
+        "three": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 5.0
+        },
+        "four": {
+          "precision": 0.17275747508305647,
+          "recall": 0.26666666666666666,
+          "f1-score": 0.20967741935483872,
+          "support": 195.0
+        },
+        "six": {
+          "precision": 0.13253012048192772,
+          "recall": 0.3333333333333333,
+          "f1-score": 0.1896551724137931,
+          "support": 66.0
+        },
+        "wicket": {
+          "precision": 0.03827751196172249,
+          "recall": 0.16326530612244897,
+          "f1-score": 0.06201550387596899,
+          "support": 49.0
+        },
+        "accuracy": 0.2968645763842562,
+        "macro avg": {
+          "precision": 0.24078759761300433,
+          "recall": 0.22814489469720867,
+          "f1-score": 0.20496231463933082,
+          "support": 1499.0
+        },
+        "weighted avg": {
+          "precision": 0.4806903871664268,
+          "recall": 0.2968645763842562,
+          "f1-score": 0.34783317393992647,
+          "support": 1499.0
+        }
+      },
+      "stratified_evaluations": {
+        "by_batter": {
+          "AB de Villiers": {
+            "sample_count": 166,
+            "wickets_count": 8,
+            "log_loss": 1.746,
+            "mean_expected_runs": 1.998
+          },
+          "Brendon McCullum": {
+            "sample_count": 97,
+            "wickets_count": 4,
+            "log_loss": 1.7574,
+            "mean_expected_runs": 2.258
+          },
+          "Chris Gayle": {
+            "sample_count": 158,
+            "wickets_count": 7,
+            "log_loss": 1.5463,
+            "mean_expected_runs": 2.233
+          },
+          "David Warner": {
+            "sample_count": 204,
+            "wickets_count": 10,
+            "log_loss": 1.6629,
+            "mean_expected_runs": 2.259
+          },
+          "Kumar Sangakkara": {
+            "sample_count": 268,
+            "wickets_count": 4,
+            "log_loss": 1.6738,
+            "mean_expected_runs": 1.785
+          },
+          "Mahela Jayawardene": {
+            "sample_count": 154,
+            "wickets_count": 6,
+            "log_loss": 1.7046,
+            "mean_expected_runs": 1.794
+          },
+          "Martin Guptill": {
+            "sample_count": 148,
+            "wickets_count": 2,
+            "log_loss": 1.7476,
+            "mean_expected_runs": 2.271
+          },
+          "Shane Watson": {
+            "sample_count": 133,
+            "wickets_count": 6,
+            "log_loss": 1.6686,
+            "mean_expected_runs": 2.343
+          },
+          "Virat Kohli": {
+            "sample_count": 171,
+            "wickets_count": 2,
+            "log_loss": 1.6651,
+            "mean_expected_runs": 1.821
+          }
+        },
+        "by_match_phase": {
+          "powerplay": {
+            "sample_count": 639,
+            "wickets_count": 24,
+            "log_loss": 1.6261
+          },
+          "middle": {
+            "sample_count": 725,
+            "wickets_count": 23,
+            "log_loss": 1.7254
+          },
+          "death": {
+            "sample_count": 135,
+            "wickets_count": 2,
+            "log_loss": 1.7057
+          }
+        }
+      }
+    }
+  },
+  "xgboost_multiclass": {
+    "model_id": "candidate_xgboost_multiclass_v2",
+    "name": "XGBoost Multi-Class (V2 Features)",
+    "metrics": {
+      "evaluation_timestamp": "2026-10-22T18:58:01.991186+00:00",
+      "sample_count": 1499,
+      "valid_probability_distribution": true,
+      "max_probability_deviation_from_one": 0.0,
+      "test_log_loss": 1.3806,
+      "test_brier_score": 0.6617,
+      "wicket_metrics": {
+        "support": 49,
+        "recall": 0.1837,
+        "precision": 0.0947,
+        "f1": 0.125,
+        "pr_auc": 0.0781,
+        "expected_calibration_error": 0.0163,
+        "wilson_recall_ci_95": [
+          0.0998,
+          0.3136
+        ]
+      },
+      "boundary_metrics": {
+        "support": 261,
+        "recall": 0.3218,
+        "precision": 0.3218,
+        "f1": 0.3218,
+        "pr_auc": 0.2741,
+        "expected_calibration_error": 0.0378
+      },
+      "class_report": {
+        "dot": {
+          "precision": 0.575503355704698,
+          "recall": 0.618018018018018,
+          "f1-score": 0.5960034752389227,
+          "support": 555.0
+        },
+        "single": {
+          "precision": 0.4420289855072464,
+          "recall": 0.7162426614481409,
+          "f1-score": 0.5466766243465273,
+          "support": 511.0
+        },
+        "two": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 118.0
+        },
+        "three": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 5.0
+        },
+        "four": {
+          "precision": 0.3333333333333333,
+          "recall": 0.07692307692307693,
+          "f1-score": 0.125,
+          "support": 195.0
+        },
+        "six": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 66.0
+        },
+        "wicket": {
+          "precision": 0.23529411764705882,
+          "recall": 0.08163265306122448,
+          "f1-score": 0.12121212121212122,
+          "support": 49.0
+        },
+        "accuracy": 0.485657104736491,
+        "macro avg": {
+          "precision": 0.22659425602747665,
+          "recall": 0.21325948706435147,
+          "f1-score": 0.19841317439965303,
+          "support": 1499.0
+        },
+        "weighted avg": {
+          "precision": 0.4148169351401042,
+          "recall": 0.485657104736491,
+          "f1-score": 0.42725021863780627,
+          "support": 1499.0
+        }
+      },
+      "stratified_evaluations": {
+        "by_batter": {
+          "AB de Villiers": {
+            "sample_count": 166,
+            "wickets_count": 8,
+            "log_loss": 1.4021,
+            "mean_expected_runs": 1.272
+          },
+          "Brendon McCullum": {
+            "sample_count": 97,
+            "wickets_count": 4,
+            "log_loss": 1.3588,
+            "mean_expected_runs": 1.336
+          },
+          "Chris Gayle": {
+            "sample_count": 158,
+            "wickets_count": 7,
+            "log_loss": 1.2532,
+            "mean_expected_runs": 1.288
+          },
+          "David Warner": {
+            "sample_count": 204,
+            "wickets_count": 10,
+            "log_loss": 1.3678,
+            "mean_expected_runs": 1.352
+          },
+          "Kumar Sangakkara": {
+            "sample_count": 268,
+            "wickets_count": 4,
+            "log_loss": 1.2644,
+            "mean_expected_runs": 1.114
+          },
+          "Mahela Jayawardene": {
+            "sample_count": 154,
+            "wickets_count": 6,
+            "log_loss": 1.6601,
+            "mean_expected_runs": 1.075
+          },
+          "Martin Guptill": {
+            "sample_count": 148,
+            "wickets_count": 2,
+            "log_loss": 1.3368,
+            "mean_expected_runs": 1.361
+          },
+          "Shane Watson": {
+            "sample_count": 133,
+            "wickets_count": 6,
+            "log_loss": 1.4748,
+            "mean_expected_runs": 1.351
+          },
+          "Virat Kohli": {
+            "sample_count": 171,
+            "wickets_count": 2,
+            "log_loss": 1.4005,
+            "mean_expected_runs": 0.987
+          }
+        },
+        "by_match_phase": {
+          "powerplay": {
+            "sample_count": 639,
+            "wickets_count": 24,
+            "log_loss": 1.2965
+          },
+          "middle": {
+            "sample_count": 725,
+            "wickets_count": 23,
+            "log_loss": 1.443
+          },
+          "death": {
+            "sample_count": 135,
+            "wickets_count": 2,
+            "log_loss": 1.4436
+          }
+        }
+      }
+    }
+  },
+  "calibrated_xgboost": {
+    "model_id": "candidate_calibrated_xgboost_v2",
+    "name": "Calibrated XGBoost (Sigmoid)",
+    "metrics": {
+      "evaluation_timestamp": "2026-10-22T18:58:03.917036+00:00",
+      "sample_count": 1499,
+      "valid_probability_distribution": true,
+      "max_probability_deviation_from_one": 0.0,
+      "test_log_loss": 1.3486,
+      "test_brier_score": 0.6552,
+      "wicket_metrics": {
+        "support": 49,
+        "recall": 0.1224,
+        "precision": 0.1224,
+        "f1": 0.1224,
+        "pr_auc": 0.0664,
+        "expected_calibration_error": 0.0102,
+        "wilson_recall_ci_95": [
+          0.0573,
+          0.2424
+        ]
+      },
+      "boundary_metrics": {
+        "support": 261,
+        "recall": 0.2605,
+        "precision": 0.356,
+        "f1": 0.3009,
+        "pr_auc": 0.2747,
+        "expected_calibration_error": 0.0233
+      },
+      "class_report": {
+        "dot": {
+          "precision": 0.5704697986577181,
+          "recall": 0.6126126126126126,
+          "f1-score": 0.5907906168549087,
+          "support": 555.0
+        },
+        "single": {
+          "precision": 0.44244604316546765,
+          "recall": 0.7221135029354208,
+          "f1-score": 0.5486988847583643,
+          "support": 511.0
+        },
+        "two": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 118.0
+        },
+        "three": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 5.0
+        },
+        "four": {
+          "precision": 0.35555555555555557,
+          "recall": 0.08205128205128205,
+          "f1-score": 0.13333333333333333,
+          "support": 195.0
+        },
+        "six": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 66.0
+        },
+        "wicket": {
+          "precision": 0.14285714285714285,
+          "recall": 0.04081632653061224,
+          "f1-score": 0.06349206349206349,
+          "support": 49.0
+        },
+        "accuracy": 0.4849899933288859,
+        "macro avg": {
+          "precision": 0.21590407717655488,
+          "recall": 0.20822767487570393,
+          "f1-score": 0.19090212834838138,
+          "support": 1499.0
+        },
+        "weighted avg": {
+          "precision": 0.4129646428591867,
+          "recall": 0.4849899933288859,
+          "f1-score": 0.4252068269360304,
+          "support": 1499.0
+        }
+      },
+      "stratified_evaluations": {
+        "by_batter": {
+          "AB de Villiers": {
+            "sample_count": 166,
+            "wickets_count": 8,
+            "log_loss": 1.3695,
+            "mean_expected_runs": 1.327
+          },
+          "Brendon McCullum": {
+            "sample_count": 97,
+            "wickets_count": 4,
+            "log_loss": 1.3245,
+            "mean_expected_runs": 1.337
+          },
+          "Chris Gayle": {
+            "sample_count": 158,
+            "wickets_count": 7,
+            "log_loss": 1.2861,
+            "mean_expected_runs": 1.348
+          },
+          "David Warner": {
+            "sample_count": 204,
+            "wickets_count": 10,
+            "log_loss": 1.3653,
+            "mean_expected_runs": 1.356
+          },
+          "Kumar Sangakkara": {
+            "sample_count": 268,
+            "wickets_count": 4,
+            "log_loss": 1.259,
+            "mean_expected_runs": 1.23
+          },
+          "Mahela Jayawardene": {
+            "sample_count": 154,
+            "wickets_count": 6,
+            "log_loss": 1.5355,
+            "mean_expected_runs": 1.197
+          },
+          "Martin Guptill": {
+            "sample_count": 148,
+            "wickets_count": 2,
+            "log_loss": 1.3162,
+            "mean_expected_runs": 1.351
+          },
+          "Shane Watson": {
+            "sample_count": 133,
+            "wickets_count": 6,
+            "log_loss": 1.4795,
+            "mean_expected_runs": 1.368
+          },
+          "Virat Kohli": {
+            "sample_count": 171,
+            "wickets_count": 2,
+            "log_loss": 1.2784,
+            "mean_expected_runs": 1.135
+          }
+        },
+        "by_match_phase": {
+          "powerplay": {
+            "sample_count": 639,
+            "wickets_count": 24,
+            "log_loss": 1.2988
+          },
+          "middle": {
+            "sample_count": 725,
+            "wickets_count": 23,
+            "log_loss": 1.3804
+          },
+          "death": {
+            "sample_count": 135,
+            "wickets_count": 2,
+            "log_loss": 1.4134
+          }
+        }
+      }
+    }
+  },
+  "decomposed_factorized": {
+    "model_id": "candidate_decomposed_v4",
+    "name": "Decomposed Factorized Architecture",
+    "metrics": {
+      "evaluation_timestamp": "2026-10-22T18:58:04.647129+00:00",
+      "sample_count": 1499,
+      "valid_probability_distribution": true,
+      "max_probability_deviation_from_one": 0.0,
+      "test_log_loss": 1.4123,
+      "test_brier_score": 0.674,
+      "wicket_metrics": {
+        "support": 49,
+        "recall": 0.1224,
+        "precision": 0.0923,
+        "f1": 0.1053,
+        "pr_auc": 0.0633,
+        "expected_calibration_error": 0.0098,
+        "wilson_recall_ci_95": [
+          0.0573,
+          0.2424
+        ]
+      },
+      "boundary_metrics": {
+        "support": 261,
+        "recall": 0.7663,
+        "precision": 0.2155,
+        "f1": 0.3364,
+        "pr_auc": 0.2616,
+        "expected_calibration_error": 0.1221
+      },
+      "class_report": {
+        "dot": {
+          "precision": 0.61,
+          "recall": 0.5495495495495496,
+          "f1-score": 0.5781990521327014,
+          "support": 555.0
+        },
+        "single": {
+          "precision": 0.45241379310344826,
+          "recall": 0.6418786692759295,
+          "f1-score": 0.5307443365695793,
+          "support": 511.0
+        },
+        "two": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 118.0
+        },
+        "three": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 5.0
+        },
+        "four": {
+          "precision": 0.2222222222222222,
+          "recall": 0.3076923076923077,
+          "f1-score": 0.25806451612903225,
+          "support": 195.0
+        },
+        "six": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 66.0
+        },
+        "wicket": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 49.0
+        },
+        "accuracy": 0.46230820547031354,
+        "macro avg": {
+          "precision": 0.18351943076081007,
+          "recall": 0.2141600752168267,
+          "f1-score": 0.19528684354733042,
+          "support": 1499.0
+        },
+        "weighted avg": {
+          "precision": 0.40898384363522045,
+          "recall": 0.46230820547031354,
+          "f1-score": 0.4285746568151205,
+          "support": 1499.0
+        }
+      },
+      "stratified_evaluations": {
+        "by_batter": {
+          "AB de Villiers": {
+            "sample_count": 166,
+            "wickets_count": 8,
+            "log_loss": 1.4202,
+            "mean_expected_runs": 1.799
+          },
+          "Brendon McCullum": {
+            "sample_count": 97,
+            "wickets_count": 4,
+            "log_loss": 1.4696,
+            "mean_expected_runs": 1.887
+          },
+          "Chris Gayle": {
+            "sample_count": 158,
+            "wickets_count": 7,
+            "log_loss": 1.2771,
+            "mean_expected_runs": 1.76
+          },
+          "David Warner": {
+            "sample_count": 204,
+            "wickets_count": 10,
+            "log_loss": 1.3793,
+            "mean_expected_runs": 1.882
+          },
+          "Kumar Sangakkara": {
+            "sample_count": 268,
+            "wickets_count": 4,
+            "log_loss": 1.2664,
+            "mean_expected_runs": 1.569
+          },
+          "Mahela Jayawardene": {
+            "sample_count": 154,
+            "wickets_count": 6,
+            "log_loss": 1.6283,
+            "mean_expected_runs": 1.515
+          },
+          "Martin Guptill": {
+            "sample_count": 148,
+            "wickets_count": 2,
+            "log_loss": 1.3867,
+            "mean_expected_runs": 2.043
+          },
+          "Shane Watson": {
+            "sample_count": 133,
+            "wickets_count": 6,
+            "log_loss": 1.5399,
+            "mean_expected_runs": 1.912
+          },
+          "Virat Kohli": {
+            "sample_count": 171,
+            "wickets_count": 2,
+            "log_loss": 1.4937,
+            "mean_expected_runs": 1.571
+          }
+        },
+        "by_match_phase": {
+          "powerplay": {
+            "sample_count": 639,
+            "wickets_count": 24,
+            "log_loss": 1.3369
+          },
+          "middle": {
+            "sample_count": 725,
+            "wickets_count": 23,
+            "log_loss": 1.4667
+          },
+          "death": {
+            "sample_count": 135,
+            "wickets_count": 2,
+            "log_loss": 1.4776
+          }
+        }
+      }
+    }
+  }
+}

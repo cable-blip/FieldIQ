@@ -9,6 +9,8 @@ interface FielderMarkerProps {
   role: 'wicket_taking' | 'run_saving' | 'core';
   onUpdate: (x: number, y: number) => void;
   showCoverage?: boolean;
+  isSelected?: boolean;
+  onSelect?: () => void;
 }
 
 export const FielderMarker: React.FC<FielderMarkerProps> = ({
@@ -17,7 +19,9 @@ export const FielderMarker: React.FC<FielderMarkerProps> = ({
   y,
   role,
   onUpdate,
-  showCoverage = true
+  showCoverage = true,
+  isSelected = false,
+  onSelect,
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState<boolean>(false);
@@ -46,6 +50,7 @@ export const FielderMarker: React.FC<FielderMarkerProps> = ({
   // Drag handler using R3F pointer events
   const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
+    if (onSelect) onSelect();
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     setActive(true);
   };
@@ -83,14 +88,18 @@ export const FielderMarker: React.FC<FielderMarkerProps> = ({
         onPointerUp={handlePointerUp}
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (onSelect) onSelect();
+        }}
       >
         <sphereGeometry args={[1.2, 16, 16]} />
         <meshStandardMaterial
-          color={hovered || active ? '#58a6ff' : color}
+          color={hovered || active || isSelected ? '#38bdf8' : color}
           roughness={0.4}
           metalness={0.1}
-          emissive={active ? '#58a6ff' : '#000000'}
-          emissiveIntensity={0.2}
+          emissive={isSelected ? '#38bdf8' : active ? '#58a6ff' : '#000000'}
+          emissiveIntensity={isSelected ? 0.4 : active ? 0.2 : 0}
         />
       </mesh>
 
@@ -99,6 +108,14 @@ export const FielderMarker: React.FC<FielderMarkerProps> = ({
         <ringGeometry args={[0, 1.4]} />
         <meshBasicMaterial color="#000000" opacity={0.3} transparent />
       </mesh>
+
+      {/* Selected Fielder Beacon Ring */}
+      {isSelected && (
+        <mesh position={[x, 0.03, y]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[1.6, 2.2, 32]} />
+          <meshBasicMaterial color="#38bdf8" opacity={0.9} transparent side={THREE.DoubleSide} />
+        </mesh>
+      )}
 
       {/* Fielder Intercept Coverage Radius Ring */}
       {showCoverage && (

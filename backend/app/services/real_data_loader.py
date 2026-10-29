@@ -1,8 +1,17 @@
 """
 real_data_loader.py — Real delivery data loader for the Cricket Tactical Field Intelligence System.
 
-Converts raw delivery-level cricket data (from CSV/JSON datasets or uploaded files) into the
-zone_chart format used by BatterProfile. Supports both RHB and LHB batters with automatic mirroring.
+Converts derived delivery-level cricket data into the zone_chart format used by BatterProfile.
+Supports both RHB and LHB batters with automatic off/leg side mirroring.
+
+Data Lineage & Provenance:
+- Spatial Direction: Extracted from `rishsriv/t20i_data` (ESPNcricinfo wagon wheels from 510 T20Is, 2005-2016).
+- Match Metadata: Enriched with Cricsheet ball-by-ball records.
+- Spatial Limitation: Direction is inherited from the source wagon-wheel sector field (1-8).
+  Distance bands are categorical proxies from runs, not measured coordinates.
+- Spatial Availability: Deliveries with Zone == 0 (2,119 rows / 20.3%) represent unavailable spatial data
+  and are strictly excluded from directional calculations. Never inferred.
+- Statistical Shrinkage: Empirical Bayes shrinkage toward documented priors for small samples.
 """
 from __future__ import annotations
 
@@ -15,6 +24,20 @@ from typing import Optional, Union
 import pandas as pd
 
 from backend.app.services.profiles import BatterProfile, Handedness, generate_default_zone_chart
+from backend.app.services.spatial_intelligence import (
+    DIRECTIONS,
+    BANDS,
+    ZONE_TO_DIRECTION_RHB,
+    ZONE_TO_DIRECTION_LHB,
+    MIRROR_DIRECTION,
+    is_valid_spatial_zone,
+    parse_spatial_zone,
+    resolve_batter_handedness,
+    compute_shrunk_zone_danger,
+    compute_directional_distribution,
+    derive_batter_risk_profile,
+    ResultConfidenceTier,
+)
 
 # ---------------------------------------------------------------------------
 # Security: Path validation
@@ -44,53 +67,6 @@ def _validate_filepath(filepath: str | Path) -> Path:
         raise FileNotFoundError(f"Data file not found: {resolved}")
     return resolved
 
-# ---------------------------------------------------------------------------
-# Constants & Mappings
-# ---------------------------------------------------------------------------
-
-DIRECTIONS = ['Mid Off', 'Cover', 'Point', 'Third Man',
-              'Fine Leg', 'Square Leg', 'Mid Wicket', 'Mid On']
-BANDS = ['Inner', 'Mid', 'Deep']
-
-# Maps wagon-wheel zone numbers (1-8) to directions for RHB
-ZONE_TO_DIRECTION_RHB = {
-    1: 'Fine Leg',
-    2: 'Square Leg',
-    3: 'Mid Wicket',
-    4: 'Mid On',
-    5: 'Mid Off',
-    6: 'Cover',
-    7: 'Point',
-    8: 'Third Man',
-}
-
-# Mirror mapping for LHB: off/leg sides flip
-MIRROR_DIRECTION = {
-    'Fine Leg': 'Third Man',
-    'Third Man': 'Fine Leg',
-    'Square Leg': 'Point',
-    'Point': 'Square Leg',
-    'Mid Wicket': 'Cover',
-    'Cover': 'Mid Wicket',
-    'Mid On': 'Mid Off',
-    'Mid Off': 'Mid On',
-}
-
-ZONE_TO_DIRECTION_LHB = {
-    zone: MIRROR_DIRECTION[direction]
-    for zone, direction in ZONE_TO_DIRECTION_RHB.items()
-}
-
-
-def band_from_runs(runs: int) -> str:
-    """Estimate distance band from runs scored on a delivery."""
-    if runs <= 1:
-        return 'Inner'
-    elif runs <= 3:
-        return 'Mid'
-    else:
-        return 'Deep'
-
 
 def _find_column(columns: list[str], candidates: list[str]) -> Optional[str]:
     """Case-insensitive column name resolver."""
@@ -99,43 +75,6 @@ def _find_column(columns: list[str], candidates: list[str]) -> Optional[str]:
         if cand.lower() in col_map:
             return col_map[cand.lower()]
     return None
-
-
-# Known batter risk priors
-KNOWN_BATTER_RISKS = {
-    "Virat Kohli": {
-        "edge_vs_pace": 0.72, "pull_mistime": 0.35, "sweep_risk": 0.20,
-        "charge_spin": 0.15, "lofted_drive": 0.40, "handedness": Handedness.RHB
-    },
-    "AB de Villiers": {
-        "edge_vs_pace": 0.45, "pull_mistime": 0.30, "sweep_risk": 0.65,
-        "charge_spin": 0.55, "lofted_drive": 0.70, "handedness": Handedness.RHB
-    },
-    "Brendon McCullum": {
-        "edge_vs_pace": 0.65, "pull_mistime": 0.60, "sweep_risk": 0.45,
-        "charge_spin": 0.70, "lofted_drive": 0.80, "handedness": Handedness.RHB
-    },
-    "Mahela Jayawardene": {
-        "edge_vs_pace": 0.30, "pull_mistime": 0.20, "sweep_risk": 0.60,
-        "charge_spin": 0.50, "lofted_drive": 0.35, "handedness": Handedness.RHB
-    },
-    "Martin Guptill": {
-        "edge_vs_pace": 0.55, "pull_mistime": 0.50, "sweep_risk": 0.30,
-        "charge_spin": 0.40, "lofted_drive": 0.65, "handedness": Handedness.RHB
-    },
-    "Shane Watson": {
-        "edge_vs_pace": 0.60, "pull_mistime": 0.55, "sweep_risk": 0.25,
-        "charge_spin": 0.45, "lofted_drive": 0.60, "handedness": Handedness.RHB
-    },
-    "David Warner": {
-        "edge_vs_pace": 0.55, "pull_mistime": 0.65, "sweep_risk": 0.35,
-        "charge_spin": 0.30, "lofted_drive": 0.50, "handedness": Handedness.LHB
-    },
-    "Rishabh Pant": {
-        "edge_vs_pace": 0.55, "pull_mistime": 0.50, "sweep_risk": 0.70,
-        "charge_spin": 0.75, "lofted_drive": 0.65, "handedness": Handedness.LHB
-    },
-}
 
 
 NORMALIZE_DIRECTION_MAP = {
@@ -160,111 +99,80 @@ NORMALIZE_DIRECTION_MAP = {
     'point': 'Point',
     'backward point': 'Point',
     'deep point': 'Point',
-    'gully': 'Point',
     'third man': 'Third Man',
+    'short third man': 'Third Man',
     'deep third man': 'Third Man',
-    'slip': 'Third Man',
 }
-
-_PROBABILISTIC_DIRECTIONS = ['Mid Off', 'Cover', 'Point', 'Third Man', 'Fine Leg', 'Square Leg', 'Mid Wicket', 'Mid On']
-
-
-def _infer_direction_for_delivery(
-    row_idx: int,
-    runs: int,
-    handedness: Handedness,
-    wicket_kind: str = "",
-    fielders_involved: str = ""
-) -> str:
-    """Deterministically assign realistic shot sector when no explicit zone column is in raw dataset."""
-    fk = str(fielders_involved).lower()
-    wk = str(wicket_kind).lower()
-
-    for k, v in NORMALIZE_DIRECTION_MAP.items():
-        if k in fk or k in wk:
-            return v
-
-    # Fallback to realistic cricket distribution based on runs
-    if runs == 6:
-        choices = ['Mid Wicket', 'Mid On', 'Mid Off', 'Square Leg']
-        dir_cand = choices[row_idx % len(choices)]
-    elif runs == 4:
-        choices = ['Cover', 'Mid Wicket', 'Point', 'Square Leg', 'Fine Leg', 'Third Man']
-        dir_cand = choices[row_idx % len(choices)]
-    elif runs in (1, 2, 3):
-        choices = ['Mid Wicket', 'Cover', 'Square Leg', 'Point', 'Mid On', 'Mid Off']
-        dir_cand = choices[row_idx % len(choices)]
-    else:  # Dot ball
-        choices = ['Point', 'Cover', 'Third Man', 'Mid Off', 'Mid On', 'Square Leg']
-        dir_cand = choices[row_idx % len(choices)]
-
-    if handedness == Handedness.LHB:
-        return MIRROR_DIRECTION.get(dir_cand, dir_cand)
-    return dir_cand
 
 
 def load_deliveries_from_dataframe(
     df: pd.DataFrame,
     batter_name: str,
 ) -> tuple[dict[str, float], Handedness]:
-    """Extract zone chart and handedness for a specific batter from a pandas DataFrame."""
+    """Extract zone chart and handedness for a specific batter from a pandas DataFrame.
+
+    Calculates data-derived runs-per-ball danger strictly from deliveries with valid spatial sectors (1..8).
+    Deliveries with Zone == 0 or missing spatial information are strictly excluded and never fabricated.
+    Unhit directions default to 0.5.
+    """
     cols = [str(c) for c in df.columns]
     batter_col = _find_column(cols, ['batter', 'batter_name', 'batsman', 'batsman_name', 'player']) or cols[0]
     zone_col = _find_column(cols, ['zone', 'z', 'shot_zone', 'shot_direction', 'sector'])
     runs_col = _find_column(cols, ['runsbatter', 'runs_batter', 'runs', 'batsman_runs', 'runs_scored', 'runs_total'])
-    hand_col = _find_column(cols, ['handedness', 'batting_hand', 'hand', 'batting_style'])
 
     subset = df[df[batter_col].astype(str).str.strip().str.lower() == batter_name.strip().lower()]
     if subset.empty:
         raise ValueError(f"No deliveries found for batter: {batter_name}")
 
-    # Determine handedness
-    handedness = Handedness.RHB
-    if hand_col and not subset[hand_col].dropna().empty:
-        val = str(subset[hand_col].dropna().iloc[0]).strip().lower()
-        if val in ('l', 'lhb', 'left', 'left-hand bat', 'left_hand'):
-            handedness = Handedness.LHB
-    elif batter_name in KNOWN_BATTER_RISKS:
-        handedness = KNOWN_BATTER_RISKS[batter_name]['handedness']
+    handedness, _ = resolve_batter_handedness(df, batter_name)
+    dir_runs: dict[str, list[float]] = {d: [] for d in DIRECTIONS}
 
-    zone_runs: dict[str, list[float]] = {f'{d}_{b}': [] for d in DIRECTIONS for b in BANDS}
-
-    for idx, (_, row) in enumerate(subset.iterrows()):
-        runs = 0
+    for _, row in subset.iterrows():
+        runs = 0.0
         if runs_col and pd.notna(row.get(runs_col)):
             try:
-                runs = int(row[runs_col])
+                runs = float(row[runs_col])
             except (ValueError, TypeError):
-                runs = 0
+                runs = 0.0
 
         direction = None
         if zone_col and pd.notna(row.get(zone_col)):
-            val = str(row[zone_col]).strip()
-            # Try integer 1-8
-            try:
-                zone_num = int(float(val))
-                if 1 <= zone_num <= 8:
-                    direction = ZONE_TO_DIRECTION_LHB.get(zone_num) if handedness == Handedness.LHB else ZONE_TO_DIRECTION_RHB.get(zone_num)
-            except (ValueError, TypeError):
-                # Try string name
-                direction = NORMALIZE_DIRECTION_MAP.get(val.lower())
+            val = row[zone_col]
+            z = parse_spatial_zone(val)
+            if z is not None:
+                direction = ZONE_TO_DIRECTION_LHB.get(z) if handedness == Handedness.LHB else ZONE_TO_DIRECTION_RHB.get(z)
+            else:
+                s_val = str(val).strip().lower()
+                if s_val in NORMALIZE_DIRECTION_MAP:
+                    cand = NORMALIZE_DIRECTION_MAP[s_val]
+                    direction = MIRROR_DIRECTION.get(cand, cand) if handedness == Handedness.LHB else cand
 
-        if not direction:
-            wk = str(row.get('wicket_kind', '')) if 'wicket_kind' in row else ''
-            fi = str(row.get('fielders_involved', '')) if 'fielders_involved' in row else ''
-            direction = _infer_direction_for_delivery(idx, runs, handedness, wk, fi)
+        if direction and direction in dir_runs:
+            dir_runs[direction].append(runs)
 
-        band = band_from_runs(runs)
-        zone_runs[f'{direction}_{band}'].append(float(runs))
-
-    zone_chart = {}
-    for zone_key, runs_list in zone_runs.items():
-        if runs_list:
-            zone_chart[zone_key] = round(sum(runs_list) / len(runs_list), 3)
-        else:
-            zone_chart[zone_key] = 0.5  # Neutral prior for unhit zones
+    zone_chart: dict[str, float] = {}
+    for d in DIRECTIONS:
+        runs_list = dir_runs[d]
+        val = round(sum(runs_list) / len(runs_list), 3) if runs_list else 0.5
+        for b in BANDS:
+            zone_chart[f"{d}_{b}"] = val
 
     return zone_chart, handedness
+
+
+def get_directional_delivery_counts(
+    df: pd.DataFrame,
+    batter_name: str,
+) -> dict[str, int]:
+    """Return explicit-zone ball counts by direction for a batter.
+
+    Zone 0, missing zones, and unrecognized direction strings are excluded.
+    This count is intentionally separate from the chart so empirical shrinkage
+    can use each direction's own sample size rather than global N.
+    """
+    handedness, _ = resolve_batter_handedness(df, batter_name)
+    dist = compute_directional_distribution(df, batter_name, handedness=handedness)
+    return dist.directional_counts
 
 
 def load_deliveries_from_csv(
@@ -362,6 +270,201 @@ def get_all_available_bowlers(force_reload: bool = False) -> list[str]:
     return _CACHED_AVAILABLE_BOWLERS
 
 
+# ---------------------------------------------------------------------------
+# Domain Priors and Empirical Bayesian Shrinkage
+# ---------------------------------------------------------------------------
+KNOWN_BATTER_RISKS: dict[str, dict[str, float]] = {
+    "Virat Kohli": {
+        "edge_vs_pace": 0.72,
+        "pull_mistime_vs_short_ball": 0.35,
+        "sweep_risk_vs_spin": 0.20,
+        "charge_vs_spin": 0.15,
+        "lofted_drive_risk": 0.40,
+    },
+    "Kane Williamson": {
+        "edge_vs_pace": 0.35,
+        "pull_mistime_vs_short_ball": 0.20,
+        "sweep_risk_vs_spin": 0.15,
+        "charge_vs_spin": 0.10,
+        "lofted_drive_risk": 0.25,
+    },
+    "Rishabh Pant": {
+        "edge_vs_pace": 0.55,
+        "pull_mistime_vs_short_ball": 0.50,
+        "sweep_risk_vs_spin": 0.70,
+        "charge_vs_spin": 0.75,
+        "lofted_drive_risk": 0.65,
+    },
+    "Joe Root": {
+        "edge_vs_pace": 0.45,
+        "pull_mistime_vs_short_ball": 0.25,
+        "sweep_risk_vs_spin": 0.55,
+        "charge_vs_spin": 0.30,
+        "lofted_drive_risk": 0.30,
+    },
+    "Babar Azam": {
+        "edge_vs_pace": 0.60,
+        "pull_mistime_vs_short_ball": 0.30,
+        "sweep_risk_vs_spin": 0.25,
+        "charge_vs_spin": 0.20,
+        "lofted_drive_risk": 0.45,
+    },
+    "Ben Stokes": {
+        "edge_vs_pace": 0.50,
+        "pull_mistime_vs_short_ball": 0.55,
+        "sweep_risk_vs_spin": 0.40,
+        "charge_vs_spin": 0.45,
+        "lofted_drive_risk": 0.70,
+    },
+    "Glenn Maxwell": {
+        "edge_vs_pace": 0.40,
+        "pull_mistime_vs_short_ball": 0.45,
+        "sweep_risk_vs_spin": 0.75,
+        "charge_vs_spin": 0.80,
+        "lofted_drive_risk": 0.60,
+    },
+    "Mahela Jayawardene": {
+        "edge_vs_pace": 0.30,
+        "pull_mistime_vs_short_ball": 0.20,
+        "sweep_risk_vs_spin": 0.60,
+        "charge_vs_spin": 0.50,
+        "lofted_drive_risk": 0.35,
+    },
+    "David Warner": {
+        "edge_vs_pace": 0.55,
+        "pull_mistime_vs_short_ball": 0.65,
+        "sweep_risk_vs_spin": 0.35,
+        "charge_vs_spin": 0.30,
+        "lofted_drive_risk": 0.50,
+    },
+    "AB de Villiers": {
+        "edge_vs_pace": 0.45,
+        "pull_mistime_vs_short_ball": 0.30,
+        "sweep_risk_vs_spin": 0.65,
+        "charge_vs_spin": 0.55,
+        "lofted_drive_risk": 0.70,
+    },
+    "Brendon McCullum": {
+        "edge_vs_pace": 0.65,
+        "pull_mistime_vs_short_ball": 0.60,
+        "sweep_risk_vs_spin": 0.45,
+        "charge_vs_spin": 0.70,
+        "lofted_drive_risk": 0.80,
+    },
+    "Martin Guptill": {
+        "edge_vs_pace": 0.55,
+        "pull_mistime_vs_short_ball": 0.50,
+        "sweep_risk_vs_spin": 0.30,
+        "charge_vs_spin": 0.40,
+        "lofted_drive_risk": 0.65,
+    },
+    "Shane Watson": {
+        "edge_vs_pace": 0.60,
+        "pull_mistime_vs_short_ball": 0.55,
+        "sweep_risk_vs_spin": 0.25,
+        "charge_vs_spin": 0.45,
+        "lofted_drive_risk": 0.60,
+    },
+    "Chris Gayle": {
+        "edge_vs_pace": 0.50,
+        "pull_mistime_vs_short_ball": 0.60,
+        "sweep_risk_vs_spin": 0.30,
+        "charge_vs_spin": 0.35,
+        "lofted_drive_risk": 0.75,
+    },
+    "Kumar Sangakkara": {
+        "edge_vs_pace": 0.40,
+        "pull_mistime_vs_short_ball": 0.30,
+        "sweep_risk_vs_spin": 0.35,
+        "charge_vs_spin": 0.35,
+        "lofted_drive_risk": 0.45,
+    },
+}
+
+DEFAULT_BATTER_RISK_PRIOR: dict[str, float] = {
+    "edge_vs_pace": 0.50,
+    "pull_mistime_vs_short_ball": 0.40,
+    "sweep_risk_vs_spin": 0.35,
+    "charge_vs_spin": 0.40,
+    "lofted_drive_risk": 0.50,
+}
+
+
+def compute_learned_batter_risks(
+    df: pd.DataFrame,
+    batter_name: str,
+) -> dict[str, Any]:
+    """
+    Derives tactical batter risk parameters from delivery history,
+    blended with domain priors via Empirical Bayesian shrinkage.
+
+    Formula:
+        lambda = n / (n + 50)
+        blended = lambda * empirical + (1 - lambda) * prior
+
+    Provenance tiers:
+        - "learned_empirical_blended" (n >= 50): Strong empirical sample size
+        - "shrunk_domain_prior" (0 < n < 50): Small empirical sample shrunk heavily to prior
+        - "domain_prior_fallback" (n == 0): Unobserved batter using expert domain prior
+    """
+    risk_profile = derive_batter_risk_profile(df, batter_name)
+    n = risk_profile.total_balls
+
+    # Resolve domain prior
+    prior = KNOWN_BATTER_RISKS.get(batter_name)
+    if prior is None:
+        for k, v in KNOWN_BATTER_RISKS.items():
+            if k.strip().lower() == batter_name.strip().lower():
+                prior = v
+                break
+    if prior is None:
+        prior = DEFAULT_BATTER_RISK_PRIOR
+
+    emp_dict = {
+        "edge_vs_pace": risk_profile.edge_vs_pace,
+        "pull_mistime_vs_short_ball": risk_profile.pull_mistime_vs_short_ball,
+        "sweep_risk_vs_spin": risk_profile.sweep_risk_vs_spin,
+        "charge_vs_spin": risk_profile.charge_vs_spin,
+        "lofted_drive_risk": risk_profile.lofted_drive_risk,
+    }
+
+    if n == 0:
+        lam = 0.0
+        provenance = "domain_prior_fallback"
+        blended = dict(prior)
+        disclosure = f"Zero deliveries in dataset; using expert domain prior fallback for '{batter_name}'."
+    elif n < 50:
+        lam = round(n / (n + 50.0), 3)
+        provenance = "shrunk_domain_prior"
+        blended = {
+            k: round(lam * emp_dict[k] + (1.0 - lam) * prior.get(k, 0.50), 3)
+            for k in emp_dict
+        }
+        disclosure = f"Sparse sample of {n} deliveries; empirical parameters shrunk toward prior with weight {round(1.0 - lam, 3)}."
+    else:
+        lam = round(n / (n + 50.0), 3)
+        provenance = "learned_empirical_blended"
+        blended = {
+            k: round(lam * emp_dict[k] + (1.0 - lam) * prior.get(k, 0.50), 3)
+            for k in emp_dict
+        }
+        disclosure = f"Empirically derived from {n} deliveries ({risk_profile.valid_spatial_balls} valid spatial) with shrinkage weight {lam}."
+
+    return {
+        "batter_name": batter_name,
+        "provenance": provenance,
+        "sample_size": n,
+        "valid_spatial_balls": risk_profile.valid_spatial_balls,
+        "shrinkage_weight_empirical": lam,
+        "shrinkage_weight_prior": round(1.0 - lam, 3),
+        "risks": blended,
+        "empirical_risks": emp_dict,
+        "prior_risks": prior,
+        "uncertainty_disclosure": disclosure,
+        "handedness": risk_profile.handedness,
+    }
+
+
 def load_all_real_batters(filepath: str | Path = 'real_batters_deliveries.csv') -> list[BatterProfile]:
     """Load all unique batters from CSV dataset as BatterProfile objects."""
     filepath = _validate_filepath(filepath)
@@ -370,34 +473,30 @@ def load_all_real_batters(filepath: str | Path = 'real_batters_deliveries.csv') 
 
 
 def load_all_batters_from_df(df: pd.DataFrame, source_name: str = "Uploaded Data") -> list[BatterProfile]:
-    """Build BatterProfile objects for every batter present in a DataFrame."""
+    """Build BatterProfile objects for every batter present in a DataFrame using learned, shrunk risks."""
     batter_names = get_available_batters_from_df(df)
     profiles = []
 
     for name in batter_names:
         try:
-            zone_chart, handedness = load_deliveries_from_dataframe(df, name)
-            
-            priors = KNOWN_BATTER_RISKS.get(name, {
-                "edge_vs_pace": 0.50,
-                "pull_mistime": 0.40,
-                "sweep_risk": 0.35,
-                "charge_spin": 0.40,
-                "lofted_drive": 0.50,
-            })
-            
-            subset_len = len(df[df.iloc[:, 0].astype(str).str.strip().str.lower() == name.strip().lower()])
-            
+            learned = compute_learned_batter_risks(df, name)
+            risks = learned["risks"]
+            zone_chart, _ = compute_shrunk_zone_danger(df, name, handedness=learned["handedness"])
+
             profiles.append(BatterProfile(
                 name=name,
-                handedness=handedness,
+                handedness=learned["handedness"],
                 zone_chart=zone_chart,
-                edge_vs_pace=priors.get("edge_vs_pace", 0.50),
-                pull_mistime_vs_short_ball=priors.get("pull_mistime", 0.40),
-                sweep_risk_vs_spin=priors.get("sweep_risk", 0.35),
-                charge_vs_spin=priors.get("charge_spin", 0.40),
-                lofted_drive_risk=priors.get("lofted_drive", 0.50),
-                notes=f"Generated from real delivery dataset ({source_name}, {subset_len} balls)"
+                edge_vs_pace=risks["edge_vs_pace"],
+                pull_mistime_vs_short_ball=risks["pull_mistime_vs_short_ball"],
+                sweep_risk_vs_spin=risks["sweep_risk_vs_spin"],
+                charge_vs_spin=risks["charge_vs_spin"],
+                lofted_drive_risk=risks["lofted_drive_risk"],
+                notes=(
+                    f"Derived from real delivery dataset ({source_name}, {learned['sample_size']} balls, "
+                    f"{learned['valid_spatial_balls']} valid spatial zones; tier: {learned['provenance']})"
+                ),
+                intelligence_metadata=learned,
             ))
         except Exception:
             continue

@@ -21,7 +21,9 @@ Integrate the real delivery-level CSV dataset and real data loader into the back
 
 Cursor owns:
 - Importing `real_batters_deliveries.csv` into the `data/` directory.
-- Porting `real_data_loader.py` from `C:\Users\ADMIN\Documents\PBL\` to `backend/app/services/real_data_loader.py`, updating paths and local imports.
+  - *Provenance Note:* This dataset is derived from `rishsriv/t20i_data` (ESPNcricinfo wagon wheels from 510 T20Is, 2005–2016) for spatial sectors 1–8, enriched with Cricsheet match metadata for bowler names, dismissals, and dot balls.
+  - Direction is inherited from the source wagon-wheel sector field. Distance bands are not measured spatial coordinates and must not be interpreted as exact fielder distances. Cricsheet alone does not contain wagon-wheel coordinates.
+- Porting `real_data_loader.py` from prototype (`prepare_real_batter_data.py` / `C:\Users\ADMIN\Documents\PBL\`) to `backend/app/services/real_data_loader.py`, updating paths and local imports.
 - Creating the `GET /api/v1/players` endpoint.
 - Updating `POST /api/v1/analysis` to query `real_data_loader` to construct the batter's `BatterProfile` on-the-fly.
 - Writing tests to verify dynamic batter profile construction and player retrieval.

@@ -1,0 +1,47 @@
+{
+  "dataset_name": "FieldIQ Derived Historical T20I Deliveries",
+  "dataset_version": "2.0.0",
+  "derived_dataset_version": "2.0.0-mixed-provenance",
+  "status": "validated",
+  "primary_spatial_source": {
+    "name": "rishsriv/t20i_data",
+    "repository": "https://github.com/rishsriv/t20i_data",
+    "url": "https://github.com/rishsriv/t20i_data",
+    "license": "unavailable",
+    "scope": "ESPNcricinfo match-center wagon-wheel records (510 Men's T20Is from 2005-2016) mapped to 8 angular sectors (z in 1..8).",
+    "time_period": "2005-2016"
+  },
+  "ball_by_ball_source": {
+    "name": "Cricsheet",
+    "url": "https://cricsheet.org",
+    "role": "metadata enrichment",
+    "license": "Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)",
+    "contains_wagon_wheel_data": false
+  },
+  "transformation_scripts": [
+    "scripts/ingest/01_download_cricsheet.py",
+    "scripts/ingest/02_parse_cricsheet.py",
+    "scripts/ingest/03_validate_schema.py",
+    "scripts/ingest/04_split_dataset.py",
+    "prepare_real_batter_data.py"
+  ],
+  "row_count": 10454,
+  "batter_count": 9,
+  "bowler_count": 330,
+  "match_count": 267,
+  "valid_direction_count": 8335,
+  "unmapped_zone_count": 2119,
+  "invalid_zone_count": 0,
+  "spatial_coverage_pct": 79.73,
+  "validation_status": "PASS",
+  "known_limitations": [
+    "Cricsheet data does not contain wagon-wheel or spatial shot data; directional data is derived exclusively from rishsriv/t20i_data.",
+    "Direction is inherited from the source wagon-wheel sector field (1-8). Distance bands (Inner/Mid/Deep) are categorical proxies derived from runs scored off the bat and are not measured spatial coordinates.",
+    "Deliveries with Zone == 0 (20.3%) represent unavailable spatial data and are strictly excluded from directional calculations.",
+    "Dataset is confined to a historical sample of 9 international batters from the 2005-2016 era; modern batters and post-2016 deliveries require external wagon-wheel ingestion."
+  ],
+  "created_at": "2026-08-26T17:26:00.462672+00:00",
+  "validated_at": "2026-10-22T18:49:25.575958+00:00",
+  "production_approved": false,
+  "governance_classification": "decision_support_research_only"
+}

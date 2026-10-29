@@ -1,7 +1,18 @@
 """
 02_parse_cricsheet.py
 ---------------------
-Parses Cricsheet match format into normalized delivery records.
+Normalizes delivery records into the project schema.
+
+Provenance boundary:
+- The canonical delivery dataset (`data/real_batters_deliveries.csv`) has mixed provenance:
+  1. Directional wagon-wheel data ($z \in [1..8]$) originated from `rishsriv/t20i_data`
+     (ESPNcricinfo wagon wheels from 510 T20Is, 2005–2016).
+  2. Ball-by-ball and dismissal metadata was enriched from Cricsheet.
+- Raw Cricsheet JSON contains NO wagon-wheel shot direction or spatial coordinates.
+  When parsing raw Cricsheet, `Zone: 0` is set to explicitly mark spatial data as unavailable.
+- Distance bands are categorical proxies from runs, not measured spatial coordinates.
+- This script guarantees canonical schema output without fabricating spatial data.
+
 Guarantees canonical schema output:
 ['Batter', 'GameId', 'Over', 'RunsBatter', 'Zone', 'BowlerName', 'Wicket', 'WicketMethod', 'WhoOut']
 """

@@ -63,6 +63,13 @@ placements, and fielder outcomes.
 Their absence must remain explicit. No default values, inferred positions, or
 synthetic tracking measurements are created during ingestion.
 
+### Spatial Shot & Wagon-Wheel Provenance Rule
+
+When delivery datasets include a spatial `Zone` or `shot_sector` field:
+- **Spatial Source Separation:** Standard Cricsheet ball-by-ball datasets do **not** contain wagon-wheel shot direction or distance coordinates. A dataset containing valid directional zones ($1..8$) represents a derived or composite dataset incorporating spatial tracking or wagon-wheel data (e.g. from `rishsriv/t20i_data` / ESPNcricinfo match centers).
+- **Spatial Availability:** Deliveries with missing or unrecorded directions must be coded as `Zone == 0` (or `null`), indicating spatial data unavailable. They must never be synthetically imputed or inferred from runs, dismissal text, or row order.
+- **Distance Band Disclaimer:** Direction is inherited from the source wagon-wheel sector field. Distance bands (`Inner`, `Mid`, `Deep`) are not measured spatial coordinates and must not be interpreted as exact fielder distances. Runs cannot prove shot distance.
+
 ## Validation outcome
 
 Every validation report contains:

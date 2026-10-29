@@ -167,20 +167,27 @@ class H2HStatsEngine:
         prior_chart: dict[str, float],
         n_sample: int,
         k: float = 40.0,
+        sample_counts: Optional[dict[str, int]] = None,
     ) -> dict[str, float]:
         """
         Applies empirical Bayesian shrinkage:
           lambda = n_sample / (n_sample + k)
-          shrunk[zone] = lambda * sample[zone] + (1 - lambda) * prior[zone]
+          shrunk[zone] = lambda_zone * sample[zone] + (1 - lambda_zone) * prior[zone]
         Guarantees small samples (e.g. 15-20 balls) do not collapse unhit zones to neutral defaults,
         while large samples smoothly transition to data-driven empirical weights.
         """
         if not prior_chart or n_sample <= 0:
             return sample_chart
-        lmbda = float(n_sample) / float(n_sample + k)
         shrunk = {}
         for zk in prior_chart:
-            # If the zone wasn't in sample_chart or was neutral default 0.5, use prior
+            direction = zk.rsplit("_", 1)[0]
+            count = n_sample
+            if sample_counts is not None:
+                count = int(sample_counts.get(zk, sample_counts.get(direction, 0)))
+            if count <= 0:
+                shrunk[zk] = round(prior_chart[zk], 3)
+                continue
+            lmbda = float(count) / float(count + k)
             sample_val = sample_chart.get(zk, prior_chart[zk])
             shrunk[zk] = round(lmbda * sample_val + (1.0 - lmbda) * prior_chart[zk], 3)
         return shrunk
@@ -199,18 +206,18 @@ class H2HStatsEngine:
         from backend.app.services.real_data_loader import (
             ZONE_TO_DIRECTION_RHB,
             ZONE_TO_DIRECTION_LHB,
-            band_from_runs,
             DIRECTIONS,
             BANDS,
         )
+        from backend.app.services.profiles import resolve_batter_profile
         b_df = self.df[self.df["BowlerName"] == bowler_name]
-        n = len(b_df)
-        if n < min_balls_bowler:
-            return None, n
+        n_total = len(b_df)
+        if n_total < min_balls_bowler:
+            return None, n_total
 
         LHB_SET = {"Kumar Sangakkara", "David Warner", "Chris Gayle"}
-
-        zone_runs = {f"{d}_{b}": [] for d in DIRECTIONS for b in BANDS}
+        direction_deviations: dict[str, list[tuple[float, int]]] = {d: [] for d in DIRECTIONS}
+        observed_balls = 0
         for _, row in b_df.iterrows():
             runs = int(row["RunsBatter"]) if pd.notna(row.get("RunsBatter")) else 0
             z_val = row.get("Zone")
@@ -225,18 +232,31 @@ class H2HStatsEngine:
             except Exception:
                 pass
 
-            if direction:
-                band = band_from_runs(runs)
-                zone_runs[f"{direction}_{band}"].append(float(runs))
+            if not direction:
+                continue
+            observed_balls += 1
+            batter_profile = resolve_batter_profile(str(row.get("Batter", "")))
+            batter_prior = getattr(batter_profile, "zone_chart", {}) if batter_profile else {}
+            baseline = sum(
+                float(batter_prior.get(f"{direction}_{band}", 0.5)) for band in BANDS
+            ) / len(BANDS)
+            direction_deviations[direction].append((float(runs) - baseline, 1))
 
-        lmbda = float(n) / float(n + k)
-        shrunk = {}
+        if observed_balls < min_balls_bowler:
+            return None, n_total
+
+        # A bowler effect is the observed deviation from each batter's own
+        # direction baseline, aggregated by direction. It is then regularized
+        # by the bowler's observed sample volume; no fixed 70/30 blend.
+        bowler_weight = float(observed_balls) / float(observed_balls + k)
+        adjusted = {}
         for zk in prior_chart:
-            runs_list = zone_runs.get(zk, [])
-            sample_val = (sum(runs_list) / len(runs_list)) if runs_list else prior_chart[zk]
-            shrunk[zk] = round(lmbda * sample_val + (1.0 - lmbda) * prior_chart[zk], 3)
+            direction = zk.rsplit("_", 1)[0]
+            deviations = direction_deviations.get(direction, [])
+            delta = sum(value for value, _ in deviations) / len(deviations) if deviations else 0.0
+            adjusted[zk] = round(max(0.0, prior_chart[zk] + bowler_weight * delta), 3)
 
-        return shrunk, n
+        return adjusted, n_total
 
     def get_matchup_zone_chart(
         self,
@@ -252,6 +272,7 @@ class H2HStatsEngine:
         bowler's conceded distribution when available.
         """
         from backend.app.services.real_data_loader import load_deliveries_from_dataframe
+        from backend.app.services.real_data_loader import get_directional_delivery_counts
 
         # Resolve batter prior chart if not passed
         if not batter_prior_chart:
@@ -265,8 +286,10 @@ class H2HStatsEngine:
         if n_direct >= self.min_balls_direct:
             try:
                 raw_chart, _ = load_deliveries_from_dataframe(direct_sub, batter)
+                direct_counts = get_directional_delivery_counts(direct_sub, batter)
                 shrunk_chart = self._apply_empirical_shrinkage(
-                    raw_chart, batter_prior_chart, n_direct, k=40.0
+                    raw_chart, batter_prior_chart, n_direct, k=40.0,
+                    sample_counts=direct_counts,
                 )
                 return shrunk_chart, f"direct_h2h (n={n_direct})"
             except Exception:
@@ -291,12 +314,15 @@ class H2HStatsEngine:
             if n_phase >= self.min_balls_type_fallback:
                 try:
                     raw_phase, _ = load_deliveries_from_dataframe(phase_sub, batter)
+                    phase_counts = get_directional_delivery_counts(phase_sub, batter)
                     shrunk_phase = self._apply_empirical_shrinkage(
-                        raw_phase, batter_prior_chart, n_phase, k=40.0
+                        raw_phase, batter_prior_chart, n_phase, k=40.0,
+                        sample_counts=phase_counts,
                     )
                     if bowler_conceded_chart is not None:
+                        bowler_weight = float(n_bowler) / float(n_bowler + 40.0)
                         blended = {
-                            zk: round(0.70 * shrunk_phase[zk] + 0.30 * bowler_conceded_chart[zk], 3)
+                            zk: round((1.0 - bowler_weight) * shrunk_phase[zk] + bowler_weight * bowler_conceded_chart[zk], 3)
                             for zk in batter_prior_chart
                         }
                         return blended, f"vs_bowler_type_phase_blended (n_type={n_phase}, n_bowler={n_bowler})"
@@ -314,12 +340,15 @@ class H2HStatsEngine:
             if n_type >= self.min_balls_type_fallback:
                 try:
                     raw_disc, _ = load_deliveries_from_dataframe(disc_sub, batter)
+                    disc_counts = get_directional_delivery_counts(disc_sub, batter)
                     shrunk_disc = self._apply_empirical_shrinkage(
-                        raw_disc, batter_prior_chart, n_type, k=40.0
+                        raw_disc, batter_prior_chart, n_type, k=40.0,
+                        sample_counts=disc_counts,
                     )
                     if bowler_conceded_chart is not None:
+                        bowler_weight = float(n_bowler) / float(n_bowler + 40.0)
                         blended = {
-                            zk: round(0.70 * shrunk_disc[zk] + 0.30 * bowler_conceded_chart[zk], 3)
+                            zk: round((1.0 - bowler_weight) * shrunk_disc[zk] + bowler_weight * bowler_conceded_chart[zk], 3)
                             for zk in batter_prior_chart
                         }
                         return blended, f"vs_bowler_type_blended (n_type={n_type}, n_bowler={n_bowler})"
@@ -329,8 +358,9 @@ class H2HStatsEngine:
 
         # Tier 4: Bowler Conceded Only (bowler has >= 25 balls, but batter lacks discipline history)
         if bowler_conceded_chart is not None and batter_prior_chart:
+            bowler_weight = float(n_bowler) / float(n_bowler + 40.0)
             blended = {
-                zk: round(0.70 * batter_prior_chart[zk] + 0.30 * bowler_conceded_chart[zk], 3)
+                zk: round((1.0 - bowler_weight) * batter_prior_chart[zk] + bowler_weight * bowler_conceded_chart[zk], 3)
                 for zk in batter_prior_chart
             }
             return blended, f"bowler_concede_blended (n_bowler={n_bowler})"

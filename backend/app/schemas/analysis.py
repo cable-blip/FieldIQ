@@ -141,6 +141,14 @@ class AnalysisResponse(BaseModel):
     ml_probabilities: Optional[MLOutcomeProbabilitiesSchema] = None
     simulation_metrics: Optional[SimulationMetricsSchema] = None
     pitch_multipliers: Optional[Dict[str, float]] = None
+    model_version: Optional[str] = None
+    dataset_version: Optional[str] = None
+    feature_version: Optional[str] = None
+    model_status: Optional[str] = None
+    calibration_status: Optional[str] = None
+    spatial_coverage: Optional[Dict[str, Any]] = None
+    uncertainty: Optional[Dict[str, Any]] = None
+    field_optimization: Optional[Dict[str, Any]] = None
     ground_preset: Optional[Dict[str, Any]] = None
     accepted_request: AnalysisRequest
 
@@ -152,6 +160,7 @@ class EvaluateFieldRequest(BaseModel):
     placements: list[FieldPlacementSchema]
     environmental_conditions: Optional[EnvironmentalConditionsSchema] = None
     ground_preset_id: Optional[str] = "standard"
+    tactical_objective: TacticalObjective = TacticalObjective.ATTACK_WICKET
 
 class EvaluateFieldResponse(BaseModel):
     ers: float
@@ -165,6 +174,14 @@ class EvaluateFieldResponse(BaseModel):
     ml_probabilities: Optional[MLOutcomeProbabilitiesSchema] = None
     simulation_metrics: Optional[SimulationMetricsSchema] = None
     pitch_multipliers: Optional[Dict[str, float]] = None
+    model_version: Optional[str] = None
+    dataset_version: Optional[str] = None
+    feature_version: Optional[str] = None
+    model_status: Optional[str] = None
+    calibration_status: Optional[str] = None
+    spatial_coverage: Optional[Dict[str, Any]] = None
+    uncertainty: Optional[Dict[str, Any]] = None
+    field_optimization: Optional[Dict[str, Any]] = None
 
 class GroundDimensionPresetSchema(BaseModel):
     id: str
@@ -278,6 +295,14 @@ class LiveDeliveryResponse(BaseModel):
     ml_probabilities: Optional[MLOutcomeProbabilitiesSchema] = None
     simulation_metrics: Optional[SimulationMetricsSchema] = None
     pitch_multipliers: Optional[Dict[str, float]] = None
+    model_version: Optional[str] = None
+    dataset_version: Optional[str] = None
+    feature_version: Optional[str] = None
+    model_status: Optional[str] = None
+    calibration_status: Optional[str] = None
+    spatial_coverage: Optional[Dict[str, Any]] = None
+    uncertainty: Optional[Dict[str, Any]] = None
+    field_optimization: Optional[Dict[str, Any]] = None
     delivery_history: list[LoggedDeliveryItem] = []
 
 
