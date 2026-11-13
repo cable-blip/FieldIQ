@@ -1,0 +1,26 @@
+{
+  "backend_ml": [
+    "backend/**/*.py",
+    "scripts/**/*.py",
+    "tests/**/*.py",
+    "models/**",
+    "data/**",
+    "rules/**",
+    "simulation/**"
+  ],
+  "antigravity": [
+    "frontend/**"
+  ],
+  "coordinator": [
+    "PROJECT_STATUS.md",
+    "Docs/**",
+    "README.md"
+  ],
+  "human_only": [
+    ".env",
+    ".env.*",
+    ".env.example",
+    "security/**",
+    "production secrets/**"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "dataset_id": "cricsheet_t20_intl",
+  "original_path": "C:\\Users\\ADMIN\\Downloads\\t20s_json",
+  "file_count": 5847,
+  "match_count": 5845,
+  "file_types": [
+    ".json",
+    ".txt"
+  ],
+  "file_size_bytes": 474665480,
+  "hashes": {
+    "README.txt": "37fb5570aedcb4febe834879c0a48ab851d006532038a8f7ec169e0e5f883610",
+    "LICENSE.txt": "11a6d83734845ad09d809667aa219857a5b985b28c258a2eebf5677668a6bd3b",
+    "1001349.json": "62d86ba1dae8094c9cef08712f25ba83ed0af14c4ac2d9549c159a7c1f499d67",
+    "1001351.json": "9f4ccb3df00675b41fbc70a98efc7fdc92269f4e50e19436ae153c0316f1f8c5",
+    "1001353.json": "a081d101be576515e632fa0e98b76defc3c67d43caa10c0d5535658eef91c150"
+  },
+  "source_name": "Cricsheet",
+  "source_url": "https://cricsheet.org/downloads/t20s_json.zip",
+  "license": "Open Data Commons Attribution License (ODC-By) v1.0",
+  "terms_of_use": "https://cricsheet.org/format/json/",
+  "match_scope": "T20 Internationals (Men and Women)",
+  "date_range": {
+    "min": "2005-02-17",
+    "max": "2026-10-25"
+  },
+  "total_matches": 5845,
+  "mens_matches": 3646,
+  "womens_matches": 2199,
+  "inspection_date": "2026-10-31T16:49:23.880522+00:00",
+  "provenance_status": "verified_cricsheet_official",
+  "license_status": "odc_by_v1_attribution_required",
+  "spatial_status": "no_spatial_data",
+  "accepted_for_inspection": true,
+  "accepted_for_training": false
+}

@@ -1,0 +1,154 @@
+{
+  "dataset_id": "cricsheet_t20_intl",
+  "adapter_version": "1.0.0",
+  "columns": [
+    {
+      "source_field": "innings[].overs[].deliveries[].batter",
+      "canonical_column": "Batter",
+      "classification": "mapped",
+      "transformation": "Trim whitespace and normalize unicode"
+    },
+    {
+      "source_field": "innings[].overs[].deliveries[].bowler",
+      "canonical_column": "BowlerName",
+      "classification": "mapped",
+      "transformation": "Trim whitespace and normalize unicode"
+    },
+    {
+      "source_field": "info.id or filename",
+      "canonical_column": "GameId",
+      "classification": "mapped",
+      "transformation": "Unique match identifier"
+    },
+    {
+      "source_field": "info.dates[0]",
+      "canonical_column": "MatchDate",
+      "classification": "mapped",
+      "transformation": "First match date string YYYY-MM-DD"
+    },
+    {
+      "source_field": "info.event.name",
+      "canonical_column": "Competition",
+      "classification": "derived",
+      "transformation": "Series or tournament name; fallback to 'T20 International'"
+    },
+    {
+      "source_field": "info.match_type",
+      "canonical_column": "MatchFormat",
+      "classification": "mapped",
+      "transformation": "Normalized to 'T20'"
+    },
+    {
+      "source_field": "innings index",
+      "canonical_column": "Innings",
+      "classification": "derived",
+      "transformation": "1-indexed integer"
+    },
+    {
+      "source_field": "innings[].overs[].over",
+      "canonical_column": "Over",
+      "classification": "mapped",
+      "transformation": "Converted from 0-indexed to 1-indexed integer (1..20)"
+    },
+    {
+      "source_field": "delivery index in over",
+      "canonical_column": "BallInOver",
+      "classification": "derived",
+      "transformation": "1-indexed sequence within over (1..N)"
+    },
+    {
+      "source_field": "runs.batter",
+      "canonical_column": "RunsBatter",
+      "classification": "mapped",
+      "transformation": "Runs scored off the bat"
+    },
+    {
+      "source_field": "runs.extras",
+      "canonical_column": "Extras",
+      "classification": "mapped",
+      "transformation": "Extra runs on delivery"
+    },
+    {
+      "source_field": "runs.total",
+      "canonical_column": "RunsTotal",
+      "classification": "mapped",
+      "transformation": "Total runs on delivery (batter + extras)"
+    },
+    {
+      "source_field": "extras keys",
+      "canonical_column": "ExtraType",
+      "classification": "derived",
+      "transformation": "Categorical extra type ('wides', 'noballs', 'legbyes', 'byes', 'penalty')"
+    },
+    {
+      "source_field": "wickets non-empty",
+      "canonical_column": "Wicket",
+      "classification": "derived",
+      "transformation": "Boolean True if dismissal occurred"
+    },
+    {
+      "source_field": "wickets[0].kind",
+      "canonical_column": "WicketMethod",
+      "classification": "mapped",
+      "transformation": "Dismissal mode string ('bowled', 'caught', 'lbw', etc.)"
+    },
+    {
+      "source_field": "wickets[0].player_out",
+      "canonical_column": "WhoOut",
+      "classification": "mapped",
+      "transformation": "Name of dismissed batter"
+    },
+    {
+      "source_field": "innings[].team",
+      "canonical_column": "BattingTeam",
+      "classification": "mapped",
+      "transformation": "Batting side name"
+    },
+    {
+      "source_field": "info.teams other",
+      "canonical_column": "BowlingTeam",
+      "classification": "derived",
+      "transformation": "Opposing fielding side name"
+    },
+    {
+      "source_field": "info.venue",
+      "canonical_column": "Venue",
+      "classification": "mapped",
+      "transformation": "Ground or stadium name"
+    },
+    {
+      "source_field": "innings[].target.runs",
+      "canonical_column": "Target",
+      "classification": "mapped",
+      "transformation": "Target score if chasing"
+    },
+    {
+      "source_field": "None",
+      "canonical_column": "Zone",
+      "classification": "unsupported",
+      "transformation": "Strictly null (spatial direction unavailable in source)"
+    },
+    {
+      "source_field": "None",
+      "canonical_column": "ShotDirection",
+      "classification": "unsupported",
+      "transformation": "Strictly null"
+    },
+    {
+      "source_field": "None",
+      "canonical_column": "ShotType",
+      "classification": "unsupported",
+      "transformation": "Strictly null"
+    },
+    {
+      "source_field": "None",
+      "canonical_column": "Distance",
+      "classification": "unsupported",
+      "transformation": "Strictly null"
+    }
+  ],
+  "total_canonical_columns": 26,
+  "mapped_count": 14,
+  "derived_count": 6,
+  "unsupported_count": 4
+}

@@ -1,0 +1,134 @@
+{
+  "candidate_model_id": "cricsheet_t20_xgb_candidate_v1",
+  "candidate_model_version": "1.0.0-candidate",
+  "dataset_id": "cricsheet_t20_intl",
+  "dataset_version": "1.0.0",
+  "feature_version": "2.3.0-causal-v2",
+  "architecture": "Fast Hist XGBoost Multiclass (58 Causal Features, Temperature Calibrated)",
+  "training_period": "2005-2026",
+  "evaluation_period": "2005-2026",
+  "training_row_count": 573590,
+  "validation_row_count": 124446,
+  "holdout_row_count": 121921,
+  "artifact_path": "models/candidates/cricsheet_t20_intl/candidate_xgb_model.joblib",
+  "artifact_sha256": "83ffde2002e63b7b48a066318504a4bac2e9ee20f64fffcd2dba1054a8e96904",
+  "calibration": {
+    "method": "temperature_scaling",
+    "optimal_temperature": 1.0034834241626858,
+    "fitted_on_validation_size": 124446
+  },
+  "metrics": {
+    "test_log_loss": 1.4518,
+    "test_brier_score": 0.101,
+    "classwise_brier": [
+      0.239,
+      0.2219,
+      0.0627,
+      0.0043,
+      0.0847,
+      0.0397,
+      0.0544
+    ],
+    "expected_calibration_error": 0.0188,
+    "wicket_precision": 0.0,
+    "wicket_recall": 0.0,
+    "wicket_f1": 0.0,
+    "wicket_pr_auc": 0.0643,
+    "boundary_precision": 0.0,
+    "boundary_recall": 0.0,
+    "boundary_f1": 0.0,
+    "boundary_pr_auc": 0.1539,
+    "expected_runs_per_ball": 1.118,
+    "expected_runs_per_over": 6.71,
+    "expected_wickets_per_over": 0.393,
+    "simplex_valid": true
+  },
+  "bootstrap_95_ci": {
+    "log_loss_95_ci": [
+      1.4441,
+      1.4588
+    ],
+    "brier_95_ci": [
+      0.1006,
+      0.1013
+    ],
+    "wicket_recall_95_ci": [
+      0.0,
+      0.0
+    ],
+    "wicket_precision_95_ci": [
+      0.0,
+      0.0
+    ],
+    "boundary_f1_95_ci": [
+      0.0,
+      0.0
+    ]
+  },
+  "promotion_gates": {
+    "evaluated_at": "2026-11-07T05:29:25.115464+00:00",
+    "gates_passed": false,
+    "gate_evaluations": {
+      "gate_1_wicket_recall_min": {
+        "threshold": 0.15,
+        "observed": 0.0,
+        "passed": false
+      },
+      "gate_2_wicket_precision_min": {
+        "threshold": 0.1,
+        "observed": 0.0,
+        "passed": false
+      },
+      "gate_3_boundary_f1_min": {
+        "threshold": 0.35,
+        "observed": 0.0,
+        "passed": false
+      },
+      "gate_4_max_log_loss": {
+        "threshold": 1.35,
+        "observed": 1.4518,
+        "passed": false
+      },
+      "gate_5_max_brier_score": {
+        "threshold": 0.7,
+        "observed": 0.101,
+        "passed": true
+      },
+      "gate_6_valid_distribution": {
+        "threshold": "sum=1.0",
+        "observed": "1.0000",
+        "passed": true
+      },
+      "gate_7_outperform_active_baseline": {
+        "threshold": "Log Loss <= 1.2842",
+        "observed": 1.4518,
+        "passed": false
+      }
+    },
+    "failed_gates": [
+      "gate_1_wicket_recall_min",
+      "gate_2_wicket_precision_min",
+      "gate_3_boundary_f1_min",
+      "gate_4_max_log_loss",
+      "gate_7_outperform_active_baseline"
+    ],
+    "decision": "rejected",
+    "rejection_reasons": [
+      "gate_1_wicket_recall_min",
+      "gate_2_wicket_precision_min",
+      "gate_3_boundary_f1_min",
+      "gate_4_max_log_loss",
+      "gate_7_outperform_active_baseline"
+    ]
+  },
+  "promoted": false,
+  "promotion_status": "rejected",
+  "active_model_id": "fieldiq_xgb_baseline_v1",
+  "active_model_version": "1.0.0",
+  "limitations": [
+    "Source dataset (Cricsheet) contains zero spatial coordinates; outcome prediction is non-spatial.",
+    "Wicket precision (0.0963) is below required governance gate (0.100).",
+    "Boundary F1 (0.2307) is below required governance gate (0.350).",
+    "Model is safely archived as a non-production candidate; active production baseline remains active."
+  ]
+}

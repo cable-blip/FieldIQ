@@ -1,0 +1,34 @@
+{
+  "dataset_id": "cricsheet_t20_intl",
+  "dataset_version": "1.0.0",
+  "dataset_name": "Cricsheet T20 International Ball-by-Ball Dataset",
+  "source_name": "Cricsheet",
+  "source_url": "https://cricsheet.org/downloads/t20s_json.zip",
+  "license": "Open Data Commons Attribution License (ODC-By) v1.0",
+  "download_date": "2026-10-31",
+  "file_hash_sha256": "caf6a91efcfc3fe4140a398d35483e6496cb3f83b9a06dbddfb4b06713795546",
+  "schema_version": "1.0.0",
+  "normalization_version": "1.0.0",
+  "feature_version": "2.2.0-candidate",
+  "row_count": 819957,
+  "batter_count": 4406,
+  "bowler_count": 3313,
+  "match_count": 3646,
+  "date_range": {
+    "start": "2005-02-17",
+    "end": "2026-10-25"
+  },
+  "match_formats": [
+    "T20"
+  ],
+  "spatial_status": "no_spatial_data",
+  "spatial_coverage_pct": 0.0,
+  "missing_zone_count": 819957,
+  "validation_status": "PASS_WITH_WARNINGS",
+  "production_approved": false,
+  "known_limitations": [
+    "Source contains zero wagon-wheel direction or distance coordinates.",
+    "Deliveries cannot be used for spatial shot charts or candidate-field sector optimization.",
+    "Can be evaluated strictly for ball-by-ball outcome prediction (dot, singles, boundary, wicket)."
+  ]
+}

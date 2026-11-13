@@ -2,16 +2,26 @@
 dataset_registry.py
 -------------------
 Formal dataset provenance, metadata generation, and governance registry.
+Manages dataset lifecycles, versions, provenance metadata, and candidate evaluations.
+Enforces the Real Data Principle and prevents silent data merging or unapproved promotion.
 
 Tracks:
 1. Mixed provenance boundaries (rishsriv/t20i_data wagon wheels vs Cricsheet match metadata).
 2. Spatial limitations (Zone == 0 unavailable; distance bands are categorical proxies).
 3. Machine-readable data telemetry dynamically computed from source delivery CSVs.
 4. Validation and production approval gating.
+5. Candidate dataset registration and isolation.
+
+Supported lifecycle states:
+- active: Current operational dataset used by production pipelines
+- candidate: Newly ingested/validated dataset under evaluation
+- archived: Historic dataset preserved for reproducibility
+- rejected: Dataset rejected by quality or promotion gates
 """
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -21,6 +31,8 @@ from backend.app.services.real_data_loader import DATA_DIR
 
 DEFAULT_METADATA_PATH = DATA_DIR / "dataset_metadata.json"
 DEFAULT_CSV_PATH = DATA_DIR / "real_batters_deliveries.csv"
+EXTERNAL_DIR = DATA_DIR / "external"
+REGISTRY_PATH = DATA_DIR / "dataset_registry.json"
 
 DATASET_NAME = "FieldIQ Derived Historical T20I Deliveries"
 DATASET_VERSION = "2.0.0"
@@ -171,3 +183,129 @@ def approve_for_production(
     updated["status"] = "production"
     updated["approved_at"] = datetime.now(timezone.utc).isoformat()
     return updated
+
+
+class DatasetRegistry:
+    """Registry maintaining active and candidate dataset metadata."""
+
+    def __init__(self, registry_file: Path = REGISTRY_PATH):
+        self.registry_file = registry_file
+        self._ensure_registry_exists()
+
+    def _ensure_registry_exists(self):
+        if not self.registry_file.exists():
+            default_registry = {
+                "active_dataset_id": "fieldiq_v2_baseline",
+                "active_dataset_version": "2.0.0",
+                "datasets": [
+                    {
+                        "dataset_id": "fieldiq_v2_baseline",
+                        "dataset_version": "2.0.0",
+                        "status": "active",
+                        "dataset_name": "FieldIQ Derived Historical T20I Deliveries",
+                        "file_path": "data/real_batters_deliveries.csv",
+                        "source_name": "rishsriv/t20i_data + Cricsheet",
+                        "source_url": "https://github.com/rishsriv/t20i_data",
+                        "license": "mixed / CC BY-SA 4.0 enrichment",
+                        "row_count": 10454,
+                        "batter_count": 9,
+                        "bowler_count": 330,
+                        "match_count": 267,
+                        "spatial_status": "partially_available",
+                        "spatial_coverage_pct": 79.73,
+                        "validation_status": "PASS",
+                        "production_approved": True,
+                        "registered_at": "2026-10-22T10:00:00Z",
+                        "notes": "Operational baseline dataset with valid directional wagon wheel sectors."
+                    }
+                ]
+            }
+            with open(self.registry_file, "w", encoding="utf-8") as f:
+                json.dump(default_registry, f, indent=2)
+
+    def load_registry(self) -> Dict[str, Any]:
+        self._ensure_registry_exists()
+        try:
+            with open(self.registry_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {"active_dataset_id": "fieldiq_v2_baseline", "datasets": []}
+
+    def save_registry(self, data: Dict[str, Any]):
+        with open(self.registry_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+
+    def register_candidate_dataset(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Registers or updates a candidate dataset without modifying the active production dataset."""
+        registry = self.load_registry()
+        dataset_id = metadata.get("dataset_id")
+        dataset_version = metadata.get("dataset_version", "1.0.0")
+
+        # Check if already present
+        existing_idx = next((i for i, d in enumerate(registry["datasets"]) if d.get("dataset_id") == dataset_id), None)
+
+        record = {
+            "dataset_id": dataset_id,
+            "dataset_version": dataset_version,
+            "status": "candidate",
+            "dataset_name": metadata.get("dataset_name", dataset_id),
+            "file_path": metadata.get("file_path", f"data/external/{dataset_id}/normalized/deliveries.csv"),
+            "source_name": metadata.get("source_name", "Unknown"),
+            "source_url": metadata.get("source_url"),
+            "license": metadata.get("license", "unknown"),
+            "row_count": metadata.get("row_count", 0),
+            "batter_count": metadata.get("batter_count", 0),
+            "bowler_count": metadata.get("bowler_count", 0),
+            "match_count": metadata.get("match_count", 0),
+            "spatial_status": metadata.get("spatial_status", "no_spatial_data"),
+            "spatial_coverage_pct": metadata.get("spatial_coverage_pct", 0.0),
+            "validation_status": metadata.get("validation_status", "UNVALIDATED"),
+            "production_approved": False,
+            "registered_at": datetime.now(timezone.utc).isoformat(),
+            "file_hash_sha256": metadata.get("file_hash_sha256"),
+            "known_limitations": metadata.get("known_limitations", []),
+        }
+
+        if existing_idx is not None:
+            # Preserve active status if it was active
+            if registry["datasets"][existing_idx].get("status") == "active":
+                record["status"] = "active"
+                record["production_approved"] = True
+            registry["datasets"][existing_idx] = record
+        else:
+            registry["datasets"].append(record)
+
+        self.save_registry(registry)
+        return record
+
+    def get_active_dataset(self) -> Optional[Dict[str, Any]]:
+        reg = self.load_registry()
+        active_id = reg.get("active_dataset_id")
+        return next((d for d in reg.get("datasets", []) if d.get("dataset_id") == active_id), None)
+
+    def get_candidate_datasets(self) -> List[Dict[str, Any]]:
+        reg = self.load_registry()
+        return [d for d in reg.get("datasets", []) if d.get("status") == "candidate"]
+
+    def get_summary(self) -> Dict[str, Any]:
+        """Provides an API-ready summary of active, candidate, and archived datasets."""
+        reg = self.load_registry()
+        active = self.get_active_dataset()
+        candidates = self.get_candidate_datasets()
+
+        return {
+            "active_dataset": active,
+            "candidate_datasets": candidates,
+            "total_registered_datasets": len(reg.get("datasets", [])),
+            "registry_version": "1.0.0",
+        }
+
+
+_dataset_registry_instance: Optional[DatasetRegistry] = None
+
+
+def get_dataset_registry() -> DatasetRegistry:
+    global _dataset_registry_instance
+    if _dataset_registry_instance is None:
+        _dataset_registry_instance = DatasetRegistry()
+    return _dataset_registry_instance

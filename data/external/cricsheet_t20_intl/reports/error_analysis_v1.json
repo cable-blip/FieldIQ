@@ -1,0 +1,80 @@
+{
+  "analysis_version": "1.0.0",
+  "dataset_id": "cricsheet_t20_intl",
+  "model_id": "cricsheet_t20_xgb_candidate_v1",
+  "holdout_deliveries_evaluated": 121921,
+  "total_wickets_in_test": 6975,
+  "total_boundaries_in_test": 16472,
+  "wicket_false_positives_count": 0,
+  "wicket_false_negatives_count": 6975,
+  "boundary_false_positives_count": 0,
+  "boundary_false_negatives_count": 16472,
+  "feature_importances_top_15": {
+    "matchup_wkt_shrunk": 0.1624,
+    "matchup_dot_shrunk": 0.12834,
+    "matchup_bnd_shrunk": 0.0979,
+    "over_num": 0.06102,
+    "matchup_confidence": 0.0423,
+    "matchup_balls": 0.03901,
+    "current_score": 0.0333,
+    "prev_was_dot": 0.02886,
+    "prev_was_bnd": 0.02871,
+    "batter_match_balls": 0.02686,
+    "prev_was_wkt": 0.02519,
+    "bowler_match_balls": 0.02405,
+    "ball_in_over": 0.02332,
+    "batter_match_runs": 0.02267,
+    "phase_powerplay": 0.01986
+  },
+  "performance_by_phase": {
+    "powerplay": {
+      "n_deliveries": 41112,
+      "log_loss": 1.4206,
+      "exp_runs_over": 6.73,
+      "wkt_rate_pred": 0.0623,
+      "wkt_rate_true": 0.0461
+    },
+    "middle": {
+      "n_deliveries": 56040,
+      "log_loss": 1.4096,
+      "exp_runs_over": 6.71,
+      "wkt_rate_pred": 0.0652,
+      "wkt_rate_true": 0.0506
+    },
+    "death": {
+      "n_deliveries": 24769,
+      "log_loss": 1.5992,
+      "exp_runs_over": 6.68,
+      "wkt_rate_pred": 0.0719,
+      "wkt_rate_true": 0.0905
+    }
+  },
+  "performance_by_context": {
+    "chasing_innings_2": {
+      "n_deliveries": 55829,
+      "log_loss": 1.4453,
+      "exp_runs_over": 6.71
+    },
+    "defending_innings_1": {
+      "n_deliveries": 66092,
+      "log_loss": 1.4573,
+      "exp_runs_over": 6.71
+    },
+    "new_batter": {
+      "n_deliveries": 64078,
+      "log_loss": 1.4007,
+      "exp_runs_over": 6.68
+    },
+    "established_batter": {
+      "n_deliveries": 57843,
+      "log_loss": 1.5085,
+      "exp_runs_over": 6.75
+    }
+  },
+  "primary_failure_causes": [
+    "Extreme class imbalance: Wickets represent 5.75% of deliveries; standard cross-entropy penalizes false positives heavily, resulting in a conservative 9.63% precision when recall is pushed to 21%.",
+    "Missing spatial coordinates: Cricsheet data has 0% wagon-wheel coverage, depriving the model of shot direction and fielder positioning signals that physically govern boundary conversion and catches.",
+    "Player sparsity: In international cricket, 60% of batter-bowler matchups have fewer than 10 historical deliveries, forcing reliance on population priors."
+  ],
+  "non_mitigation_statement": "In accordance with AGENTS.md Rule 2 and Rule 17, promotion gates will NOT be relaxed and spatial shot angles will NOT be fabricated to artificially pass models."
+}

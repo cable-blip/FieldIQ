@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from fastapi import APIRouter, status, HTTPException
 import pandas as pd
 from typing import List, Dict, Any, Optional
@@ -187,7 +188,8 @@ def create_analysis_request(
         fielder_pool=fielders,
         current_over=request.over,
         fmt=fmt,
-        keeper=keeper
+        keeper=keeper,
+        objective=request.tactical_objective.value,
     )
 
     alt_schemas = []
@@ -219,7 +221,20 @@ def create_analysis_request(
                 placements=alt_placements,
                 ers=alt["ers"],
                 ewo=alt["ewo"],
-                cds=alt["cds"]
+                cds=alt["cds"],
+                expected_runs=alt.get("expected_runs"),
+                expected_wickets=alt.get("expected_wickets"),
+                boundary_probability=alt.get("boundary_probability"),
+                wicket_probability=alt.get("wicket_probability"),
+                tactical_utility=alt.get("tactical_utility"),
+                catch_opportunity=alt.get("catch_opportunity"),
+                boundary_prevention=alt.get("boundary_prevention"),
+                pressure_score=alt.get("pressure_score"),
+                is_legal=alt.get("is_legal", True),
+                violations=alt.get("violations", []),
+                missing_capabilities=alt.get("missing_capabilities", []),
+                uncertainty=alt.get("uncertainty"),
+                explanation=alt.get("explanation"),
             )
         )
 
@@ -371,6 +386,8 @@ def create_analysis_request(
         ml_probabilities=ml_probs_schema,
         simulation_metrics=sim_metrics_schema,
         pitch_multipliers=pitch_mults,
+        model_id=active_meta.get("active_model_id", "fieldiq_xgb_baseline_v1"),
+        dataset_id=active_meta.get("active_dataset_id", "fieldiq_v2_baseline"),
         model_version=active_meta.get("active_model_version", "1.0.0"),
         dataset_version=active_meta.get("active_dataset_version", "2.0.0"),
         feature_version=active_model.get("feature_version", FEATURE_VERSION),
@@ -378,6 +395,12 @@ def create_analysis_request(
         calibration_status=active_model.get("calibration", {}).get("status", "uncalibrated_baseline"),
         spatial_coverage=spatial_cov_info,
         uncertainty=uncertainty_info,
+        fallback_tier=coverage_tier,
+        limitations=active_model.get("limitations", ["Source dataset has mixed provenance.", "Decision support only."]),
+        prediction_timestamp=datetime.now(timezone.utc).isoformat(),
+        tactical_policy_version="1.0.0",
+        rule_version="2026.1",
+        alternative_strategy="Objective-conditioned candidate evaluation" if alt_schemas else None,
         field_optimization=field_opt_info,
         ground_preset=ground.to_dict(),
         accepted_request=request

@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "data_version": "1.0.0",
+    "created": "2021-01-01",
+    "revision": 1
+  },
+  "info": {
+    "gender": "male",
+    "match_type": "T20",
+    "dates": ["2021-01-01"],
+    "teams": ["India", "Australia"],
+    "event": {
+      "name": "International T20"
+    }
+  },
+  "innings": [
+    {
+      "team": "India",
+      "overs": [
+        {
+          "over": 0,
+          "deliveries": [
+            {
+              "batter": "V Kohli",
+              "bowler": "M Starc",
+              "non_striker": "RG Sharma",
+              "runs": {
+                "batter": 4,
+                "extras": 0,
+                "total": 4
+              }
+            },
+            {
+              "batter": "V Kohli",
+              "bowler": "M Starc",
+              "non_striker": "RG Sharma",
+              "runs": {
+                "batter": 0,
+                "extras": 0,
+                "total": 0
+              },
+              "wickets": [
+                {
+                  "kind": "caught",
+                  "player_out": "V Kohli",
+                  "fielders": [{"name": "SPD Smith"}]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

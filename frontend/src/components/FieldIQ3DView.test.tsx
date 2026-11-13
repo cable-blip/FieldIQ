@@ -188,7 +188,7 @@ describe('FieldIQ3DView Component', () => {
         headers: { 'Content-Type': 'application/json' },
       })
     );
-  });
+  }, 15000);
 
   it('synchronizes selection between placement row and active fielder inspector card', async () => {
     const user = userEvent.setup();

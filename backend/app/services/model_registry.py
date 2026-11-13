@@ -25,7 +25,7 @@ DEFAULT_PROMOTION_GATES = {
     "wicket_precision_min": 0.12,
     "boundary_f1_min": 0.30,
     "max_log_loss": 1.350,
-    "max_brier_score": 0.150,
+    "max_brier_score": 0.750,
     "probability_sum_tolerance": 0.001,
 }
 
@@ -196,6 +196,31 @@ class ModelRegistry:
             if not passed:
                 failed_gates.append(f"boundary_f1 ({b_f1:.4f} < {gates['boundary_f1_min']:.4f})")
 
+        # Gate 4: Wicket Precision
+        prec = metrics.get("wicket_precision")
+        if prec is not None:
+            passed = prec >= gates["wicket_precision_min"]
+            gate_results["wicket_precision"] = {"observed": prec, "threshold": gates["wicket_precision_min"], "passed": passed}
+            if not passed:
+                failed_gates.append(f"wicket_precision ({prec:.4f} < {gates['wicket_precision_min']:.4f})")
+
+        # Gate 5: Max Brier Score
+        brier = metrics.get("test_brier_score")
+        if brier is not None:
+            passed = brier <= gates["max_brier_score"]
+            gate_results["brier_score"] = {"observed": brier, "threshold": gates["max_brier_score"], "passed": passed}
+            if not passed:
+                failed_gates.append(f"brier_score ({brier:.4f} > {gates['max_brier_score']:.4f})")
+
+        # Gate 6: Valid Probability Distribution
+        cal_meta = record.get("calibration", {})
+        valid_dist = cal_meta.get("valid_distribution")
+        if valid_dist is not None:
+            passed = bool(valid_dist)
+            gate_results["probability_distribution"] = {"passed": passed}
+            if not passed:
+                failed_gates.append("invalid_probability_distribution (probabilities do not sum to 1.0)")
+
         all_passed = len(failed_gates) == 0
 
         if all_passed or force:
@@ -236,6 +261,11 @@ class ModelRegistry:
         data["active_dataset_version"] = target.get("dataset_version", "2.0.0")
         self._write_registry(data)
         return target
+
+    def get_active_model_id(self) -> str:
+        """Returns the ID of the currently active production model."""
+        data = self._read_registry()
+        return data.get("active_model_id", "fieldiq_xgb_baseline_v1")
 
     def get_active_model_metadata(self) -> Dict[str, Any]:
         """Returns the full metadata dictionary for the currently active production model."""

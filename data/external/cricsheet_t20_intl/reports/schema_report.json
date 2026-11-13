@@ -1,0 +1,258 @@
+{
+  "dataset_id": "cricsheet_t20_intl",
+  "raw_files_found": 5845,
+  "sample_files_inspected": 200,
+  "sample_deliveries_inspected": 45656,
+  "match_info_fields": {
+    "balls_per_over": {
+      "type": "int",
+      "count": 200,
+      "examples": [
+        "6",
+        "6",
+        "6"
+      ]
+    },
+    "dates": {
+      "type": "list",
+      "count": 200,
+      "examples": [
+        "['2017-02-17']",
+        "['2017-02-19']",
+        "['2017-02-22']"
+      ]
+    },
+    "event": {
+      "type": "dict",
+      "count": 196,
+      "examples": [
+        "{'match_number': 1, 'name': 'Sri Lanka in Australi",
+        "{'match_number': 2, 'name': 'Sri Lanka in Australi",
+        "{'match_number': 3, 'name': 'Sri Lanka in Australi"
+      ]
+    },
+    "gender": {
+      "type": "str",
+      "count": 200,
+      "examples": [
+        "male",
+        "female"
+      ]
+    },
+    "match_type": {
+      "type": "str",
+      "count": 200,
+      "examples": [
+        "T20"
+      ]
+    },
+    "match_type_number": {
+      "type": "int",
+      "count": 200,
+      "examples": [
+        "596",
+        "597",
+        "598"
+      ]
+    },
+    "officials": {
+      "type": "dict",
+      "count": 200,
+      "examples": [
+        "{'match_referees': ['JJ Crowe'], 'reserve_umpires'",
+        "{'match_referees': ['JJ Crowe'], 'reserve_umpires'",
+        "{'match_referees': ['JJ Crowe'], 'reserve_umpires'"
+      ]
+    },
+    "outcome": {
+      "type": "dict",
+      "count": 200,
+      "examples": [
+        "{'by': {'wickets': 5}, 'winner': 'Sri Lanka'}",
+        "{'by': {'wickets': 2}, 'winner': 'Sri Lanka'}",
+        "{'by': {'runs': 41}, 'winner': 'Australia'}"
+      ]
+    },
+    "overs": {
+      "type": "int",
+      "count": 200,
+      "examples": [
+        "20",
+        "20",
+        "20"
+      ]
+    },
+    "player_of_match": {
+      "type": "list",
+      "count": 176,
+      "examples": [
+        "['DAS Gunaratne']",
+        "['DAS Gunaratne']",
+        "['A Zampa']"
+      ]
+    },
+    "players": {
+      "type": "dict",
+      "count": 200,
+      "examples": [
+        "{'Australia': ['AJ Finch', 'M Klinger', 'TM Head',",
+        "{'Australia': ['M Klinger', 'AJ Finch', 'BR Dunk',",
+        "{'Australia': ['AJ Finch', 'M Klinger', 'BR Dunk',"
+      ]
+    },
+    "registry": {
+      "type": "dict",
+      "count": 200,
+      "examples": [
+        "{'people': {'A Zampa': '14f96089', 'AJ Finch': 'b8",
+        "{'people': {'AJ Finch': 'b8d490fd', 'AJ Turner': '",
+        "{'people': {'A Zampa': '14f96089', 'AJ Finch': 'b8"
+      ]
+    },
+    "season": {
+      "type": "str",
+      "count": 200,
+      "examples": [
+        "2016/17",
+        "2016",
+        "2016"
+      ]
+    },
+    "team_type": {
+      "type": "str",
+      "count": 200,
+      "examples": [
+        "international"
+      ]
+    },
+    "teams": {
+      "type": "list",
+      "count": 200,
+      "examples": [
+        "['Australia', 'Sri Lanka']",
+        "['Australia', 'Sri Lanka']",
+        "['Australia', 'Sri Lanka']"
+      ]
+    },
+    "toss": {
+      "type": "dict",
+      "count": 200,
+      "examples": [
+        "{'decision': 'field', 'winner': 'Sri Lanka'}",
+        "{'decision': 'field', 'winner': 'Sri Lanka'}",
+        "{'decision': 'field', 'winner': 'Sri Lanka'}"
+      ]
+    },
+    "venue": {
+      "type": "str",
+      "count": 200,
+      "examples": [
+        "Melbourne Cricket Ground",
+        "Simonds Stadium, South Geelong",
+        "Adelaide Oval"
+      ]
+    },
+    "city": {
+      "type": "str",
+      "count": 171,
+      "examples": [
+        "Victoria",
+        "Londonderry",
+        "Napier"
+      ]
+    },
+    "missing": {
+      "type": "list",
+      "count": 51,
+      "examples": [
+        "['player_of_match']",
+        "['player_of_match']",
+        "['reviews']"
+      ]
+    }
+  },
+  "delivery_fields": {
+    "actual_delivery": {
+      "type": "str",
+      "count": 45656,
+      "examples": [
+        "0.1",
+        "0.2",
+        "0.3"
+      ]
+    },
+    "batter": {
+      "type": "str",
+      "count": 45656,
+      "examples": [
+        "AJ Finch",
+        "M Klinger",
+        "TM Head"
+      ]
+    },
+    "bowler": {
+      "type": "str",
+      "count": 45656,
+      "examples": [
+        "SL Malinga",
+        "KMDN Kulasekara",
+        "JRMVB Sanjaya"
+      ]
+    },
+    "non_striker": {
+      "type": "str",
+      "count": 45656,
+      "examples": [
+        "M Klinger",
+        "AJ Finch",
+        "TM Head"
+      ]
+    },
+    "runs": {
+      "type": "dict",
+      "count": 45656,
+      "examples": [
+        "{'batter': 0, 'extras': 0, 'total': 0}",
+        "{'batter': 1, 'extras': 0, 'total': 1}",
+        "{'batter': 2, 'extras': 0, 'total': 2}"
+      ]
+    },
+    "extras": {
+      "type": "dict",
+      "count": 2407,
+      "examples": [
+        "{'wides': 1}",
+        "{'byes': 1}",
+        "{'legbyes': 1}"
+      ]
+    },
+    "wickets": {
+      "type": "list",
+      "count": 2414,
+      "examples": [
+        "[{'kind': 'caught', 'player_out': 'M Klinger', 'fi",
+        "[{'kind': 'caught', 'player_out': 'AJ Finch', 'fie",
+        "[{'kind': 'caught', 'player_out': 'MC Henriques', "
+      ]
+    },
+    "replacements": {
+      "type": "dict",
+      "count": 7,
+      "examples": [
+        "{'role': [{'in': 'Mosaddek Hossain', 'reason': 'in",
+        "{'role': [{'in': 'TA Boult', 'out': 'BM Wheeler', ",
+        "{'role': [{'in': 'Ehsan Nawaz', 'reason': 'injury'"
+      ]
+    },
+    "review": {
+      "type": "dict",
+      "count": 71,
+      "examples": [
+        "{'by': 'Australia', 'batter': 'LRPL Taylor', 'deci",
+        "{'by': 'Australia', 'umpire': 'GA Abood', 'batter'",
+        "{'by': 'England', 'batter': 'DJM Short', 'decision"
+      ]
+    }
+  },
+  "generated_at": "2026-10-31T17:16:33.932059+00:00"
+}

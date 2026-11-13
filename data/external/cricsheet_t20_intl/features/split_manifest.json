@@ -1,0 +1,35 @@
+{
+  "dataset_id": "cricsheet_t20_intl",
+  "feature_version": "2.3.0-causal-v2",
+  "random_seed": 42,
+  "split_method": "GameId match-level disjoint holdout",
+  "split_ratios": {
+    "train": 0.7,
+    "val": 0.15,
+    "test": 0.15
+  },
+  "counts": {
+    "total_matches": 3646,
+    "train_matches": 2552,
+    "val_matches": 546,
+    "test_matches": 548,
+    "train_deliveries": 573590,
+    "val_deliveries": 124446,
+    "test_deliveries": 121921
+  },
+  "feature_count": 58,
+  "class_distribution_train": {
+    "0": 0.39315190292717794,
+    "1": 0.33847347408427625,
+    "4": 0.09444550985895848,
+    "2": 0.06952004044700918,
+    "6": 0.057453930507854044,
+    "5": 0.04264195679841001,
+    "3": 0.004313185376314092
+  },
+  "sha256": {
+    "train": "fb4485d1b9681af2dcdf2384ea2dc13ba2c0a435aa08632215e2e6c1cdec121b",
+    "val": "8598f21108c52bd25e3ee086d30d2e77fe0322a5f9cc72643c45502488d5b9dd",
+    "test": "2f11172a98794f040ba17a8817e357f3c8a104b7183f8da90414ee4930f346fa"
+  }
+}

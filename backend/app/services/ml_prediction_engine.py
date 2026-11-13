@@ -319,6 +319,107 @@ class MLModelManager:
             print(f"[MLModelManager] Prediction error: {e}")
             return None
 
+    _candidate_model = None
+
+    @classmethod
+    def get_candidate_metadata(cls) -> Optional[Dict[str, Any]]:
+        cand_meta_path = MODELS_DIR / "candidates" / "cricsheet_t20_intl" / "candidate_metadata.json"
+        if cand_meta_path.exists():
+            try:
+                with open(cand_meta_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                return None
+        return None
+
+    @classmethod
+    def get_candidate_model(cls):
+        if cls._candidate_model is None:
+            cand_path = MODELS_DIR / "candidates" / "cricsheet_t20_intl" / "candidate_xgb_model.joblib"
+            if cand_path.exists():
+                try:
+                    cls._candidate_model = joblib.load(cand_path)
+                except Exception as e:
+                    print(f"[MLModelManager] Error loading candidate model: {e}")
+                    return None
+        return cls._candidate_model
+
+    @classmethod
+    def predict_candidate_probabilities(
+        cls,
+        over_num: int,
+        ball_in_over: int = 3,
+        innings: int = 1,
+        batter_sr: float = 125.0,
+        batter_dot_pct: float = 0.40,
+        batter_bnd_pct: float = 0.14,
+        batter_wicket_pct: float = 0.045,
+        bowler_econ: float = 7.50,
+        bowler_wicket_rate: float = 0.045,
+    ) -> Optional[Dict[str, float]]:
+        model = cls.get_candidate_model()
+        if model is None:
+            return None
+
+        phase_pp = 1 if over_num <= 6 else 0
+        phase_mid = 1 if 6 < over_num <= 15 else 0
+        phase_dth = 1 if over_num > 15 else 0
+
+        meta = cls.get_candidate_metadata() or {}
+        opt_temp = meta.get("calibration", {}).get("optimal_temperature", 1.003)
+
+        legal_balls = max(0, (over_num - 1) * 6 + ball_in_over)
+        balls_rem = max(0, 120 - legal_balls)
+        score = int(legal_balls * (bowler_econ / 6.0))
+        wkts_fallen = int(over_num * 0.25)
+        wkts_rem = int(np.clip(10 - wkts_fallen, 0, 10))
+        crr = (score / max(1, legal_balls)) * 6.0
+
+        is_chase = 1 if innings == 2 else 0
+        target = 165.0 if is_chase else 0.0
+        runs_req = max(0.0, target - score) if is_chase else 0.0
+        rrr = (runs_req / max(1, balls_rem)) * 6.0 if is_chase else 0.0
+        rr_diff = rrr - crr if is_chase else 0.0
+        pressure = (rrr / 10.0) * (1.0 + (10 - wkts_rem) / 5.0) if is_chase else (score / max(1, legal_balls + 1)) * 0.1
+
+        feature_vals = [
+            over_num, ball_in_over, innings, phase_pp, phase_mid, phase_dth,
+            legal_balls, balls_rem, score, wkts_fallen, wkts_rem,
+            crr, is_chase, target, 0, runs_req, rrr, rr_diff, pressure,
+            15, 12,
+            0, 0, 0,
+            0,
+            6.0, 14.0,
+            2, 2, 0,
+            12, 15,
+            batter_sr, 0,
+            6, 8,
+            0, bowler_econ,
+            500, batter_sr, batter_dot_pct,
+            0.35, 0.07,
+            batter_bnd_pct, batter_wicket_pct,
+            400, bowler_econ,
+            0.40, 0.14,
+            bowler_wicket_rate, 0.03, 0.01,
+            0,
+            batter_dot_pct,
+            batter_bnd_pct,
+            batter_wicket_pct,
+            0.0,
+            1,
+        ]
+
+        vec = np.array([feature_vals])
+        probs = model.predict_proba(vec)[0]
+        # Temperature scaling
+        logits = np.log(np.clip(probs, 1e-15, 1.0)) / opt_temp
+        scaled_max = np.max(logits)
+        calib = np.exp(logits - scaled_max)
+        calib /= calib.sum()
+
+        outcome_names = ["dot", "single", "two", "three", "four", "six", "wicket"]
+        return {outcome_names[i]: float(calib[i]) for i in range(7)}
+
 
 class HistoricalMatchDataMiner:
     """

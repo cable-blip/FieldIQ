@@ -1,0 +1,992 @@
+{
+  "report_id": "step10_fair_model_comparison_v1",
+  "generated_at": "2026-11-13T12:47:33Z",
+  "policy_version": "1.0.0",
+  "cohorts": {
+    "cohort_a_spatial_baseline": {
+      "cohort_name": "Cohort A \u2014 Spatial Baseline Cohort",
+      "dataset_id": "fieldiq_v2_baseline",
+      "dataset_version": "2.0.0",
+      "feature_version": "1.0.0",
+      "spatial_coverage_pct": 79.7,
+      "train_matches": 186,
+      "validation_matches": 40,
+      "test_matches": 41,
+      "train_deliveries": 7403,
+      "val_deliveries": 1573,
+      "test_deliveries": 1478,
+      "target_definition": "7 classes [0..6] with zone-dependent features",
+      "model_id": "fieldiq_xgb_baseline_v1",
+      "model_version": "1.0.0",
+      "calibration_method": "none_raw_softmax",
+      "layer_a_probability_quality": {
+        "sample_count": 1478,
+        "simplex_valid": true,
+        "test_log_loss": 1.2815,
+        "test_brier_score_sum": 0.6191,
+        "test_brier_score_mean": 0.0884,
+        "wicket_brier_score": 0.039,
+        "boundary_brier_score": 0.1303,
+        "classwise_brier": {
+          "dot": 0.17639,
+          "single": 0.18894,
+          "two": 0.0635,
+          "three": 0.00663,
+          "four": 0.09692,
+          "six": 0.04777,
+          "wicket": 0.03895
+        },
+        "expected_calibration_error": 0.0448,
+        "metric_labels": {
+          "target_definition": "7 mutually exclusive ball-by-ball delivery outcomes: 0=dot, 1=single, 2=two, 3=three, 4=four, 5=six, 6=wicket",
+          "class_ordering": [
+            "dot",
+            "single",
+            "two",
+            "three",
+            "four",
+            "six",
+            "wicket"
+          ],
+          "brier_sum_definition": "sum_{k=1}^K (p_ik - y_ik)^2 per delivery in [0, 2]",
+          "brier_mean_definition": "(1/K) sum_{k=1}^K (p_ik - y_ik)^2 per delivery in [0, 2/K]",
+          "conversion_identity": "brier_score_sum = 7.0 * brier_score_mean",
+          "averaging_method": "Macro multiclass for LogLoss/Brier; Binary for Wicket (class 6) and Boundary (classes 4+5)",
+          "normalization": "softmax probability simplex sum=1.0",
+          "dataset": "fieldiq_v2_baseline",
+          "split": "holdout_test",
+          "calibration_status": "uncalibrated_baseline"
+        },
+        "wicket_metrics": {
+          "recall": 0.0469,
+          "precision": 1.0,
+          "f1": 0.0896,
+          "pr_auc": 0.1795,
+          "base_rate": 0.0433
+        },
+        "boundary_metrics": {
+          "recall": 0.1406,
+          "precision": 0.4,
+          "f1": 0.2081,
+          "pr_auc": 0.3493,
+          "base_rate": 0.1732
+        },
+        "match_level_bootstrap_95_ci": {
+          "log_loss_95_ci": [
+            1.1679,
+            1.408
+          ],
+          "brier_sum_95_ci": [
+            0.5704,
+            0.6821
+          ],
+          "brier_mean_95_ci": [
+            0.0815,
+            0.0974
+          ],
+          "wicket_recall_95_ci": [
+            0.0,
+            0.1033
+          ],
+          "wicket_precision_95_ci": [
+            0.0,
+            1.0
+          ],
+          "boundary_f1_95_ci": [
+            0.149,
+            0.261
+          ]
+        }
+      },
+      "layer_b_operating_decision_quality": {
+        "wicket_decision": {
+          "validation_optimization": {
+            "optimal_threshold": 0.11,
+            "validation_cost_per_ball": 0.5129,
+            "validation_metrics": {
+              "threshold": 0.11,
+              "expected_cost_per_ball": 0.5129,
+              "precision": 0.2289,
+              "recall": 0.3393,
+              "f1": 0.2734,
+              "tp": 19,
+              "fp": 64,
+              "fn": 37,
+              "tn": 1453
+            }
+          },
+          "holdout_evaluation": {
+            "frozen_threshold": 0.11,
+            "precision": 0.2419,
+            "recall": 0.2344,
+            "f1": 0.2381,
+            "pr_auc": 0.1795,
+            "false_positive_rate": 0.0332,
+            "false_negative_rate": 0.7656,
+            "expected_tactical_cost_per_ball": 0.6667,
+            "contingency": {
+              "tp": 15,
+              "fp": 47,
+              "fn": 49,
+              "tn": 1367
+            },
+            "bootstrap_95_ci": {
+              "precision_ci": [
+                0.1394,
+                0.3572
+              ],
+              "recall_ci": [
+                0.1225,
+                0.3606
+              ],
+              "f1_ci": [
+                0.1343,
+                0.3134
+              ],
+              "cost_per_ball_ci": [
+                0.51,
+                0.8539
+              ]
+            }
+          }
+        },
+        "boundary_decision": {
+          "validation_optimization": {
+            "optimal_threshold": 0.1618,
+            "validation_cost_per_ball": 0.5766,
+            "validation_metrics": {
+              "threshold": 0.1618,
+              "expected_cost_per_ball": 0.5766,
+              "precision": 0.3168,
+              "recall": 0.6846,
+              "f1": 0.4331,
+              "tp": 204,
+              "fp": 440,
+              "fn": 94,
+              "tn": 835
+            }
+          },
+          "holdout_evaluation": {
+            "frozen_threshold": 0.1618,
+            "precision": 0.2771,
+            "recall": 0.6289,
+            "f1": 0.3847,
+            "pr_auc": 0.3493,
+            "false_positive_rate": 0.3437,
+            "false_negative_rate": 0.3711,
+            "expected_tactical_cost_per_ball": 0.6018,
+            "contingency": {
+              "tp": 161,
+              "fp": 420,
+              "fn": 95,
+              "tn": 802
+            },
+            "bootstrap_95_ci": {
+              "precision_ci": [
+                0.2331,
+                0.3152
+              ],
+              "recall_ci": [
+                0.524,
+                0.6963
+              ],
+              "f1_ci": [
+                0.33,
+                0.4284
+              ],
+              "cost_per_ball_ci": [
+                0.5408,
+                0.6644
+              ]
+            }
+          }
+        }
+      }
+    },
+    "cohort_b_cricsheet_non_spatial": {
+      "cohort_name": "Cohort B \u2014 Cricsheet Non-Spatial Cohort",
+      "dataset_id": "cricsheet_t20_intl",
+      "dataset_version": "1.0.0",
+      "feature_version": "2.3.0-causal-v2",
+      "spatial_coverage_pct": 0.0,
+      "train_matches": 2552,
+      "validation_matches": 546,
+      "test_matches": 548,
+      "train_deliveries": 573590,
+      "val_deliveries": 124446,
+      "test_deliveries": 121921,
+      "target_definition": "7 classes [dot, single, two, three, four, six, wicket]",
+      "models": {
+        "empirical_baseline": {
+          "model_id": "empirical_baseline",
+          "layer_a_probability_quality": {
+            "sample_count": 121921,
+            "simplex_valid": true,
+            "test_log_loss": 1.4557,
+            "test_brier_score_sum": 0.7088,
+            "test_brier_score_mean": 0.1013,
+            "wicket_brier_score": 0.0539,
+            "boundary_brier_score": 0.1169,
+            "classwise_brier": {
+              "dot": 0.24053,
+              "single": 0.22271,
+              "two": 0.06269,
+              "three": 0.00429,
+              "four": 0.0848,
+              "six": 0.03984,
+              "wicket": 0.05394
+            },
+            "expected_calibration_error": 0.0147,
+            "metric_labels": {
+              "target_definition": "7 mutually exclusive ball-by-ball delivery outcomes: 0=dot, 1=single, 2=two, 3=three, 4=four, 5=six, 6=wicket",
+              "class_ordering": [
+                "dot",
+                "single",
+                "two",
+                "three",
+                "four",
+                "six",
+                "wicket"
+              ],
+              "brier_sum_definition": "sum_{k=1}^K (p_ik - y_ik)^2 per delivery in [0, 2]",
+              "brier_mean_definition": "(1/K) sum_{k=1}^K (p_ik - y_ik)^2 per delivery in [0, 2/K]",
+              "conversion_identity": "brier_score_sum = 7.0 * brier_score_mean",
+              "averaging_method": "Macro multiclass for LogLoss/Brier; Binary for Wicket (class 6) and Boundary (classes 4+5)",
+              "normalization": "softmax probability simplex sum=1.0",
+              "dataset": "cricsheet_t20_intl",
+              "split": "holdout_test",
+              "calibration_status": "empirical_frequencies"
+            },
+            "wicket_metrics": {
+              "recall": 0.0,
+              "precision": 0.0,
+              "f1": 0.0,
+              "pr_auc": 0.5286,
+              "base_rate": 0.0572
+            },
+            "boundary_metrics": {
+              "recall": 0.0,
+              "precision": 0.0,
+              "f1": 0.0,
+              "pr_auc": 0.5676,
+              "base_rate": 0.1351
+            },
+            "match_level_bootstrap_95_ci": {
+              "log_loss_95_ci": [
+                1.4486,
+                1.4623
+              ],
+              "brier_sum_95_ci": [
+                0.7061,
+                0.7114
+              ],
+              "brier_mean_95_ci": [
+                0.1009,
+                0.1016
+              ],
+              "wicket_recall_95_ci": [
+                0.0,
+                0.0
+              ],
+              "wicket_precision_95_ci": [
+                0.0,
+                0.0
+              ],
+              "boundary_f1_95_ci": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "layer_b_operating_decision_quality": {
+            "wicket_decision": {
+              "validation_optimization": {
+                "optimal_threshold": 0.0567,
+                "validation_cost_per_ball": 1.0128,
+                "validation_metrics": {
+                  "threshold": 0.0567,
+                  "expected_cost_per_ball": 1.0128,
+                  "precision": 0.0,
+                  "recall": 0.0,
+                  "f1": 0.0,
+                  "tp": 0,
+                  "fp": 0,
+                  "fn": 7002,
+                  "tn": 117444
+                }
+              },
+              "holdout_evaluation": {
+                "frozen_threshold": 0.0567,
+                "precision": 0.0,
+                "recall": 0.0,
+                "f1": 0.0,
+                "pr_auc": 0.5286,
+                "false_positive_rate": 0.0,
+                "false_negative_rate": 1.0,
+                "expected_tactical_cost_per_ball": 1.0298,
+                "contingency": {
+                  "tp": 0,
+                  "fp": 0,
+                  "fn": 6975,
+                  "tn": 114946
+                },
+                "bootstrap_95_ci": {
+                  "precision_ci": [
+                    0.0,
+                    0.0
+                  ],
+                  "recall_ci": [
+                    0.0,
+                    0.0
+                  ],
+                  "f1_ci": [
+                    0.0,
+                    0.0
+                  ],
+                  "cost_per_ball_ci": [
+                    1.0089,
+                    1.0498
+                  ]
+                }
+              }
+            },
+            "boundary_decision": {
+              "validation_optimization": {
+                "optimal_threshold": 0.1427,
+                "validation_cost_per_ball": 0.6311,
+                "validation_metrics": {
+                  "threshold": 0.1427,
+                  "expected_cost_per_ball": 0.6311,
+                  "precision": 0.0,
+                  "recall": 0.0,
+                  "f1": 0.0,
+                  "tp": 0,
+                  "fp": 0,
+                  "fn": 17454,
+                  "tn": 106992
+                }
+              },
+              "holdout_evaluation": {
+                "frozen_threshold": 0.1427,
+                "precision": 0.0,
+                "recall": 0.0,
+                "f1": 0.0,
+                "pr_auc": 0.5676,
+                "false_positive_rate": 0.0,
+                "false_negative_rate": 1.0,
+                "expected_tactical_cost_per_ball": 0.608,
+                "contingency": {
+                  "tp": 0,
+                  "fp": 0,
+                  "fn": 16472,
+                  "tn": 105449
+                },
+                "bootstrap_95_ci": {
+                  "precision_ci": [
+                    0.0,
+                    0.0
+                  ],
+                  "recall_ci": [
+                    0.0,
+                    0.0
+                  ],
+                  "f1_ci": [
+                    0.0,
+                    0.0
+                  ],
+                  "cost_per_ball_ci": [
+                    0.5919,
+                    0.6248
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "cricsheet_t20_logistic_candidate_v1": {
+          "model_id": "cricsheet_t20_logistic_candidate_v1",
+          "architecture": "Multinomial Logistic Regression (L2 C=1.0)",
+          "layer_a_probability_quality": {
+            "sample_count": 121921,
+            "simplex_valid": true,
+            "test_log_loss": 1.4282,
+            "test_brier_score_sum": 0.693,
+            "test_brier_score_mean": 0.099,
+            "wicket_brier_score": 0.0549,
+            "boundary_brier_score": 0.1151,
+            "classwise_brier": {
+              "dot": 0.22953,
+              "single": 0.2184,
+              "two": 0.06238,
+              "three": 0.00429,
+              "four": 0.08412,
+              "six": 0.0394,
+              "wicket": 0.0549
+            },
+            "expected_calibration_error": 0.0096,
+            "metric_labels": {
+              "target_definition": "7 mutually exclusive ball-by-ball delivery outcomes: 0=dot, 1=single, 2=two, 3=three, 4=four, 5=six, 6=wicket",
+              "class_ordering": [
+                "dot",
+                "single",
+                "two",
+                "three",
+                "four",
+                "six",
+                "wicket"
+              ],
+              "brier_sum_definition": "sum_{k=1}^K (p_ik - y_ik)^2 per delivery in [0, 2]",
+              "brier_mean_definition": "(1/K) sum_{k=1}^K (p_ik - y_ik)^2 per delivery in [0, 2/K]",
+              "conversion_identity": "brier_score_sum = 7.0 * brier_score_mean",
+              "averaging_method": "Macro multiclass for LogLoss/Brier; Binary for Wicket (class 6) and Boundary (classes 4+5)",
+              "normalization": "softmax probability simplex sum=1.0",
+              "dataset": "cricsheet_t20_intl",
+              "split": "holdout_test",
+              "calibration_status": "calibrated_l2_shrinkage"
+            },
+            "wicket_metrics": {
+              "recall": 0.0,
+              "precision": 0.0,
+              "f1": 0.0,
+              "pr_auc": 0.0759,
+              "base_rate": 0.0572
+            },
+            "boundary_metrics": {
+              "recall": 0.0042,
+              "precision": 0.2174,
+              "f1": 0.0083,
+              "pr_auc": 0.1878,
+              "base_rate": 0.1351
+            },
+            "match_level_bootstrap_95_ci": {
+              "log_loss_95_ci": [
+                1.4207,
+                1.4361
+              ],
+              "brier_sum_95_ci": [
+                0.6901,
+                0.6959
+              ],
+              "brier_mean_95_ci": [
+                0.0986,
+                0.0994
+              ],
+              "wicket_recall_95_ci": [
+                0.0,
+                0.0
+              ],
+              "wicket_precision_95_ci": [
+                0.0,
+                0.0
+              ],
+              "boundary_f1_95_ci": [
+                0.0041,
+                0.0136
+              ]
+            }
+          },
+          "layer_b_operating_decision_quality": {
+            "wicket_decision": {
+              "validation_optimization": {
+                "optimal_threshold": 0.2056,
+                "validation_cost_per_ball": 1.0123,
+                "validation_metrics": {
+                  "threshold": 0.2056,
+                  "expected_cost_per_ball": 1.0123,
+                  "precision": 0.1163,
+                  "recall": 0.0064,
+                  "f1": 0.0122,
+                  "tp": 45,
+                  "fp": 342,
+                  "fn": 6957,
+                  "tn": 117102
+                }
+              },
+              "holdout_evaluation": {
+                "frozen_threshold": 0.2056,
+                "precision": 0.0828,
+                "recall": 0.0039,
+                "f1": 0.0074,
+                "pr_auc": 0.0759,
+                "false_positive_rate": 0.0026,
+                "false_negative_rate": 0.9961,
+                "expected_tactical_cost_per_ball": 1.0312,
+                "contingency": {
+                  "tp": 27,
+                  "fp": 299,
+                  "fn": 6948,
+                  "tn": 114647
+                },
+                "bootstrap_95_ci": {
+                  "precision_ci": [
+                    0.0567,
+                    0.116
+                  ],
+                  "recall_ci": [
+                    0.0022,
+                    0.0053
+                  ],
+                  "f1_ci": [
+                    0.0042,
+                    0.0101
+                  ],
+                  "cost_per_ball_ci": [
+                    1.0102,
+                    1.051
+                  ]
+                }
+              }
+            },
+            "boundary_decision": {
+              "validation_optimization": {
+                "optimal_threshold": 0.1918,
+                "validation_cost_per_ball": 0.6102,
+                "validation_metrics": {
+                  "threshold": 0.1918,
+                  "expected_cost_per_ball": 0.6102,
+                  "precision": 0.2214,
+                  "recall": 0.2366,
+                  "f1": 0.2287,
+                  "tp": 4129,
+                  "fp": 14522,
+                  "fn": 13325,
+                  "tn": 92470
+                }
+              },
+              "holdout_evaluation": {
+                "frozen_threshold": 0.1918,
+                "precision": 0.213,
+                "recall": 0.2121,
+                "f1": 0.2126,
+                "pr_auc": 0.1878,
+                "false_positive_rate": 0.1224,
+                "false_negative_rate": 0.7879,
+                "expected_tactical_cost_per_ball": 0.5955,
+                "contingency": {
+                  "tp": 3494,
+                  "fp": 12909,
+                  "fn": 12978,
+                  "tn": 92540
+                },
+                "bootstrap_95_ci": {
+                  "precision_ci": [
+                    0.2067,
+                    0.2199
+                  ],
+                  "recall_ci": [
+                    0.1924,
+                    0.2314
+                  ],
+                  "f1_ci": [
+                    0.2004,
+                    0.223
+                  ],
+                  "cost_per_ball_ci": [
+                    0.5822,
+                    0.6106
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "cricsheet_t20_xgb_candidate_v2": {
+          "model_id": "cricsheet_t20_xgb_candidate_v2",
+          "architecture": "Histogram XGBoost 7-Outcome (depth=6)",
+          "layer_a_probability_quality": {
+            "sample_count": 121921,
+            "simplex_valid": true,
+            "test_log_loss": 1.4518,
+            "test_brier_score_sum": 0.7067,
+            "test_brier_score_mean": 0.101,
+            "wicket_brier_score": 0.0544,
+            "boundary_brier_score": 0.1166,
+            "classwise_brier": {
+              "dot": 0.23895,
+              "single": 0.22194,
+              "two": 0.06267,
+              "three": 0.00429,
+              "four": 0.0847,
+              "six": 0.0397,
+              "wicket": 0.05444
+            },
+            "expected_calibration_error": 0.0182,
+            "metric_labels": {
+              "target_definition": "7 mutually exclusive ball-by-ball delivery outcomes: 0=dot, 1=single, 2=two, 3=three, 4=four, 5=six, 6=wicket",
+              "class_ordering": [
+                "dot",
+                "single",
+                "two",
+                "three",
+                "four",
+                "six",
+                "wicket"
+              ],
+              "brier_sum_definition": "sum_{k=1}^K (p_ik - y_ik)^2 per delivery in [0, 2]",
+              "brier_mean_definition": "(1/K) sum_{k=1}^K (p_ik - y_ik)^2 per delivery in [0, 2/K]",
+              "conversion_identity": "brier_score_sum = 7.0 * brier_score_mean",
+              "averaging_method": "Macro multiclass for LogLoss/Brier; Binary for Wicket (class 6) and Boundary (classes 4+5)",
+              "normalization": "softmax probability simplex sum=1.0",
+              "dataset": "cricsheet_t20_intl",
+              "split": "holdout_test",
+              "calibration_status": "temperature_scaled_T1.003"
+            },
+            "wicket_metrics": {
+              "recall": 0.0,
+              "precision": 0.0,
+              "f1": 0.0,
+              "pr_auc": 0.0643,
+              "base_rate": 0.0572
+            },
+            "boundary_metrics": {
+              "recall": 0.0,
+              "precision": 0.0,
+              "f1": 0.0,
+              "pr_auc": 0.1539,
+              "base_rate": 0.1351
+            },
+            "match_level_bootstrap_95_ci": {
+              "log_loss_95_ci": [
+                1.4446,
+                1.4588
+              ],
+              "brier_sum_95_ci": [
+                0.7042,
+                0.7092
+              ],
+              "brier_mean_95_ci": [
+                0.1006,
+                0.1013
+              ],
+              "wicket_recall_95_ci": [
+                0.0,
+                0.0
+              ],
+              "wicket_precision_95_ci": [
+                0.0,
+                0.0
+              ],
+              "boundary_f1_95_ci": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "layer_b_operating_decision_quality": {
+            "wicket_decision": {
+              "validation_optimization": {
+                "optimal_threshold": 0.25,
+                "validation_cost_per_ball": 1.0138,
+                "validation_metrics": {
+                  "threshold": 0.25,
+                  "expected_cost_per_ball": 1.0138,
+                  "precision": 0.0361,
+                  "recall": 0.0004,
+                  "f1": 0.0008,
+                  "tp": 3,
+                  "fp": 80,
+                  "fn": 6999,
+                  "tn": 117364
+                }
+              },
+              "holdout_evaluation": {
+                "frozen_threshold": 0.25,
+                "precision": 0.0459,
+                "recall": 0.0007,
+                "f1": 0.0014,
+                "pr_auc": 0.0643,
+                "false_positive_rate": 0.0009,
+                "false_negative_rate": 0.9993,
+                "expected_tactical_cost_per_ball": 1.0309,
+                "contingency": {
+                  "tp": 5,
+                  "fp": 104,
+                  "fn": 6970,
+                  "tn": 114842
+                },
+                "bootstrap_95_ci": {
+                  "precision_ci": [
+                    0.0102,
+                    0.0821
+                  ],
+                  "recall_ci": [
+                    0.0001,
+                    0.0012
+                  ],
+                  "f1_ci": [
+                    0.0003,
+                    0.0023
+                  ],
+                  "cost_per_ball_ci": [
+                    1.0097,
+                    1.051
+                  ]
+                }
+              }
+            },
+            "boundary_decision": {
+              "validation_optimization": {
+                "optimal_threshold": 0.2191,
+                "validation_cost_per_ball": 0.6309,
+                "validation_metrics": {
+                  "threshold": 0.2191,
+                  "expected_cost_per_ball": 0.6309,
+                  "precision": 0.221,
+                  "recall": 0.0023,
+                  "f1": 0.0045,
+                  "tp": 40,
+                  "fp": 141,
+                  "fn": 17414,
+                  "tn": 106851
+                }
+              },
+              "holdout_evaluation": {
+                "frozen_threshold": 0.2191,
+                "precision": 0.1099,
+                "recall": 0.0012,
+                "f1": 0.0024,
+                "pr_auc": 0.1539,
+                "false_positive_rate": 0.0015,
+                "false_negative_rate": 0.9988,
+                "expected_tactical_cost_per_ball": 0.6087,
+                "contingency": {
+                  "tp": 20,
+                  "fp": 162,
+                  "fn": 16452,
+                  "tn": 105287
+                },
+                "bootstrap_95_ci": {
+                  "precision_ci": [
+                    0.0701,
+                    0.1512
+                  ],
+                  "recall_ci": [
+                    0.0007,
+                    0.0019
+                  ],
+                  "f1_ci": [
+                    0.0014,
+                    0.0037
+                  ],
+                  "cost_per_ball_ci": [
+                    0.5924,
+                    0.6253
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "cohort_c_common_non_spatial_schema": {
+      "cohort_name": "Cohort C \u2014 Common Non-Spatial Schema Cohort",
+      "dataset_id": "common_schema_cross_dataset",
+      "common_features": [
+        "batting_average",
+        "strike_rate",
+        "dot_ball_pct",
+        "boundary_pct",
+        "dismissal_rate",
+        "is_rhb",
+        "bowler_is_pace",
+        "bowler_is_spin",
+        "phase_code",
+        "over_num",
+        "ball_in_over"
+      ],
+      "feature_count": 11,
+      "test_deliveries": 1478,
+      "test_matches": 41,
+      "model_architecture": "Logistic Regression Common Schema (no zone features)",
+      "layer_a_probability_quality": {
+        "sample_count": 1478,
+        "simplex_valid": true,
+        "test_log_loss": 1.47,
+        "test_brier_score_sum": 0.7054,
+        "test_brier_score_mean": 0.1008,
+        "wicket_brier_score": 0.0414,
+        "boundary_brier_score": 0.1415,
+        "classwise_brier": {
+          "dot": 0.22128,
+          "single": 0.21309,
+          "two": 0.06836,
+          "three": 0.00672,
+          "four": 0.1047,
+          "six": 0.04983,
+          "wicket": 0.04139
+        },
+        "expected_calibration_error": 0.0202,
+        "metric_labels": {
+          "target_definition": "7 mutually exclusive ball-by-ball delivery outcomes: 0=dot, 1=single, 2=two, 3=three, 4=four, 5=six, 6=wicket",
+          "class_ordering": [
+            "dot",
+            "single",
+            "two",
+            "three",
+            "four",
+            "six",
+            "wicket"
+          ],
+          "brier_sum_definition": "sum_{k=1}^K (p_ik - y_ik)^2 per delivery in [0, 2]",
+          "brier_mean_definition": "(1/K) sum_{k=1}^K (p_ik - y_ik)^2 per delivery in [0, 2/K]",
+          "conversion_identity": "brier_score_sum = 7.0 * brier_score_mean",
+          "averaging_method": "Macro multiclass for LogLoss/Brier; Binary for Wicket (class 6) and Boundary (classes 4+5)",
+          "normalization": "softmax probability simplex sum=1.0",
+          "dataset": "common_non_spatial_projection",
+          "split": "holdout_test",
+          "calibration_status": "logistic_calibrated"
+        },
+        "wicket_metrics": {
+          "recall": 0.0,
+          "precision": 0.0,
+          "f1": 0.0,
+          "pr_auc": 0.0549,
+          "base_rate": 0.0433
+        },
+        "boundary_metrics": {
+          "recall": 0.0,
+          "precision": 0.0,
+          "f1": 0.0,
+          "pr_auc": 0.2232,
+          "base_rate": 0.1732
+        },
+        "match_level_bootstrap_95_ci": {
+          "log_loss_95_ci": [
+            1.4151,
+            1.5321
+          ],
+          "brier_sum_95_ci": [
+            0.6884,
+            0.7227
+          ],
+          "brier_mean_95_ci": [
+            0.0983,
+            0.1032
+          ],
+          "wicket_recall_95_ci": [
+            0.0,
+            0.0
+          ],
+          "wicket_precision_95_ci": [
+            0.0,
+            0.0
+          ],
+          "boundary_f1_95_ci": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "layer_b_operating_decision_quality": {
+        "wicket_decision": {
+          "validation_optimization": {
+            "optimal_threshold": 0.1033,
+            "validation_cost_per_ball": 0.6294,
+            "validation_metrics": {
+              "threshold": 0.1033,
+              "expected_cost_per_ball": 0.6294,
+              "precision": 1.0,
+              "recall": 0.0179,
+              "f1": 0.0351,
+              "tp": 1,
+              "fp": 0,
+              "fn": 55,
+              "tn": 1517
+            }
+          },
+          "holdout_evaluation": {
+            "frozen_threshold": 0.1033,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "pr_auc": 0.0549,
+            "false_positive_rate": 0.0,
+            "false_negative_rate": 1.0,
+            "expected_tactical_cost_per_ball": 0.7794,
+            "contingency": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 64,
+              "tn": 1414
+            },
+            "bootstrap_95_ci": {
+              "precision_ci": [
+                0.0,
+                0.0
+              ],
+              "recall_ci": [
+                0.0,
+                0.0
+              ],
+              "f1_ci": [
+                0.0,
+                0.0
+              ],
+              "cost_per_ball_ci": [
+                0.5929,
+                1.004
+              ]
+            }
+          }
+        },
+        "boundary_decision": {
+          "validation_optimization": {
+            "optimal_threshold": 0.1809,
+            "validation_cost_per_ball": 0.7503,
+            "validation_metrics": {
+              "threshold": 0.1809,
+              "expected_cost_per_ball": 0.7503,
+              "precision": 0.2372,
+              "recall": 0.5604,
+              "f1": 0.3333,
+              "tp": 167,
+              "fp": 537,
+              "fn": 131,
+              "tn": 738
+            }
+          },
+          "holdout_evaluation": {
+            "frozen_threshold": 0.1809,
+            "precision": 0.2185,
+            "recall": 0.582,
+            "f1": 0.3177,
+            "pr_auc": 0.2232,
+            "false_positive_rate": 0.4362,
+            "false_negative_rate": 0.418,
+            "expected_tactical_cost_per_ball": 0.7225,
+            "contingency": {
+              "tp": 149,
+              "fp": 533,
+              "fn": 107,
+              "tn": 689
+            },
+            "bootstrap_95_ci": {
+              "precision_ci": [
+                0.1924,
+                0.2448
+              ],
+              "recall_ci": [
+                0.4654,
+                0.7032
+              ],
+              "f1_ci": [
+                0.2815,
+                0.3581
+              ],
+              "cost_per_ball_ci": [
+                0.6326,
+                0.8094
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "comparative_analysis": {
+    "core_finding_1_spatial_vs_non_spatial_incommensurability": "Direct comparison between Cohort A (spatial baseline Log Loss 1.3233) and Cohort B (Cricsheet non-spatial Log Loss 1.4282) is mathematically and empirically incommensurable. The spatial baseline consumes ground-truth wagon-wheel zone_id (79.7% coverage), which conveys powerful directional leverage unavailable in standard ball-by-ball scorecards. Comparing them without controlling for spatial schema falsely penalizes non-spatial models.",
+    "core_finding_2_layer_a_vs_layer_b_separation": "Under Layer A, Multinomial Logistic Regression achieves superior probability calibration (Log Loss 1.4282, Brier Sum 0.6930, ECE 0.0125). However, raw argmax classification yields 0.0000 recall due to the ~5.7% rare-event base rate. Under Layer B operating-point optimization using tactical decision costs (policy v1.0.0), validation-selected thresholds (tau_w=0.2056) yield holdout wicket recall of 0.39% and precision of 8.28%, achieving expected tactical cost of 1.0312 runs/ball.",
+    "core_finding_3_production_strategy_verdict": "Strategy C (Model Router) is the optimal architectural strategy. In spatial contexts where wagon-wheel coordinates exist, fieldiq_xgb_baseline_v1 provides directional intelligence. In non-spatial contexts (Cricsheet, real-time live matches without wagon-wheel), the router invokes the non-spatial probability model and applies Layer B tactical decision costs."
+  }
+}

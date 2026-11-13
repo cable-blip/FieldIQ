@@ -182,3 +182,122 @@ Run `pytest` in the `backend/` directory, and `npm run test` in the `frontend/` 
 - **Video Overlay Export:** Export Three.js scene paths directly for OBS/Broadcast AR overlays.
 - **Advanced ML Models:** Deep Reinforcement Learning for dynamic fielder repositioning mid-over.
 - **Mobile Apps:** React Native captaincy companion app for on-field quick references.
+
+### 18. Candidate Field Conditional Outcome Modeling & ML Governance (Milestone ML-004)
+
+- **Physical Geometry & Simplex Probabilities:** Candidate fields are evaluated conditional on continuous player coordinates $(x, y)$, mapped to 8 wagon-wheel sectors with batter handedness mirroring and 3 radial depth zones.
+- **Elimination of Heuristic Multipliers:** Eradicated artificial multipliers (`ers * 0.82`, `ewo * 1.35`) in favor of data-derived boundary suppression factors ($B_{\text{sup}}$), catch opportunity scores ($C_{\text{opp}}$), and ring tightness pressure scores ($P_{\text{score}}$).
+- **Multi-Class Discrete Outcome Simplex:** Produces 7 mutually exclusive outcome probabilities:
+  $$\sum_{k \in \{\text{dot}, \text{single}, \text{two}, \text{three}, \text{four}, \text{six}, \text{wicket}\}} P(k) = 1.0 \pm 10^{-4}, \quad P(k) \ge 0$$
+- **Objective Utility Optimization:** Scores candidate layouts against 4 distinct tactical objectives:
+  - `attack_wicket`: Prioritizes wicket opportunities and dots while accepting elevated boundary risks.
+  - `prevent_boundary`: Prioritizes boundary suppression and expected run minimization.
+  - `build_pressure`: Balances dot ball creation with ring compression.
+  - `stop_singles`: Maximizes infield ring tightness to choke rotation of strike.
+- **Strict Model Governance & Promotion Gates:**
+  - Automated gates enforce wicket recall $\ge 0.150$, precision $\ge 0.100$, boundary $F_1 \ge 0.350$, test log-loss $\le 1.350$, and Brier score $\le 0.700$.
+  - Candidates failing any gate remain strictly unpromoted (`promoted: false`), keeping the operational baseline stable with documented low-recall disclosures.
+- **Golden Acceptance Test Suite:** 18 automated tests in `tests/test_candidate_field_intelligence.py` validating 15 domain tactical scenarios.
+
+---
+
+## 9. Dataset Ingestion & Candidate Model Evaluation: Cricsheet T20 International
+
+### 9.1 Provenance, Architecture & Real Data Compliance
+- **Source:** Cricsheet T20 International JSON Archive (3,646 Men's T20I matches from 2005-02-17 to 2026-10-25).
+- **Licensing:** Open Data Commons Attribution License (ODC-By) v1.0.
+- **Normalization:** 819,957 deliveries across 4,406 batters and 3,313 bowlers normalized into `data/external/cricsheet_t20_intl/normalized/deliveries.csv` (SHA-256: `caf6a91efcfc3fe4140a398d35483e6496cb3f83b9a06dbddfb4b06713795546`).
+- **Spatial Status Disclosure:** Cricsheet data contains zero wagon-wheel coordinates (`spatial_status: no_spatial_data`). Under FieldIQ's Real Data Principle (`AGENTS.md`), no shot directions were fabricated; `Zone` is strictly stored as `None`.
+- **Dataset Registry Isolation:** Managed by `backend/app/services/dataset_registry.py` under `data/dataset_registry.json` as `candidate` (`production_approved: false`). Production baseline dataset remains isolated and untouched.
+
+### 9.2 Leakage-Free Partitions & Benchmark Evaluation
+- **Partitioning:** Disjoint splitting by `GameId` hash (70% train / 15% validation / 15% holdout test). Zero match overlap across splits.
+- **Priors:** Calculated strictly on train set.
+- **Candidate Models:**
+  - Multi-class Hist XGBoost: Test Log Loss = 1.4310, Brier Score = 0.6922, Wicket Recall = 20.95%, Wicket Precision = 9.63%, Boundary F1 = 0.2307.
+  - Temperature Scaling: Calibrated on validation set ($T = 1.060$).
+- **Objective Promotion Gates & Governance Verdict:**
+  - Candidate model failed Gate 2 (Wicket Precision $0.0963 < 0.100$), Gate 3 (Boundary F1 $0.2307 < 0.350$), and Gate 4 (Log loss $1.4310 > 1.350$).
+  - In adherence to Rule 17 ("No Fake Completion"), candidate model is rejected (`promoted: false`). Active baseline (`fieldiq_xgb_baseline_v1`) remains active.
+- **Full Platform Health:** 195 backend tests passed; 16 frontend tests passed; production build clean; prototype servers active on ports 8001 and 5173.
+
+---
+
+## 10. Production-Grade Model Improvement, Evaluation, and Tactical Integration (Milestone ML-005)
+
+### 10.1 Pipeline Audit & Provenance Verification
+- **Audit Report:** `data/external/cricsheet_t20_intl/reports/pipeline_audit_v1.json`.
+- **Verdict:** `PASS`. Full normalized delivery dataset (819,957 rows, 3,646 matches) contains 0 duplicate delivery keys.
+- **Spatial Reality Disclosed:** 100% of deliveries have `Zone = None` (0% spatial coverage). Spatial coordinates and wagon-wheel directions are never synthetically populated.
+
+### 10.2 Rich Causal Feature Engineering (v2.3.0, 58 features)
+Implemented in `scripts/train/generate_rich_causal_features.py`:
+- **Match State & Target Context:** `innings`, `over_num`, `ball_in_over`, `current_score`, `current_wickets`, `target_runs`, `required_run_rate`, `balls_remaining`, `wickets_in_hand`.
+- **Strictly Preceding Within-Match Momentum:** `runs_last_6`, `runs_last_12`, `dots_last_6`, `bnd_last_12`, `wkt_last_12`, `consecutive_dots`, `prev_was_dot`, `prev_was_bnd`, `prev_was_wkt`.
+- **Inning-Level Form:** `batter_runs_so_far`, `batter_balls_faced`, `batter_strike_rate`, `bowler_runs_conceded`, `bowler_balls_bowled`, `bowler_wickets_so_far`, `bowler_economy_rate`.
+- **Historical Priors (Train Set Only):** Batter career strike rate, dot %, boundary %, dismissal rate; Bowler economy and wicket rate.
+- **Empirical Bayes Matchup Shrinkage:** Shrunk dismissal rate, economy rate, dot rate.
+- **Zero Future Leakage:** Sequences strictly reset at the start of each inning; over 1 ball 1 has strictly 0 prior score, balls, and sequences.
+
+### 10.3 Comprehensive 6-Architecture Benchmark (121,921 holdout deliveries)
+Reported in `data/external/cricsheet_t20_intl/reports/model_benchmark_report_v1.json`:
+1. **Empirical Class Frequency Baseline:** Log Loss = 1.4553, Brier = 0.1012, ECE = 0.0526.
+2. **Historical Prior Baseline:** Log Loss = 1.4635, Brier = 0.1017, ECE = 0.0573.
+3. **Multinomial Logistic Regression:** Log Loss = 1.4274 [1.4181, 1.4361], Brier = 0.0990 [0.0982, 0.0998], ECE = 0.0305, PR-AUC Wkt = 0.0801, PR-AUC Bnd = 0.2974.
+4. **Calibrated Tree (HistGB):** Log Loss = 2.1658, Brier = 0.1295, ECE = 0.0617.
+5. **Candidate Hist XGBoost Classifier:** Log Loss = 1.4518 [1.4441, 1.4588], Brier = 0.1010 [0.1004, 0.1016], ECE = 0.0326, Temperature T = 1.003.
+6. **Decomposed Hierarchical Calibrated Model:** Log Loss = 2.0620, Brier = 0.1235.
+
+### 10.4 Error Analysis & Rare-Event Study
+Reported in `data/external/cricsheet_t20_intl/reports/error_analysis_v1.json`:
+- **Class Imbalance Realities:** Wickets constitute 5.75% of deliveries; unweighted argmax classification achieves 0 recall because raw softmax probability rarely exceeds 0.35 even at 5x base hazard rate.
+- **Feature Importance:** Death phase, required run rate, balls remaining, consecutive dots, and career strike rate dominate model predictions.
+
+### 10.5 Tactical Policy Configuration & Component Separation
+- **Tactical Policy (`backend/app/config/tactical_policy.json` v1.0.0):** Decoupled objective utility weights (`attack_wicket`, `prevent_boundary`, `build_pressure`, `stop_singles`) from source code.
+- **5-Pillar Candidate Decomposition:** `compute_candidate_field_outcomes` transparently exposes `learned_probabilities`, `geometry_effects`, `rule_constraints`, `tactical_policy`, and `spatial_evidence`.
+
+### 10.6 Verified Regression Suite & Platform Health
+- **Backend Tests:** 230 passed, 0 failed, 1 warning (289.97s across all 5 verification suites).
+- **Frontend Status:** Integration deferred; all 16 Vitest tests and assets preserved untouched.
+- **Frontend Build:** Clean compilation in 866ms.
+- **Prototype Servers:** FastAPI backend (8001) & Vite frontend (5173) operational.
+
+---
+
+### 11. Multi-Agent Collaboration Bridge & Governance
+
+FieldIQ implements a structured, auditable collaboration protocol governing interactions between heterogeneous AI development agents and the human system architect:
+
+#### 11.1 Agent Roles & Boundaries
+- **Coordinator (`coordinator` — ChatGPT / Codex):** Decomposes work into atomic tasks, defines scope, acceptance criteria, and verification commands, inspects handoff reports, and escalates to the human approver only when strictly necessary.
+- **Backend / ML Executor (`backend_ml` — Cursor / Backend Agent):** Executes tasks in Python core, FastAPI, ML pipelines, data ingestion, feature engineering, and offline backend test suites.
+- **Frontend Executor (`antigravity` — Antigravity Agent):** Responsible for React, TypeScript, Three.js, React Three Fiber, and UI/UX. **Must visualize backend output; must NOT invent tactical logic.**
+- **Human Approver (`human`):** Approves model promotions, secrets, architectural changes, destructive actions, and Git commits/pushes.
+
+#### 11.2 Task Ledger as Source of Truth
+All agent work is governed by the shared ledger:
+- **Ledger Path:** `Docs/FieldIQ/05_Operations/agent_task_ledger.json`
+- **Protocol:** `Docs/FieldIQ/05_Operations/Agent Collaboration Protocol.md`
+- **File Ownership:** `Docs/FieldIQ/05_Operations/file_ownership.json`
+- **Handoff Reports:** `Docs/FieldIQ/05_Operations/handoffs/<task_id>_<date>.md`
+- **Initial Tasks:** `FIQ-0001` (metrics reconciliation), `FIQ-0002` (reproduce model benchmarks), `FIQ-0003` (verify leakage controls), `FIQ-0004` (audit model registry), `FIQ-0005` (preserve frontend for future integration), `FIQ-0006` (review backend API contract).
+
+#### 11.3 Coordination Utilities & CLI
+- **Service (`backend/app/services/agent_coordination.py`):** Thread-safe, process-safe atomic ledger operations, state machine transition enforcement, file scope boundary validation, secret redaction, and handoff report generation.
+- **CLI Wrapper (`scripts/ops/agent_task.py`):** Provides command-line actions: `list`, `create`, `claim`, `release`, `block`, `verify`, `approve`, `complete`, `history`.
+
+#### 11.4 Local MCP Coordination Server
+- **Server Script:** `scripts/ops/fieldiq_mcp_server.py`
+- **Transport:** Standard I/O (`stdio`), newline-delimited JSON-RPC 2.0.
+- **Exposed Tools:** `list_tasks`, `get_task`, `create_task`, `claim_task`, `update_task`, `submit_for_review`, `record_verification`, `request_human_approval`, `get_project_status`.
+- **Security Limitations:** Zero arbitrary shell command execution, zero file deletion, zero secret retrieval, zero automatic git push, zero automatic model promotion.
+- **Fallback Mechanism:** The MCP bridge is optional. If unsupported or disabled, the JSON ledger and CLI wrapper serve as the primary coordination mechanism.
+
+#### 11.5 Governance & Safety Invariants
+1. **Live Frontend Integration Deferred:** Live UI modifications are deferred (`FIQ-0005`); existing 3D operator view contracts are preserved without modification.
+2. **Backend/ML Active Priority:** Focus remains on data and ML pipeline reconciliation (`FIQ-0001` through `FIQ-0004`, `FIQ-0006`).
+3. **Model Promotion Protection:** Model promotion strictly requires human approval. Rejected models (`promoted: false`) cannot be silently activated.
+4. **Offline Testing Only:** Offline tests run in terminal sandboxes without launching live servers or browser instances during coordination workflows.
+5. **Human Interruption Rules:** Agents interrupt the human only for secrets, destructive actions, schema migrations, model promotions, commits/pushes, conflicting requirements, and architectural changes.
+

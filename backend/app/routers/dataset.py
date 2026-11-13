@@ -107,6 +107,9 @@ def get_dataset_summary() -> Dict[str, Any]:
     if not unique_batters:
         unique_batters = [b.name for b in get_sample_batters()]
 
+    from backend.app.services.dataset_registry import get_dataset_registry
+    registry_data = get_dataset_registry().get_summary()
+
     provenance_info: Optional[Dict[str, Any]] = None
     meta_path = DATA_DIR / "dataset_metadata.json"
     if meta_path.exists():
@@ -127,6 +130,7 @@ def get_dataset_summary() -> Dict[str, Any]:
         "missing_zone_deliveries": missing_zone_deliveries,
         "missing_zone_pct": round((missing_zone_deliveries / total_deliveries) * 100, 1) if total_deliveries > 0 else 0.0,
         "provenance": provenance_info,
+        "dataset_registry": registry_data,
         "last_updated": datetime.now(timezone.utc).isoformat()
     }
 

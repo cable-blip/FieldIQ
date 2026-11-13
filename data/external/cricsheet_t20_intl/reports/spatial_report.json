@@ -1,0 +1,15 @@
+{
+  "dataset_id": "cricsheet_t20_intl",
+  "spatial_status": "no_spatial_data",
+  "direction_field": null,
+  "direction_convention": null,
+  "valid_direction_values": [],
+  "invalid_direction_values": [],
+  "missing_spatial_count": 68604,
+  "spatial_coverage_pct": 0.0,
+  "direction_data_available": false,
+  "distance_is_measured": false,
+  "distance_is_derived_proxy": false,
+  "safe_for_spatial_training": false,
+  "limitation_statement": "Cricsheet JSON ball-by-ball scorecards do not record wagon-wheel shot direction, landing coordinates, trajectory, or fielding position. Spatial data is strictly absent and must not be fabricated."
+}

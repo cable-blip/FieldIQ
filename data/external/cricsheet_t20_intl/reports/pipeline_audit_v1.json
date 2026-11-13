@@ -1,0 +1,145 @@
+{
+  "audit_version": "1.0.0",
+  "audit_date": "2026-11-07T05:18:35.571969+00:00",
+  "dataset_id": "cricsheet_t20_intl",
+  "dataset_version": "1.0.0",
+  "source": {
+    "origin": "Cricsheet (https://cricsheet.org)",
+    "download_path": "C:/Users/ADMIN/Downloads/t20s_json",
+    "match_format": "Men T20 International",
+    "license": "Open Data Commons Attribution License (ODC-By) v1.0"
+  },
+  "file_hashes": {
+    "normalized_data_sha256": "caf6a91efcfc3fe4140a398d35483e6496cb3f83b9a06dbddfb4b06713795546",
+    "feature_train_sha256": "e39c44fea5362eed6763a2e950411ffd0b6804d8b7b45a15338ecd28a377e231",
+    "feature_val_sha256": "c7079366f49d7e5399ba8d53bea7a6860aa9eaa7cecf692a0211cea1cb98d55e",
+    "feature_test_sha256": "8b4568a0eae006278831a95c6801c6a0cb0bc707674ba8a4a3bc170ca472a8c5",
+    "split_manifest_sha256": "21df10af02c5a90402e81d0e709b1e3d0bff3d3492d74c1db7877b086740e8c8"
+  },
+  "row_counts": {
+    "total_normalized_deliveries": 819957,
+    "train_deliveries": 573590,
+    "val_deliveries": 124446,
+    "test_deliveries": 121921
+  },
+  "match_counts": {
+    "total_normalized_matches": 3646,
+    "train_matches": 2552,
+    "val_matches": 546,
+    "test_matches": 548
+  },
+  "duplicate_counts": {
+    "duplicate_delivery_keys": 0
+  },
+  "missing_value_counts": {
+    "DatasetId": 0,
+    "DatasetVersion": 0,
+    "Batter": 0,
+    "BowlerName": 0,
+    "GameId": 0,
+    "MatchDate": 0,
+    "Competition": 14098,
+    "MatchFormat": 0,
+    "Innings": 0,
+    "Over": 0,
+    "BallInOver": 0,
+    "RunsBatter": 0,
+    "Extras": 0,
+    "RunsTotal": 0,
+    "ExtraType": 769421,
+    "Wicket": 0,
+    "WicketMethod": 773025,
+    "WhoOut": 773025,
+    "BattingTeam": 0,
+    "BowlingTeam": 0,
+    "Venue": 0,
+    "Target": 443485,
+    "Zone": 819957,
+    "ShotDirection": 819957,
+    "ShotType": 819957,
+    "Distance": 819957
+  },
+  "target_distributions": {
+    "normalized_data": {
+      "wickets": 46932,
+      "wicket_rate_pct": 5.724,
+      "runs_distribution": {
+        "0": 368088,
+        "1": 278843,
+        "4": 77439,
+        "2": 56783,
+        "6": 35128,
+        "3": 3551,
+        "5": 123,
+        "7": 2
+      }
+    },
+    "splits_7_outcome_classes": {
+      "train": {
+        "0": 225508,
+        "1": 194145,
+        "4": 54173,
+        "2": 39876,
+        "6": 32955,
+        "5": 24459,
+        "3": 2474
+      },
+      "val": {
+        "0": 48149,
+        "1": 42706,
+        "4": 11850,
+        "2": 8587,
+        "6": 7002,
+        "5": 5604,
+        "3": 548
+      },
+      "test": {
+        "0": 48963,
+        "1": 40793,
+        "4": 11406,
+        "2": 8193,
+        "6": 6975,
+        "5": 5066,
+        "3": 525
+      }
+    }
+  },
+  "leakage_checks": {
+    "train_val_match_overlap": 0,
+    "train_test_match_overlap": 0,
+    "val_test_match_overlap": 0,
+    "match_overlap_detected": false,
+    "holdout_used_for_training": false,
+    "validation_used_for_final_training": false,
+    "temporal_leakage_in_priors": false,
+    "priors_derived_strictly_from_train": true
+  },
+  "feature_availability": {
+    "spatial_shot_coordinates": false,
+    "spatial_coverage_pct": 0.0,
+    "wagon_wheel_direction_available": false,
+    "ball_by_ball_scores_available": true,
+    "dismissal_modes_available": true,
+    "extras_breakdown_available": true,
+    "innings_and_over_available": true,
+    "batter_bowler_identities_available": true,
+    "match_date_and_venue_available": true
+  },
+  "calibration_procedure": {
+    "method": "Post-hoc Temperature Scaling",
+    "fitted_on": "Validation split only (124,446 deliveries)",
+    "evaluated_on": "Untouched holdout test split (121,921 deliveries)",
+    "enforces_simplex": true
+  },
+  "model_comparison_procedure": {
+    "holdout_evaluation_rule": "Holdout test partition evaluated strictly once for model benchmark and gate assessment",
+    "target_alignment": "Candidate and baseline target definitions strictly 7-outcome discrete simplex",
+    "promotion_gate_enforcement": "Automatic gates enforce minimum wicket precision (>=0.100), recall (>=0.150), boundary F1 (>=0.350), log loss (<=1.350)"
+  },
+  "warnings_and_limitations": [
+    "Zero spatial shot direction coordinates exist in Cricsheet raw data; Zone is strictly None and no directions may be fabricated.",
+    "Wicket events comprise 5.72% of deliveries, presenting extreme class imbalance where standard multi-class loss without class weighting or threshold tuning yields high false negatives.",
+    "Holdout test set must remain strictly untouched during feature selection and hyperparameter exploration."
+  ],
+  "audit_verdict": "PASS"
+}

@@ -1,0 +1,51 @@
+{
+  "active_dataset_id": "fieldiq_v2_baseline",
+  "active_dataset_version": "2.0.0",
+  "datasets": [
+    {
+      "dataset_id": "fieldiq_v2_baseline",
+      "dataset_version": "2.0.0",
+      "status": "active",
+      "dataset_name": "FieldIQ Derived Historical T20I Deliveries",
+      "file_path": "data/real_batters_deliveries.csv",
+      "source_name": "rishsriv/t20i_data + Cricsheet",
+      "source_url": "https://github.com/rishsriv/t20i_data",
+      "license": "mixed / CC BY-SA 4.0 enrichment",
+      "row_count": 10454,
+      "batter_count": 9,
+      "bowler_count": 330,
+      "match_count": 267,
+      "spatial_status": "partially_available",
+      "spatial_coverage_pct": 79.73,
+      "validation_status": "PASS",
+      "production_approved": true,
+      "registered_at": "2026-10-22T10:00:00Z",
+      "notes": "Operational baseline dataset with valid directional wagon wheel sectors."
+    },
+    {
+      "dataset_id": "cricsheet_t20_intl",
+      "dataset_version": "1.0.0",
+      "status": "candidate",
+      "dataset_name": "Cricsheet T20 International Ball-by-Ball Dataset",
+      "file_path": "data/external/cricsheet_t20_intl/normalized/deliveries.csv",
+      "source_name": "Cricsheet",
+      "source_url": "https://cricsheet.org/downloads/t20s_json.zip",
+      "license": "Open Data Commons Attribution License (ODC-By) v1.0",
+      "row_count": 819957,
+      "batter_count": 4406,
+      "bowler_count": 3313,
+      "match_count": 3646,
+      "spatial_status": "no_spatial_data",
+      "spatial_coverage_pct": 0.0,
+      "validation_status": "PASS_WITH_WARNINGS",
+      "production_approved": false,
+      "registered_at": "2026-11-06T01:46:31.907549+00:00",
+      "file_hash_sha256": "caf6a91efcfc3fe4140a398d35483e6496cb3f83b9a06dbddfb4b06713795546",
+      "known_limitations": [
+        "Source contains zero wagon-wheel direction or distance coordinates.",
+        "Deliveries cannot be used for spatial shot charts or candidate-field sector optimization.",
+        "Can be evaluated strictly for ball-by-ball outcome prediction (dot, singles, boundary, wicket)."
+      ]
+    }
+  ]
+}

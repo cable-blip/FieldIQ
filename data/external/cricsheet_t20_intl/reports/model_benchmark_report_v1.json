@@ -1,0 +1,955 @@
+{
+  "benchmark_version": "1.0.0",
+  "evaluated_at": "2026-11-07T05:29:25.117868+00:00",
+  "holdout_deliveries_count": 121921,
+  "models": {
+    "empirical_baseline": {
+      "model_name": "Empirical Population Baseline",
+      "metrics": {
+        "test_log_loss": 1.4553,
+        "test_brier_score": 0.1012,
+        "classwise_brier": [
+          0.2404,
+          0.2227,
+          0.0627,
+          0.0043,
+          0.0848,
+          0.0398,
+          0.0539
+        ],
+        "expected_calibration_error": 0.0084,
+        "wicket_precision": 0.0,
+        "wicket_recall": 0.0,
+        "wicket_f1": 0.0,
+        "wicket_pr_auc": 0.5286,
+        "boundary_precision": 0.0,
+        "boundary_recall": 0.0,
+        "boundary_f1": 0.0,
+        "boundary_pr_auc": 0.5676,
+        "expected_runs_per_ball": 1.124,
+        "expected_runs_per_over": 6.74,
+        "expected_wickets_per_over": 0.345,
+        "simplex_valid": true
+      },
+      "phase_breakdown": {
+        "powerplay": {
+          "n_deliveries": 41112,
+          "log_loss": 1.4203,
+          "exp_runs_over": 6.74,
+          "wkt_rate_pred": 0.0575,
+          "wkt_rate_true": 0.0461
+        },
+        "middle": {
+          "n_deliveries": 56040,
+          "log_loss": 1.4131,
+          "exp_runs_over": 6.74,
+          "wkt_rate_pred": 0.0575,
+          "wkt_rate_true": 0.0506
+        },
+        "death": {
+          "n_deliveries": 24769,
+          "log_loss": 1.6087,
+          "exp_runs_over": 6.74,
+          "wkt_rate_pred": 0.0575,
+          "wkt_rate_true": 0.0905
+        }
+      },
+      "context_breakdown": {
+        "chasing_innings_2": {
+          "n_deliveries": 55829,
+          "log_loss": 1.4476,
+          "exp_runs_over": 6.74
+        },
+        "defending_innings_1": {
+          "n_deliveries": 66092,
+          "log_loss": 1.4617,
+          "exp_runs_over": 6.74
+        },
+        "new_batter": {
+          "n_deliveries": 64078,
+          "log_loss": 1.4034,
+          "exp_runs_over": 6.74
+        },
+        "established_batter": {
+          "n_deliveries": 57843,
+          "log_loss": 1.5128,
+          "exp_runs_over": 6.74
+        }
+      },
+      "confusion_matrix": [
+        [
+          48963,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          40793,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          8193,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          525,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          11406,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          5066,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          6975,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    "historical_prior_baseline": {
+      "model_name": "Historical Prior Baseline",
+      "metrics": {
+        "test_log_loss": 1.4635,
+        "test_brier_score": 0.1017,
+        "classwise_brier": [
+          0.2419,
+          0.225,
+          0.0627,
+          0.0043,
+          0.0848,
+          0.0396,
+          0.0539
+        ],
+        "expected_calibration_error": 0.0531,
+        "wicket_precision": 0.0,
+        "wicket_recall": 0.0,
+        "wicket_f1": 0.0,
+        "wicket_pr_auc": 0.0711,
+        "boundary_precision": 0.0714,
+        "boundary_recall": 0.0002,
+        "boundary_f1": 0.0004,
+        "boundary_pr_auc": 0.1705,
+        "expected_runs_per_ball": 1.05,
+        "expected_runs_per_over": 6.3,
+        "expected_wickets_per_over": 0.357,
+        "simplex_valid": true
+      },
+      "phase_breakdown": {
+        "powerplay": {
+          "n_deliveries": 41112,
+          "log_loss": 1.3915,
+          "exp_runs_over": 6.5,
+          "wkt_rate_pred": 0.0564,
+          "wkt_rate_true": 0.0461
+        },
+        "middle": {
+          "n_deliveries": 56040,
+          "log_loss": 1.4343,
+          "exp_runs_over": 6.32,
+          "wkt_rate_pred": 0.0586,
+          "wkt_rate_true": 0.0506
+        },
+        "death": {
+          "n_deliveries": 24769,
+          "log_loss": 1.649,
+          "exp_runs_over": 5.92,
+          "wkt_rate_pred": 0.0665,
+          "wkt_rate_true": 0.0905
+        }
+      },
+      "context_breakdown": {
+        "chasing_innings_2": {
+          "n_deliveries": 55829,
+          "log_loss": 1.4599,
+          "exp_runs_over": 6.32
+        },
+        "defending_innings_1": {
+          "n_deliveries": 66092,
+          "log_loss": 1.4665,
+          "exp_runs_over": 6.29
+        },
+        "new_batter": {
+          "n_deliveries": 64078,
+          "log_loss": 1.4002,
+          "exp_runs_over": 6.14
+        },
+        "established_batter": {
+          "n_deliveries": 57843,
+          "log_loss": 1.5336,
+          "exp_runs_over": 6.48
+        }
+      },
+      "confusion_matrix": [
+        [
+          44733,
+          4212,
+          0,
+          0,
+          18,
+          0,
+          0
+        ],
+        [
+          35893,
+          4886,
+          0,
+          0,
+          14,
+          0,
+          0
+        ],
+        [
+          7152,
+          1038,
+          0,
+          0,
+          3,
+          0,
+          0
+        ],
+        [
+          471,
+          54,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          10247,
+          1157,
+          0,
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          4594,
+          471,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          6323,
+          648,
+          0,
+          0,
+          4,
+          0,
+          0
+        ]
+      ]
+    },
+    "multinomial_logistic_regression": {
+      "model_name": "Multinomial Logistic Regression",
+      "metrics": {
+        "test_log_loss": 1.4274,
+        "test_brier_score": 0.099,
+        "classwise_brier": [
+          0.2294,
+          0.2185,
+          0.0624,
+          0.0043,
+          0.0841,
+          0.0394,
+          0.0547
+        ],
+        "expected_calibration_error": 0.0097,
+        "wicket_precision": 0.0,
+        "wicket_recall": 0.0,
+        "wicket_f1": 0.0,
+        "wicket_pr_auc": 0.0767,
+        "boundary_precision": 0.2145,
+        "boundary_recall": 0.0039,
+        "boundary_f1": 0.0077,
+        "boundary_pr_auc": 0.1871,
+        "expected_runs_per_ball": 1.079,
+        "expected_runs_per_over": 6.48,
+        "expected_wickets_per_over": 0.487,
+        "simplex_valid": true
+      },
+      "phase_breakdown": {
+        "powerplay": {
+          "n_deliveries": 41112,
+          "log_loss": 1.3751,
+          "exp_runs_over": 5.96,
+          "wkt_rate_pred": 0.0588,
+          "wkt_rate_true": 0.0461
+        },
+        "middle": {
+          "n_deliveries": 56040,
+          "log_loss": 1.3982,
+          "exp_runs_over": 6.64,
+          "wkt_rate_pred": 0.0832,
+          "wkt_rate_true": 0.0506
+        },
+        "death": {
+          "n_deliveries": 24769,
+          "log_loss": 1.5802,
+          "exp_runs_over": 6.97,
+          "wkt_rate_pred": 0.1139,
+          "wkt_rate_true": 0.0905
+        }
+      },
+      "context_breakdown": {
+        "chasing_innings_2": {
+          "n_deliveries": 55829,
+          "log_loss": 1.4255,
+          "exp_runs_over": 6.45
+        },
+        "defending_innings_1": {
+          "n_deliveries": 66092,
+          "log_loss": 1.429,
+          "exp_runs_over": 6.5
+        },
+        "new_batter": {
+          "n_deliveries": 64078,
+          "log_loss": 1.3653,
+          "exp_runs_over": 5.77
+        },
+        "established_batter": {
+          "n_deliveries": 57843,
+          "log_loss": 1.4962,
+          "exp_runs_over": 7.26
+        }
+      },
+      "confusion_matrix": [
+        [
+          31884,
+          16974,
+          0,
+          0,
+          4,
+          98,
+          3
+        ],
+        [
+          18930,
+          21766,
+          0,
+          0,
+          1,
+          92,
+          4
+        ],
+        [
+          3481,
+          4684,
+          0,
+          0,
+          1,
+          26,
+          1
+        ],
+        [
+          315,
+          210,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          6137,
+          5237,
+          0,
+          0,
+          2,
+          30,
+          0
+        ],
+        [
+          1732,
+          3301,
+          0,
+          0,
+          0,
+          33,
+          0
+        ],
+        [
+          3359,
+          3600,
+          0,
+          0,
+          0,
+          16,
+          0
+        ]
+      ]
+    },
+    "calibrated_tree_baseline": {
+      "model_name": "Calibrated Tree Baseline",
+      "metrics": {
+        "test_log_loss": 2.1658,
+        "test_brier_score": 0.1295,
+        "classwise_brier": [
+          0.3011,
+          0.3266,
+          0.0639,
+          0.0057,
+          0.0939,
+          0.0411,
+          0.074
+        ],
+        "expected_calibration_error": 0.3047,
+        "wicket_precision": 0.0667,
+        "wicket_recall": 0.044,
+        "wicket_f1": 0.053,
+        "wicket_pr_auc": 0.0621,
+        "boundary_precision": 0.1811,
+        "boundary_recall": 0.0378,
+        "boundary_f1": 0.0626,
+        "boundary_pr_auc": 0.1508,
+        "expected_runs_per_ball": 1.04,
+        "expected_runs_per_over": 6.24,
+        "expected_wickets_per_over": 0.396,
+        "simplex_valid": true
+      },
+      "phase_breakdown": {
+        "powerplay": {
+          "n_deliveries": 41112,
+          "log_loss": 2.2774,
+          "exp_runs_over": 6.24,
+          "wkt_rate_pred": 0.0589,
+          "wkt_rate_true": 0.0461
+        },
+        "middle": {
+          "n_deliveries": 56040,
+          "log_loss": 2.0285,
+          "exp_runs_over": 6.19,
+          "wkt_rate_pred": 0.0649,
+          "wkt_rate_true": 0.0506
+        },
+        "death": {
+          "n_deliveries": 24769,
+          "log_loss": 2.2913,
+          "exp_runs_over": 6.37,
+          "wkt_rate_pred": 0.0801,
+          "wkt_rate_true": 0.0905
+        }
+      },
+      "context_breakdown": {
+        "chasing_innings_2": {
+          "n_deliveries": 55829,
+          "log_loss": 2.1727,
+          "exp_runs_over": 6.26
+        },
+        "defending_innings_1": {
+          "n_deliveries": 66092,
+          "log_loss": 2.1601,
+          "exp_runs_over": 6.22
+        },
+        "new_batter": {
+          "n_deliveries": 64078,
+          "log_loss": 2.1768,
+          "exp_runs_over": 6.06
+        },
+        "established_batter": {
+          "n_deliveries": 57843,
+          "log_loss": 2.1537,
+          "exp_runs_over": 6.44
+        }
+      },
+      "confusion_matrix": [
+        [
+          10489,
+          35356,
+          84,
+          102,
+          1202,
+          93,
+          1637
+        ],
+        [
+          7316,
+          30664,
+          68,
+          64,
+          967,
+          112,
+          1602
+        ],
+        [
+          1435,
+          6160,
+          17,
+          12,
+          199,
+          25,
+          345
+        ],
+        [
+          114,
+          373,
+          2,
+          2,
+          17,
+          0,
+          17
+        ],
+        [
+          2425,
+          8064,
+          13,
+          25,
+          413,
+          28,
+          438
+        ],
+        [
+          899,
+          3710,
+          7,
+          11,
+          148,
+          34,
+          257
+        ],
+        [
+          1227,
+          5196,
+          29,
+          14,
+          177,
+          25,
+          307
+        ]
+      ]
+    },
+    "candidate_xgb_model": {
+      "model_name": "Candidate Hist XGBoost (Temperature Calibrated)",
+      "metrics": {
+        "test_log_loss": 1.4518,
+        "test_brier_score": 0.101,
+        "classwise_brier": [
+          0.239,
+          0.2219,
+          0.0627,
+          0.0043,
+          0.0847,
+          0.0397,
+          0.0544
+        ],
+        "expected_calibration_error": 0.0188,
+        "wicket_precision": 0.0,
+        "wicket_recall": 0.0,
+        "wicket_f1": 0.0,
+        "wicket_pr_auc": 0.0643,
+        "boundary_precision": 0.0,
+        "boundary_recall": 0.0,
+        "boundary_f1": 0.0,
+        "boundary_pr_auc": 0.1539,
+        "expected_runs_per_ball": 1.118,
+        "expected_runs_per_over": 6.71,
+        "expected_wickets_per_over": 0.393,
+        "simplex_valid": true
+      },
+      "phase_breakdown": {
+        "powerplay": {
+          "n_deliveries": 41112,
+          "log_loss": 1.4206,
+          "exp_runs_over": 6.73,
+          "wkt_rate_pred": 0.0623,
+          "wkt_rate_true": 0.0461
+        },
+        "middle": {
+          "n_deliveries": 56040,
+          "log_loss": 1.4096,
+          "exp_runs_over": 6.71,
+          "wkt_rate_pred": 0.0652,
+          "wkt_rate_true": 0.0506
+        },
+        "death": {
+          "n_deliveries": 24769,
+          "log_loss": 1.5992,
+          "exp_runs_over": 6.68,
+          "wkt_rate_pred": 0.0719,
+          "wkt_rate_true": 0.0905
+        }
+      },
+      "context_breakdown": {
+        "chasing_innings_2": {
+          "n_deliveries": 55829,
+          "log_loss": 1.4453,
+          "exp_runs_over": 6.71
+        },
+        "defending_innings_1": {
+          "n_deliveries": 66092,
+          "log_loss": 1.4573,
+          "exp_runs_over": 6.71
+        },
+        "new_batter": {
+          "n_deliveries": 64078,
+          "log_loss": 1.4007,
+          "exp_runs_over": 6.68
+        },
+        "established_batter": {
+          "n_deliveries": 57843,
+          "log_loss": 1.5085,
+          "exp_runs_over": 6.75
+        }
+      },
+      "confusion_matrix": [
+        [
+          34067,
+          14896,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          25337,
+          15456,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          5087,
+          3106,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          342,
+          183,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          7895,
+          3511,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          3258,
+          1808,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          4567,
+          2408,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    "decomposed_hierarchical_model": {
+      "model_name": "Decomposed Hierarchical Model",
+      "metrics": {
+        "test_log_loss": 2.062,
+        "test_brier_score": 0.1235,
+        "classwise_brier": [
+          0.2898,
+          0.3115,
+          0.0646,
+          0.0055,
+          0.094,
+          0.0416,
+          0.0575
+        ],
+        "expected_calibration_error": 0.2609,
+        "wicket_precision": 0.1176,
+        "wicket_recall": 0.0003,
+        "wicket_f1": 0.0006,
+        "wicket_pr_auc": 0.0604,
+        "boundary_precision": 0.1778,
+        "boundary_recall": 0.042,
+        "boundary_f1": 0.068,
+        "boundary_pr_auc": 0.1473,
+        "expected_runs_per_ball": 0.966,
+        "expected_runs_per_over": 5.8,
+        "expected_wickets_per_over": 0.345,
+        "simplex_valid": true
+      },
+      "phase_breakdown": {
+        "powerplay": {
+          "n_deliveries": 41112,
+          "log_loss": 2.1295,
+          "exp_runs_over": 5.84,
+          "wkt_rate_pred": 0.055,
+          "wkt_rate_true": 0.0461
+        },
+        "middle": {
+          "n_deliveries": 56040,
+          "log_loss": 1.9484,
+          "exp_runs_over": 5.75,
+          "wkt_rate_pred": 0.0558,
+          "wkt_rate_true": 0.0506
+        },
+        "death": {
+          "n_deliveries": 24769,
+          "log_loss": 2.2069,
+          "exp_runs_over": 5.82,
+          "wkt_rate_pred": 0.0653,
+          "wkt_rate_true": 0.0905
+        }
+      },
+      "context_breakdown": {
+        "chasing_innings_2": {
+          "n_deliveries": 55829,
+          "log_loss": 2.0641,
+          "exp_runs_over": 5.82
+        },
+        "defending_innings_1": {
+          "n_deliveries": 66092,
+          "log_loss": 2.0602,
+          "exp_runs_over": 5.78
+        },
+        "new_batter": {
+          "n_deliveries": 64078,
+          "log_loss": 2.0269,
+          "exp_runs_over": 5.57
+        },
+        "established_batter": {
+          "n_deliveries": 57843,
+          "log_loss": 2.1009,
+          "exp_runs_over": 6.05
+        }
+      },
+      "confusion_matrix": [
+        [
+          13275,
+          34042,
+          106,
+          131,
+          1404,
+          0,
+          5
+        ],
+        [
+          9430,
+          29912,
+          80,
+          86,
+          1280,
+          0,
+          5
+        ],
+        [
+          1940,
+          5937,
+          29,
+          20,
+          265,
+          0,
+          2
+        ],
+        [
+          141,
+          365,
+          3,
+          1,
+          15,
+          0,
+          0
+        ],
+        [
+          3088,
+          7790,
+          31,
+          28,
+          467,
+          0,
+          2
+        ],
+        [
+          1175,
+          3647,
+          13,
+          5,
+          225,
+          0,
+          1
+        ],
+        [
+          1669,
+          5023,
+          36,
+          10,
+          235,
+          0,
+          2
+        ]
+      ]
+    }
+  },
+  "bootstrap_confidence_intervals": {
+    "empirical_baseline": {
+      "log_loss_95_ci": [
+        1.4473,
+        1.4625
+      ],
+      "brier_95_ci": [
+        0.1008,
+        0.1016
+      ],
+      "wicket_recall_95_ci": [
+        0.0,
+        0.0
+      ],
+      "wicket_precision_95_ci": [
+        0.0,
+        0.0
+      ],
+      "boundary_f1_95_ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "multinomial_logistic_regression": {
+      "log_loss_95_ci": [
+        1.4181,
+        1.4361
+      ],
+      "brier_95_ci": [
+        0.0985,
+        0.0994
+      ],
+      "wicket_recall_95_ci": [
+        0.0,
+        0.0
+      ],
+      "wicket_precision_95_ci": [
+        0.0,
+        0.0
+      ],
+      "boundary_f1_95_ci": [
+        0.0044,
+        0.011
+      ]
+    },
+    "calibrated_tree_baseline": {
+      "log_loss_95_ci": [
+        2.1484,
+        2.1813
+      ],
+      "brier_95_ci": [
+        0.1287,
+        0.1302
+      ],
+      "wicket_recall_95_ci": [
+        0.0391,
+        0.0489
+      ],
+      "wicket_precision_95_ci": [
+        0.0613,
+        0.0726
+      ],
+      "boundary_f1_95_ci": [
+        0.0549,
+        0.0706
+      ]
+    },
+    "candidate_xgb_model": {
+      "log_loss_95_ci": [
+        1.4441,
+        1.4588
+      ],
+      "brier_95_ci": [
+        0.1006,
+        0.1013
+      ],
+      "wicket_recall_95_ci": [
+        0.0,
+        0.0
+      ],
+      "wicket_precision_95_ci": [
+        0.0,
+        0.0
+      ],
+      "boundary_f1_95_ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "decomposed_hierarchical_model": {
+      "log_loss_95_ci": [
+        2.0494,
+        2.0759
+      ],
+      "brier_95_ci": [
+        0.1228,
+        0.1242
+      ],
+      "wicket_recall_95_ci": [
+        0.0,
+        0.0007
+      ],
+      "wicket_precision_95_ci": [
+        0.0,
+        0.2857
+      ],
+      "boundary_f1_95_ci": [
+        0.0607,
+        0.0757
+      ]
+    }
+  },
+  "candidate_promotion_decision": "rejected",
+  "active_production_model": "fieldiq_xgb_baseline_v1"
+}

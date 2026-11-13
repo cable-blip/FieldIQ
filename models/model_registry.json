@@ -2,7 +2,7 @@
   "active_model_id": "fieldiq_xgb_baseline_v1",
   "active_model_version": "1.0.0",
   "active_dataset_version": "2.0.0",
-  "last_updated": "2026-10-22T18:58:04.996128+00:00",
+  "last_updated": "2026-11-11T06:59:05.007375+00:00",
   "models": {
     "fieldiq_xgb_baseline_v1": {
       "model_id": "fieldiq_xgb_baseline_v1",
@@ -446,6 +446,459 @@
         },
         "decision": "Rejected promotion: log_loss (1.4123 > 1.3500), wicket_recall (0.1224 < 0.1500)"
       }
+    },
+    "test_golden_failing_cand": {
+      "model_id": "test_golden_failing_cand",
+      "model_version": "2.2.0-test",
+      "architecture": "Experimental Underperforming Tree",
+      "dataset_version": "2.0.0",
+      "feature_version": "2.1.0",
+      "metrics": {
+        "test_log_loss": 1.48,
+        "wicket_recall": 0.04,
+        "wicket_precision": 0.08,
+        "boundary_f1": 0.22
+      },
+      "calibration": {
+        "valid_distribution": true
+      },
+      "promotion_status": "rejected",
+      "created_at": "2026-11-11T06:59:04.405882+00:00",
+      "promoted_at": null,
+      "promotion_gates": {
+        "passed": false,
+        "failed_gates": [
+          "log_loss (1.4800 > 1.3500)",
+          "wicket_recall (0.0400 < 0.1500)",
+          "boundary_f1 (0.2200 < 0.3000)",
+          "wicket_precision (0.0800 < 0.1200)"
+        ],
+        "gate_evaluations": {
+          "log_loss": {
+            "observed": 1.48,
+            "threshold": 1.35,
+            "passed": false
+          },
+          "wicket_recall": {
+            "observed": 0.04,
+            "threshold": 0.15,
+            "passed": false
+          },
+          "boundary_f1": {
+            "observed": 0.22,
+            "threshold": 0.3,
+            "passed": false
+          },
+          "wicket_precision": {
+            "observed": 0.08,
+            "threshold": 0.12,
+            "passed": false
+          },
+          "probability_distribution": {
+            "passed": true
+          }
+        },
+        "decision": "Rejected promotion: log_loss (1.4800 > 1.3500), wicket_recall (0.0400 < 0.1500), boundary_f1 (0.2200 < 0.3000), wicket_precision (0.0800 < 0.1200)"
+      }
+    },
+    "test_golden_calibrated_cand": {
+      "model_id": "test_golden_calibrated_cand",
+      "model_version": "2.2.0-calibrated",
+      "architecture": "Calibrated XGBoost (Sigmoid)",
+      "dataset_version": "2.0.0",
+      "feature_version": "2.1.0",
+      "metrics": {
+        "test_log_loss": 1.3486,
+        "test_brier_score": 0.6552,
+        "wicket_recall": 0.1224,
+        "wicket_precision": 0.1224,
+        "boundary_f1": 0.3009
+      },
+      "calibration": {
+        "status": "calibrated",
+        "valid_distribution": true
+      },
+      "promotion_status": "rejected",
+      "created_at": "2026-11-11T06:59:04.991400+00:00",
+      "promoted_at": null,
+      "promotion_gates": {
+        "passed": false,
+        "failed_gates": [
+          "wicket_recall (0.1224 < 0.1500)"
+        ],
+        "gate_evaluations": {
+          "log_loss": {
+            "observed": 1.3486,
+            "threshold": 1.35,
+            "passed": true
+          },
+          "wicket_recall": {
+            "observed": 0.1224,
+            "threshold": 0.15,
+            "passed": false
+          },
+          "boundary_f1": {
+            "observed": 0.3009,
+            "threshold": 0.3,
+            "passed": true
+          },
+          "wicket_precision": {
+            "observed": 0.1224,
+            "threshold": 0.12,
+            "passed": true
+          },
+          "brier_score": {
+            "observed": 0.6552,
+            "threshold": 0.75,
+            "passed": true
+          },
+          "probability_distribution": {
+            "passed": true
+          }
+        },
+        "decision": "Rejected promotion: wicket_recall (0.1224 < 0.1500)"
+      }
+    },
+    "cricsheet_t20_xgb_candidate_v1": {
+      "model_id": "cricsheet_t20_xgb_candidate_v1",
+      "model_version": "1.0.0-candidate",
+      "architecture": "Histogram XGBoost Multiclass (7-Outcome)",
+      "dataset_version": "1.0.0",
+      "feature_version": "2.2.0-candidate",
+      "training_period": "2005-2026",
+      "evaluation_period": "2005-2026",
+      "metrics": {
+        "test_log_loss": 1.431,
+        "test_brier_score": 0.6922,
+        "wicket_recall": 0.2095,
+        "wicket_precision": 0.0963,
+        "boundary_f1": 0.2307,
+        "wicket_pr_auc": 0.0801,
+        "boundary_pr_auc": 0.1878
+      },
+      "calibration": {
+        "method": "temperature_scaling",
+        "optimal_temperature": 1.06,
+        "validation_log_loss_raw": 1.4474,
+        "validation_log_loss_calibrated": 1.4462,
+        "test_log_loss_calibrated": 1.431,
+        "fitted_on_validation_size": 124446
+      },
+      "promotion_gates": {
+        "evaluated_at": "2026-11-06T01:50:39.975354+00:00",
+        "gates_passed": false,
+        "gates_detail": {
+          "gate_1_wicket_recall_min": {
+            "threshold": 0.15,
+            "observed": 0.2095,
+            "passed": true
+          },
+          "gate_2_wicket_precision_min": {
+            "threshold": 0.1,
+            "observed": 0.0963,
+            "passed": false
+          },
+          "gate_3_boundary_f1_min": {
+            "threshold": 0.35,
+            "observed": 0.2307,
+            "passed": false
+          },
+          "gate_4_max_log_loss": {
+            "threshold": 1.35,
+            "observed": 1.431,
+            "passed": false
+          },
+          "gate_5_max_brier_score": {
+            "threshold": 0.7,
+            "observed": 0.6922,
+            "passed": true
+          },
+          "gate_6_valid_distribution": {
+            "threshold": "sum=1.0",
+            "observed": "1.0",
+            "passed": true
+          }
+        },
+        "decision": "rejected",
+        "rejection_reasons": [
+          "gate_2_wicket_precision_min",
+          "gate_3_boundary_f1_min",
+          "gate_4_max_log_loss"
+        ]
+      },
+      "promotion_status": "rejected",
+      "promoted": false,
+      "artifact_paths": [
+        "models/candidates/cricsheet_t20_intl/candidate_xgb_model.joblib",
+        "models/candidates/cricsheet_t20_intl/candidate_metadata.json"
+      ],
+      "limitations": [
+        "Source dataset has zero spatial wagon-wheel direction; outcome prediction is non-spatial.",
+        "Wicket class represents 5.75% of deliveries, imposing fundamental precision/recall trade-offs."
+      ],
+      "created_at": "2026-11-06T01:51:20.426695+00:00",
+      "promoted_at": null
+    },
+    "cricsheet_t20_logistic_candidate_v1": {
+      "model_id": "cricsheet_t20_logistic_candidate_v1",
+      "model_version": "1.0.0-candidate",
+      "architecture": "Multinomial Logistic Regression (L2 regularized)",
+      "dataset_version": "1.0.0",
+      "feature_version": "2.3.0-causal-v2",
+      "training_period": "2005-2026",
+      "evaluation_period": "2005-2026",
+      "metrics": {
+        "sample_count": 121921,
+        "simplex_valid": true,
+        "test_log_loss": 1.4282,
+        "test_brier_score_sum": 0.693,
+        "test_brier_score_mean": 0.099,
+        "wicket_brier_score": 0.0549,
+        "boundary_brier_score": 0.1151,
+        "classwise_brier": {
+          "dot": 0.22953,
+          "single": 0.2184,
+          "two": 0.06238,
+          "three": 0.00429,
+          "four": 0.08412,
+          "six": 0.0394,
+          "wicket": 0.0549
+        },
+        "expected_calibration_error": 0.0096,
+        "wicket_metrics": {
+          "recall": 0.0,
+          "precision": 0.0,
+          "f1": 0.0,
+          "pr_auc": 0.0759,
+          "base_rate": 0.0572
+        },
+        "boundary_metrics": {
+          "recall": 0.0042,
+          "precision": 0.2174,
+          "f1": 0.0083,
+          "pr_auc": 0.1878,
+          "base_rate": 0.1351
+        },
+        "match_level_bootstrap_95_ci": {
+          "log_loss_95_ci": [
+            1.4207,
+            1.4361
+          ],
+          "brier_sum_95_ci": [
+            0.6901,
+            0.6959
+          ],
+          "brier_mean_95_ci": [
+            0.0986,
+            0.0994
+          ],
+          "wicket_recall_95_ci": [
+            0.0,
+            0.0
+          ],
+          "wicket_precision_95_ci": [
+            0.0,
+            0.0
+          ],
+          "boundary_f1_95_ci": [
+            0.0041,
+            0.0136
+          ]
+        }
+      },
+      "promotion_gates": {
+        "evaluated_at": "2026-11-11T06:19:23.043382+00:00",
+        "gates_passed": false,
+        "gate_evaluations": {
+          "gate_1_wicket_recall_min": {
+            "threshold": 0.15,
+            "observed": 0.0,
+            "passed": false
+          },
+          "gate_2_wicket_precision_min": {
+            "threshold": 0.1,
+            "observed": 0.0,
+            "passed": false
+          },
+          "gate_3_boundary_f1_min": {
+            "threshold": 0.35,
+            "observed": 0.0083,
+            "passed": false
+          },
+          "gate_4_max_log_loss": {
+            "threshold": 1.35,
+            "observed": 1.4282,
+            "passed": false
+          },
+          "gate_5_max_brier_sum": {
+            "threshold": 0.7,
+            "observed": 0.693,
+            "passed": true
+          },
+          "gate_6_valid_distribution": {
+            "threshold": "simplex",
+            "observed": "simplex",
+            "passed": true
+          }
+        },
+        "failed_gates": [
+          "gate_1_wicket_recall_min",
+          "gate_2_wicket_precision_min",
+          "gate_3_boundary_f1_min",
+          "gate_4_max_log_loss"
+        ],
+        "decision": "rejected",
+        "rejection_reasons": [
+          "gate_1_wicket_recall_min",
+          "gate_2_wicket_precision_min",
+          "gate_3_boundary_f1_min",
+          "gate_4_max_log_loss"
+        ]
+      },
+      "promotion_status": "rejected",
+      "promoted": false,
+      "artifact_paths": [
+        "models/candidates/cricsheet_t20_intl/candidate_logistic_model.joblib"
+      ],
+      "limitations": [
+        "Source dataset has zero spatial wagon-wheel direction; outcome prediction is non-spatial.",
+        "Wicket precision is below required 0.10 governance gate.",
+        "Boundary F1 is below required 0.35 governance gate."
+      ],
+      "created_at": "2026-11-11T06:19:23.043445+00:00",
+      "promoted_at": null
+    },
+    "cricsheet_t20_xgb_candidate_v2": {
+      "model_id": "cricsheet_t20_xgb_candidate_v2",
+      "model_version": "2.0.0-candidate",
+      "architecture": "Histogram XGBoost Multiclass (7-Outcome)",
+      "dataset_version": "1.0.0",
+      "feature_version": "2.3.0-causal-v2",
+      "training_period": "2005-2026",
+      "evaluation_period": "2005-2026",
+      "metrics": {
+        "sample_count": 121921,
+        "simplex_valid": true,
+        "test_log_loss": 1.4518,
+        "test_brier_score_sum": 0.7067,
+        "test_brier_score_mean": 0.101,
+        "wicket_brier_score": 0.0544,
+        "boundary_brier_score": 0.1166,
+        "classwise_brier": {
+          "dot": 0.23895,
+          "single": 0.22194,
+          "two": 0.06267,
+          "three": 0.00429,
+          "four": 0.0847,
+          "six": 0.0397,
+          "wicket": 0.05444
+        },
+        "expected_calibration_error": 0.0182,
+        "wicket_metrics": {
+          "recall": 0.0,
+          "precision": 0.0,
+          "f1": 0.0,
+          "pr_auc": 0.0643,
+          "base_rate": 0.0572
+        },
+        "boundary_metrics": {
+          "recall": 0.0,
+          "precision": 0.0,
+          "f1": 0.0,
+          "pr_auc": 0.1539,
+          "base_rate": 0.1351
+        },
+        "match_level_bootstrap_95_ci": {
+          "log_loss_95_ci": [
+            1.4446,
+            1.4588
+          ],
+          "brier_sum_95_ci": [
+            0.7042,
+            0.7092
+          ],
+          "brier_mean_95_ci": [
+            0.1006,
+            0.1013
+          ],
+          "wicket_recall_95_ci": [
+            0.0,
+            0.0
+          ],
+          "wicket_precision_95_ci": [
+            0.0,
+            0.0
+          ],
+          "boundary_f1_95_ci": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "promotion_gates": {
+        "evaluated_at": "2026-11-11T06:19:23.043462+00:00",
+        "gates_passed": false,
+        "gate_evaluations": {
+          "gate_1_wicket_recall_min": {
+            "threshold": 0.15,
+            "observed": 0.0,
+            "passed": false
+          },
+          "gate_2_wicket_precision_min": {
+            "threshold": 0.1,
+            "observed": 0.0,
+            "passed": false
+          },
+          "gate_3_boundary_f1_min": {
+            "threshold": 0.35,
+            "observed": 0.0,
+            "passed": false
+          },
+          "gate_4_max_log_loss": {
+            "threshold": 1.35,
+            "observed": 1.4518,
+            "passed": false
+          },
+          "gate_5_max_brier_sum": {
+            "threshold": 0.7,
+            "observed": 0.7067,
+            "passed": false
+          },
+          "gate_6_valid_distribution": {
+            "threshold": "simplex",
+            "observed": "simplex",
+            "passed": true
+          }
+        },
+        "failed_gates": [
+          "gate_1_wicket_recall_min",
+          "gate_2_wicket_precision_min",
+          "gate_3_boundary_f1_min",
+          "gate_4_max_log_loss",
+          "gate_5_max_brier_sum"
+        ],
+        "decision": "rejected",
+        "rejection_reasons": [
+          "gate_1_wicket_recall_min",
+          "gate_2_wicket_precision_min",
+          "gate_3_boundary_f1_min",
+          "gate_4_max_log_loss",
+          "gate_5_max_brier_sum"
+        ]
+      },
+      "promotion_status": "rejected",
+      "promoted": false,
+      "artifact_paths": [
+        "models/candidates/cricsheet_t20_intl/candidate_xgb_model.joblib"
+      ],
+      "limitations": [
+        "Source dataset has zero spatial wagon-wheel direction.",
+        "Wicket precision is below required 0.10 governance gate.",
+        "Boundary F1 is below required 0.35 governance gate.",
+        "Log loss is above 1.35 promotion threshold."
+      ],
+      "created_at": "2026-11-11T06:19:23.043475+00:00",
+      "promoted_at": null
     }
   }
 }

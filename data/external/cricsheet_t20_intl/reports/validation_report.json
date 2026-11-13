@@ -1,0 +1,22 @@
+{
+  "validation_status": "PASS_WITH_WARNINGS",
+  "total_rows": 819957,
+  "valid_rows": 819957,
+  "errors": [],
+  "warnings": [
+    "Found 2 deliveries with RunsBatter > 6 (possible overthrows/penalty)"
+  ],
+  "unique_batters": 4406,
+  "unique_bowlers": 3313,
+  "unique_matches": 3646,
+  "date_range": {
+    "min": "2005-02-17",
+    "max": "2026-10-25"
+  },
+  "wicket_count": 46932,
+  "dot_ball_count": 319537,
+  "boundary_count": 112567,
+  "missing_spatial_rows": 819957,
+  "spatial_coverage_pct": 0.0,
+  "validated_at": "2026-10-31T17:17:15.467175+00:00"
+}

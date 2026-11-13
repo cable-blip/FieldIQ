@@ -8,7 +8,7 @@ Computes core metrics for evaluating field placements:
 """
 
 from __future__ import annotations
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 from backend.app.services.profiles import (
     BatterProfile,
@@ -58,6 +58,13 @@ def is_spin_bowler(bowler_type: BowlerType) -> bool:
     }
 
 
+def _safe_fielder_attr(fielder: FielderProfile, attr: str, default: float = 0.5) -> float:
+    val = getattr(fielder, attr, None)
+    if val is not None and isinstance(val, (int, float)):
+        return float(val)
+    return default
+
+
 def compute_placement_effectiveness(placement: FieldPlacement) -> float:
     """
     Scores how effective a fielder is at their assigned position.
@@ -69,16 +76,23 @@ def compute_placement_effectiveness(placement: FieldPlacement) -> float:
         
     fielder = placement.fielder
     score = 0.0
+
+    jump = _safe_fielder_attr(fielder, "jump", 0.5)
+    catching = _safe_fielder_attr(fielder, "catching", 0.5)
+    arm = _safe_fielder_attr(fielder, "arm", 0.5)
+    boundary_skill = _safe_fielder_attr(fielder, "boundary_skill", 0.5)
+    close_in_skill = _safe_fielder_attr(fielder, "close_in_skill", 0.5)
     
     if position.is_boundary or not position.is_inside_circle:
-        score = fielder.jump * 0.3 + fielder.boundary_skill * 0.4 + fielder.arm * 0.3
+        score = jump * 0.3 + boundary_skill * 0.4 + arm * 0.3
     elif position.is_close_catching:
-        score = fielder.close_in_skill * 0.5 + fielder.catching * 0.5
+        score = close_in_skill * 0.5 + catching * 0.5
     else:
         # Regular inner fielder
-        score = fielder.jump * 0.4 + fielder.catching * 0.35 + fielder.arm * 0.25
+        score = jump * 0.4 + catching * 0.35 + arm * 0.25
         
-    if placement.position_name in fielder.preferred_positions:
+    preferred = getattr(fielder, "preferred_positions", []) or []
+    if placement.position_name in preferred:
         score += 0.05
         
     return max(0.0, min(1.0, score))
@@ -89,9 +103,10 @@ def compute_ers(
     batter: BatterProfile,
     zone_chart: Optional[dict[str, float]] = None,
 ) -> float:
-    """Computes Expected Runs Saved using effective zone chart."""
+    """Computes Expected Runs Saved using effective zone chart with zone redundancy dampening."""
     chart = zone_chart if zone_chart is not None else batter.zone_chart
     ers = 0.0
+    zone_coverage_counts: dict[str, int] = {}
     for placement in placements:
         # Exclude Wicketkeeper and Bowler
         if placement.position_name in ('Wicketkeeper', 'Bowler'):
@@ -105,12 +120,19 @@ def compute_ers(
         valid_zones = [z for z in zones if z in chart]
         
         if valid_zones:
-            avg_rpb = sum(chart[z] for z in valid_zones) / len(valid_zones)
+            dampening = 0.0
+            for z in valid_zones:
+                count = zone_coverage_counts.get(z, 0)
+                diminish = 1.0 if count == 0 else (0.35 if count == 1 else 0.10)
+                dampening += chart[z] * diminish
+                zone_coverage_counts[z] = count + 1
+            avg_rpb = dampening / len(valid_zones)
         else:
             avg_rpb = 0.0
             
         effectiveness = compute_placement_effectiveness(placement)
-        ers += avg_rpb * effectiveness * CATCH_FACTOR
+        role_factor = 0.30 if position.is_close_catching else 1.0
+        ers += avg_rpb * effectiveness * CATCH_FACTOR * role_factor
         
     return ers
 
@@ -156,15 +178,21 @@ def get_bowler_alignment(bowler: BowlerProfile, wicket_mode: str) -> float:
 def get_fielder_catching_quality(fielder: FielderProfile, position_name: str) -> float:
     """Scores the catching quality of a fielder based on position context."""
     position = get_position(position_name)
+
+    jump = _safe_fielder_attr(fielder, "jump", 0.5)
+    catching = _safe_fielder_attr(fielder, "catching", 0.5)
+    arm = _safe_fielder_attr(fielder, "arm", 0.5)
+    boundary_skill = _safe_fielder_attr(fielder, "boundary_skill", 0.5)
+    close_in_skill = _safe_fielder_attr(fielder, "close_in_skill", 0.5)
     
     # Check against CLOSE_CATCHING set
     if position_name in CLOSE_CATCHING:
-        return fielder.close_in_skill * 0.6 + fielder.catching * 0.4
+        return close_in_skill * 0.6 + catching * 0.4
         
     if position and position.is_boundary:
-        return fielder.boundary_skill * 0.5 + fielder.catching * 0.3 + fielder.jump * 0.2
+        return boundary_skill * 0.5 + catching * 0.3 + jump * 0.2
         
-    return fielder.catching * 0.5 + fielder.jump * 0.3 + fielder.arm * 0.2
+    return catching * 0.5 + jump * 0.3 + arm * 0.2
 
 def compute_ewo(
     placements: List[FieldPlacement], 

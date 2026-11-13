@@ -1,0 +1,56 @@
+{
+  "policy_version": "1.0.0",
+  "policy_name": "FieldIQ Canonical Tactical Objective Policies",
+  "last_updated": "2026-11-07T00:00:00Z",
+  "description": "Formalized objective-specific utility weights separating domain coaching policy from learned predictive model outputs. Complies with AGENTS.md Rule 2 and Rule 17.",
+  "policies": {
+    "attack_wicket": {
+      "objective_id": "attack_wicket",
+      "display_name": "Attack Wicket",
+      "description": "Prioritizes dismissal creation, slip/cordon catch traps, and mistimed lofted catch opportunities.",
+      "weights": {
+        "p_wicket": 25.0,
+        "ewo": 1.50,
+        "catch_opportunity": 2.00,
+        "p_dot": 0.30,
+        "p_boundary_penalty": -0.40,
+        "exp_runs_penalty": -0.30
+      }
+    },
+    "prevent_boundary": {
+      "objective_id": "prevent_boundary",
+      "display_name": "Prevent Boundary",
+      "description": "Prioritizes deep boundary suppression, outfield catch security, and boundary run saving.",
+      "weights": {
+        "boundary_prevention": 3.50,
+        "deep_zone_coverage": 2.50,
+        "ers": 1.20,
+        "p_dot": 0.50,
+        "exp_runs_penalty": -0.80
+      }
+    },
+    "build_pressure": {
+      "objective_id": "build_pressure",
+      "display_name": "Build Pressure",
+      "description": "Chokes scoring rate through sustained dot balls, ring compression, and induced mistakes.",
+      "weights": {
+        "p_dot": 3.00,
+        "pressure_score": 2.00,
+        "singles_suppression": 1.50,
+        "p_wicket": 5.00,
+        "exp_runs_penalty": -0.90
+      }
+    },
+    "stop_singles": {
+      "objective_id": "stop_singles",
+      "display_name": "Stop Singles",
+      "description": "Maximizes inner-circle ring tightness to choke strike rotation and pressure new batters.",
+      "weights": {
+        "p_dot": 1.80,
+        "pressure_score": 1.80,
+        "singles_suppression": 2.50,
+        "exp_runs_penalty": -0.70
+      }
+    }
+  }
+}

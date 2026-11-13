@@ -93,6 +93,19 @@ class AlternativeFieldSchema(BaseModel):
     ers: float
     ewo: float
     cds: float
+    expected_runs: Optional[float] = None
+    expected_wickets: Optional[float] = None
+    boundary_probability: Optional[float] = None
+    wicket_probability: Optional[float] = None
+    tactical_utility: Optional[float] = None
+    catch_opportunity: Optional[float] = None
+    boundary_prevention: Optional[float] = None
+    pressure_score: Optional[float] = None
+    is_legal: Optional[bool] = True
+    violations: Optional[list[str]] = Field(default_factory=list)
+    missing_capabilities: Optional[list[str]] = Field(default_factory=list)
+    uncertainty: Optional[dict[str, Any]] = None
+    explanation: Optional[str] = None
 
 class MLOutcomeProbabilitiesSchema(BaseModel):
     dot_pct: float
@@ -141,6 +154,8 @@ class AnalysisResponse(BaseModel):
     ml_probabilities: Optional[MLOutcomeProbabilitiesSchema] = None
     simulation_metrics: Optional[SimulationMetricsSchema] = None
     pitch_multipliers: Optional[Dict[str, float]] = None
+    model_id: Optional[str] = "fieldiq_xgb_baseline_v1"
+    dataset_id: Optional[str] = "fieldiq_v2_baseline"
     model_version: Optional[str] = None
     dataset_version: Optional[str] = None
     feature_version: Optional[str] = None
@@ -148,6 +163,12 @@ class AnalysisResponse(BaseModel):
     calibration_status: Optional[str] = None
     spatial_coverage: Optional[Dict[str, Any]] = None
     uncertainty: Optional[Dict[str, Any]] = None
+    fallback_tier: Optional[str] = None
+    limitations: Optional[list[str]] = Field(default_factory=list)
+    prediction_timestamp: Optional[str] = None
+    tactical_policy_version: Optional[str] = "1.0.0"
+    rule_version: Optional[str] = "2026.1"
+    alternative_strategy: Optional[str] = None
     field_optimization: Optional[Dict[str, Any]] = None
     ground_preset: Optional[Dict[str, Any]] = None
     accepted_request: AnalysisRequest
@@ -303,6 +324,8 @@ class LiveDeliveryResponse(BaseModel):
     spatial_coverage: Optional[Dict[str, Any]] = None
     uncertainty: Optional[Dict[str, Any]] = None
     field_optimization: Optional[Dict[str, Any]] = None
+    tactical_policy_version: Optional[str] = "1.0.0"
+    rule_version: Optional[str] = "2026.1"
     delivery_history: list[LoggedDeliveryItem] = []
 
 

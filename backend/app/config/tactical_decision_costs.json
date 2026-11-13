@@ -1,0 +1,54 @@
+{
+  "policy_version": "1.0.0",
+  "policy_name": "FieldIQ Tactical Decision Costs & Risk Utilities",
+  "last_updated": "2026-11-13T00:00:00Z",
+  "description": "Formalized asymmetric loss and tactical decision cost functions. Separates domain coaching policy and tactical utility from predictive model outputs in compliance with AGENTS.md Rule 2 and Rule 17.",
+  "costs": {
+    "missing_wicket_opportunity": {
+      "metric_label": "FN_wicket",
+      "cost_value": 18.0,
+      "unit": "tactical_run_equivalents",
+      "rationale": "High cost of failing to position catching fielders when a genuine edge or dismissal opportunity occurs (loss of wicket value in T20)."
+    },
+    "falsely_declaring_wicket_opportunity": {
+      "metric_label": "FP_wicket",
+      "cost_value": 2.2,
+      "unit": "tactical_run_equivalents",
+      "rationale": "Cost of over-attacking (e.g., maintaining an unnecessary slip or close-in catcher that yields easy boundary/gap runs)."
+    },
+    "missing_boundary_threat": {
+      "metric_label": "FN_boundary",
+      "cost_value": 4.5,
+      "unit": "tactical_run_equivalents",
+      "rationale": "Cost of leaving a high-risk sector unguarded on the boundary, resulting in a conceded 4 or 6."
+    },
+    "falsely_declaring_boundary_threat": {
+      "metric_label": "FP_boundary",
+      "cost_value": 1.1,
+      "unit": "tactical_run_equivalents",
+      "rationale": "Cost of deploying an unnecessary boundary rider, leaving the inner ring open and conceding easy singles/strike rotation."
+    },
+    "conceding_boundary": {
+      "metric_label": "outcome_boundary",
+      "cost_value": 4.0,
+      "unit": "runs",
+      "rationale": "Direct scoring penalty for boundary conceded."
+    },
+    "conceding_single": {
+      "metric_label": "outcome_single",
+      "cost_value": 1.0,
+      "unit": "runs",
+      "rationale": "Direct scoring penalty for single conceded."
+    },
+    "failing_to_create_pressure": {
+      "metric_label": "pressure_release",
+      "cost_value": 0.8,
+      "unit": "tactical_run_equivalents",
+      "rationale": "Cost of failing to choke strike rotation during a dot-ball sequence."
+    }
+  },
+  "operating_threshold_bounds": {
+    "wicket_threshold_range": [0.03, 0.35],
+    "boundary_threshold_range": [0.08, 0.40]
+  }
+}

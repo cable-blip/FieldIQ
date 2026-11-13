@@ -13,6 +13,9 @@ venv/
 # IDE
 .vscode/
 
+# Local agent skill installations and generated agent state
+.agents/
+
 # OS
 .DS_Store
 Thumbs.db
@@ -29,6 +32,9 @@ data/raw/*
 data/processed/*
 data/features/*
 data/interim/*
+data/external/**/normalized/*.csv
+data/external/**/features/*.csv
+data/external/**/*.zip
 scratch/
 
 # Logs

@@ -91,3 +91,24 @@ The 8 standard wagon-wheel sectors (clockwise from fine leg for Right-Handed Bat
 3. **No Synthetic Inference of Direction:** Missing directions (`Zone == 0`) must never be synthetically fabricated.
 4. **Distance Bands Limitation:** Distance bands must be explicitly presented as categorical proxies, never as measured laser/camera tracking coordinates.
 5. **Tiered Fallbacks:** Matchups with sparse data (<15 balls) must fall back to bowler discipline or baseline heuristics, never fabricated statistics.
+
+
+---
+
+## 5. Candidate Datasets
+
+### `data/external/cricsheet_t20_intl/`
+- **Dataset Identifier:** `cricsheet_t20_intl`
+- **Version:** `1.0.0`
+- **Lifecycle Status:** `candidate` (Isolated from production active dataset; `production_approved: false`)
+- **Source:** Cricsheet T20 International JSON archive (`C:\Users\ADMIN\Downloads\t20s_json`)
+- **License:** Open Data Commons Attribution License (ODC-By) v1.0
+- **Time Coverage:** 2005-02-17 to 2026-10-25 (21 seasons)
+- **Scope:** 3,646 Men's T20 International matches
+- **Normalized Deliveries:** 819,957 rows (`data/external/cricsheet_t20_intl/normalized/deliveries.csv`)
+- **File SHA-256:** `caf6a91efcfc3fe4140a398d35483e6496cb3f83b9a06dbddfb4b06713795546`
+- **Unique Batters:** 4,406 | **Unique Bowlers:** 3,313 | **Teams:** 121
+- **Spatial Status:** `no_spatial_data` (0.0% coverage; Cricsheet does not track wagon wheels or coordinates; `Zone` is strictly stored as `None`)
+- **Splits:** Disjoint by `GameId` into train (573,590 balls), validation (124,446 balls), test (121,921 balls)
+- **Candidate Model:** `models/candidates/cricsheet_t20_intl/candidate_xgb_model.joblib`
+- **Governance Gate Decision:** Rejected by promotion gates (`promoted: false`); production baseline `fieldiq_xgb_baseline_v1` remains active.

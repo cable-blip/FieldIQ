@@ -1,0 +1,8 @@
+{
+  "method": "temperature_scaling",
+  "optimal_temperature": 1.06,
+  "validation_log_loss_raw": 1.4474,
+  "validation_log_loss_calibrated": 1.4462,
+  "test_log_loss_calibrated": 1.431,
+  "fitted_on_validation_size": 124446
+}

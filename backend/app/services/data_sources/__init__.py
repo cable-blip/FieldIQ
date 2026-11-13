@@ -17,11 +17,16 @@ from backend.app.services.data_sources.wagon_wheel_source import (
     ZONE_TO_DIRECTION_LHB,
 )
 
+from backend.app.services.data_sources.base_adapter import BaseDatasetAdapter
+from backend.app.services.data_sources.cricsheet_t20_adapter import CricsheetT20Adapter
+
 __all__ = [
     "DataSourceType",
     "SpatialAvailability",
     "SourceProvenanceRecord",
+    "BaseDatasetAdapter",
     "CricsheetBallByBallAdapter",
+    "CricsheetT20Adapter",
     "WagonWheelSourceAdapter",
     "ZONE_TO_DIRECTION_RHB",
     "ZONE_TO_DIRECTION_LHB",

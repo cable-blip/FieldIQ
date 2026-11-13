@@ -1,0 +1,287 @@
+{
+  "schema_version": "1.0.0",
+  "project": "FieldIQ",
+  "workspace": "C:\\Users\\ADMIN\\Downloads\\FieldIQ_V2",
+  "updated_at": "2026-11-11T06:15:03.190121+00:00",
+  "tasks": [
+    {
+      "task_id": "FIQ-0001",
+      "title": "Reconcile ML metric definitions",
+      "description": "Reconcile log loss, Brier score, wicket metrics, boundary metrics, and calibration definitions across pipelines.",
+      "owner": "backend_ml",
+      "status": "ready",
+      "priority": "critical",
+      "scope": {
+        "allowed_files": [
+          "backend/app/services/metrics.py",
+          "scripts/train/**",
+          "tests/**",
+          "Docs/FieldIQ/**",
+          "data/external/cricsheet_t20_intl/reports/**"
+        ],
+        "forbidden_files": []
+      },
+      "dependencies": [],
+      "acceptance_criteria": [
+        "Log loss and Brier score metrics are reconciled across scripts/train/ and backend/app/services/metrics.py",
+        "Wicket and boundary probability evaluation formulations align with model outputs",
+        "Calibration curves and temperature scaling are mathematically validated"
+      ],
+      "verification_commands": [
+        "python -m pytest tests/test_leakage_and_metrics_reconciliation.py -v"
+      ],
+      "files_changed": [],
+      "tests_run": [],
+      "test_results": [],
+      "blockers": [],
+      "approval_required": true,
+      "claimed_at": null,
+      "completed_at": null,
+      "notes": [
+        "[2026-11-11T06:15:03.124302+00:00] Task created with status 'ready' by coordinator."
+      ],
+      "history": [
+        {
+          "timestamp": "2026-11-11T06:15:03.124302+00:00",
+          "action": "create",
+          "from_status": null,
+          "to_status": "ready",
+          "actor": "coordinator",
+          "details": "Created task: Reconcile ML metric definitions"
+        }
+      ]
+    },
+    {
+      "task_id": "FIQ-0002",
+      "title": "Reproduce model benchmark",
+      "description": "Re-run every candidate and baseline model on the same untouched holdout set.",
+      "owner": "backend_ml",
+      "status": "backlog",
+      "priority": "high",
+      "scope": {
+        "allowed_files": [
+          "scripts/train/train_and_benchmark_all_models.py",
+          "scripts/train/train_candidate_models.py",
+          "models/candidates/**",
+          "tests/**"
+        ],
+        "forbidden_files": []
+      },
+      "dependencies": [
+        "FIQ-0001"
+      ],
+      "acceptance_criteria": [
+        "Candidate models (XGBoost, Logistic Regression, Decomposed) and baseline evaluated on identical holdout test set",
+        "Benchmark metrics (log loss, Brier score, wicket recall, boundary F1) saved in reproducible reports",
+        "No test-set search leakage during evaluation"
+      ],
+      "verification_commands": [
+        "python -m pytest tests/test_causal_features_and_model_evaluation.py -v"
+      ],
+      "files_changed": [],
+      "tests_run": [],
+      "test_results": [],
+      "blockers": [],
+      "approval_required": false,
+      "claimed_at": null,
+      "completed_at": null,
+      "notes": [
+        "[2026-11-11T06:15:03.137824+00:00] Task created with status 'backlog' by coordinator."
+      ],
+      "history": [
+        {
+          "timestamp": "2026-11-11T06:15:03.137824+00:00",
+          "action": "create",
+          "from_status": null,
+          "to_status": "backlog",
+          "actor": "coordinator",
+          "details": "Created task: Reproduce model benchmark"
+        }
+      ]
+    },
+    {
+      "task_id": "FIQ-0003",
+      "title": "Verify leakage controls",
+      "description": "Prove match-disjoint splits and strictly preceding causal features.",
+      "owner": "backend_ml",
+      "status": "backlog",
+      "priority": "critical",
+      "scope": {
+        "allowed_files": [
+          "backend/app/services/ml_feature_engineering.py",
+          "scripts/train/**",
+          "tests/**"
+        ],
+        "forbidden_files": []
+      },
+      "dependencies": [
+        "FIQ-0001"
+      ],
+      "acceptance_criteria": [
+        "GameId grouped split confirmed with 0 match overlap between train, val, and test sets",
+        "Causal features strictly utilize ball-by-ball history preceding the target delivery",
+        "Zero lookahead or target leakage verified across feature engineering pipeline"
+      ],
+      "verification_commands": [
+        "python -m pytest tests/test_leakage_and_metrics_reconciliation.py -v"
+      ],
+      "files_changed": [],
+      "tests_run": [],
+      "test_results": [],
+      "blockers": [],
+      "approval_required": false,
+      "claimed_at": null,
+      "completed_at": null,
+      "notes": [
+        "[2026-11-11T06:15:03.150067+00:00] Task created with status 'backlog' by coordinator."
+      ],
+      "history": [
+        {
+          "timestamp": "2026-11-11T06:15:03.150067+00:00",
+          "action": "create",
+          "from_status": null,
+          "to_status": "backlog",
+          "actor": "coordinator",
+          "details": "Created task: Verify leakage controls"
+        }
+      ]
+    },
+    {
+      "task_id": "FIQ-0004",
+      "title": "Audit model registry",
+      "description": "Verify rejected candidates cannot become active without explicit approval.",
+      "owner": "backend_ml",
+      "status": "backlog",
+      "priority": "critical",
+      "scope": {
+        "allowed_files": [
+          "backend/app/services/model_registry.py",
+          "models/model_registry.json",
+          "tests/**"
+        ],
+        "forbidden_files": []
+      },
+      "dependencies": [
+        "FIQ-0002"
+      ],
+      "acceptance_criteria": [
+        "Promotion checklist enforces all 6 model promotion gates",
+        "Rejected candidate models are preserved with status promoted: false",
+        "Active production model cannot be switched to an unpromoted candidate without explicit human approval"
+      ],
+      "verification_commands": [
+        "python -m pytest tests/test_model_registry_governance.py -v"
+      ],
+      "files_changed": [],
+      "tests_run": [],
+      "test_results": [],
+      "blockers": [],
+      "approval_required": true,
+      "claimed_at": null,
+      "completed_at": null,
+      "notes": [
+        "[2026-11-11T06:15:03.162068+00:00] Task created with status 'backlog' by coordinator."
+      ],
+      "history": [
+        {
+          "timestamp": "2026-11-11T06:15:03.162068+00:00",
+          "action": "create",
+          "from_status": null,
+          "to_status": "backlog",
+          "actor": "coordinator",
+          "details": "Created task: Audit model registry"
+        }
+      ]
+    },
+    {
+      "task_id": "FIQ-0005",
+      "title": "Preserve frontend for future integration",
+      "description": "Do not implement new UI integration. Record current frontend contracts and identify future integration points without modifying the live interface.",
+      "owner": "antigravity",
+      "status": "ready",
+      "priority": "medium",
+      "scope": {
+        "allowed_files": [
+          "frontend/src/**",
+          "Docs/FieldIQ/05_UI/**",
+          "Docs/FieldIQ/05_Operations/**"
+        ],
+        "forbidden_files": []
+      },
+      "dependencies": [],
+      "acceptance_criteria": [
+        "Live 3D frontend interface and Vite server remain unmodified and isolated",
+        "Authoritative frontend client contracts (AnalysisResponse, FieldPlacement, Legality banner) documented",
+        "Future integration points for what-if evaluation and candidate field alternatives mapped without breaking existing UI"
+      ],
+      "verification_commands": [
+        "python scripts/ops/agent_task.py list"
+      ],
+      "files_changed": [],
+      "tests_run": [],
+      "test_results": [],
+      "blockers": [],
+      "approval_required": true,
+      "claimed_at": null,
+      "completed_at": null,
+      "notes": [
+        "[2026-11-11T06:15:03.174430+00:00] Task created with status 'ready' by coordinator."
+      ],
+      "history": [
+        {
+          "timestamp": "2026-11-11T06:15:03.174430+00:00",
+          "action": "create",
+          "from_status": null,
+          "to_status": "ready",
+          "actor": "coordinator",
+          "details": "Created task: Preserve frontend for future integration"
+        }
+      ]
+    },
+    {
+      "task_id": "FIQ-0006",
+      "title": "Review backend API contract",
+      "description": "Document the stable API response contract required for future frontend integration without connecting the frontend now.",
+      "owner": "backend_ml",
+      "status": "ready",
+      "priority": "high",
+      "scope": {
+        "allowed_files": [
+          "backend/app/routers/**",
+          "backend/app/schemas/**",
+          "Docs/FieldIQ/01_Architecture/Backend_API_Contract.md"
+        ],
+        "forbidden_files": []
+      },
+      "dependencies": [],
+      "acceptance_criteria": [
+        "Synchronous REST response schemas for /api/v1/analysis, /evaluate, /gameplan, and /players reviewed",
+        "Strict schema compatibility verified with Pydantic v2 models",
+        "Backend API contract documentation updated with exact payloads, status codes, and uncertainty headers"
+      ],
+      "verification_commands": [
+        "python -m pytest tests/test_bowler_type_vocabulary_contract.py -v"
+      ],
+      "files_changed": [],
+      "tests_run": [],
+      "test_results": [],
+      "blockers": [],
+      "approval_required": true,
+      "claimed_at": null,
+      "completed_at": null,
+      "notes": [
+        "[2026-11-11T06:15:03.188998+00:00] Task created with status 'ready' by coordinator."
+      ],
+      "history": [
+        {
+          "timestamp": "2026-11-11T06:15:03.188998+00:00",
+          "action": "create",
+          "from_status": null,
+          "to_status": "ready",
+          "actor": "coordinator",
+          "details": "Created task: Review backend API contract"
+        }
+      ]
+    }
+  ]
+}

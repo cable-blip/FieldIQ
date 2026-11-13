@@ -1,0 +1,335 @@
+{
+  "report_id": "fieldiq_canonical_metric_specification_v1",
+  "generated_at": "2026-11-11T06:19:22.909127+00:00",
+  "holdout_specification": {
+    "dataset_id": "cricsheet_t20_intl",
+    "feature_version": "2.3.0-causal-v2",
+    "holdout_deliveries": 121921,
+    "holdout_matches": 548,
+    "sha256_test_csv": "2f11172a98794f040ba17a8817e357f3c8a104b7183f8da90414ee4930f346fa"
+  },
+  "metric_definitions_reconciled": {
+    "brier_score_formula_reconciliation": {
+      "brier_score_sum": {
+        "definition": "sum_{k=1}^K (p_ik - y_ik)^2 per delivery, bounded in [0, 2]",
+        "reported_candidate_value": 0.7067,
+        "interpretation": "Standard multiclass Brier score in calibration literature"
+      },
+      "brier_score_mean": {
+        "definition": "(1/K) sum_{k=1}^K (p_ik - y_ik)^2 per delivery, bounded in [0, 2/K]",
+        "reported_candidate_value": 0.101,
+        "interpretation": "Averaged across the 7 mutually exclusive outcome classes (Brier Sum / 7)"
+      },
+      "conversion_identity": "brier_score_sum = 7.0 * brier_score_mean"
+    },
+    "log_loss_reconciliation": {
+      "preliminary_run_log_loss": 1.431,
+      "preliminary_feature_count": 12,
+      "causal_v2_xgb_log_loss": 1.4518,
+      "causal_v2_lr_log_loss": 1.4282,
+      "explanation": "Preliminary candidate XGB run used 12 unconstrained features without rolling within-match aggregations. Phase 2 causal features (58 columns) include strictly preceding rolling sums and empirical Bayes priors. Multinomial Logistic Regression achieves superior log loss on sparse aggregate features, demonstrating linear regularized models are less prone to leaf over-partitioning than tree architectures on sparse cricket data."
+    }
+  },
+  "models_benchmarked": {
+    "empirical_baseline": {
+      "sample_count": 121921,
+      "simplex_valid": true,
+      "test_log_loss": 1.4553,
+      "test_brier_score_sum": 0.7086,
+      "test_brier_score_mean": 0.1012,
+      "wicket_brier_score": 0.0539,
+      "boundary_brier_score": 0.1169,
+      "classwise_brier": {
+        "dot": 0.24039,
+        "single": 0.22265,
+        "two": 0.06269,
+        "three": 0.00429,
+        "four": 0.0848,
+        "six": 0.03983,
+        "wicket": 0.05394
+      },
+      "expected_calibration_error": 0.0084,
+      "wicket_metrics": {
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0,
+        "pr_auc": 0.5286,
+        "base_rate": 0.0572
+      },
+      "boundary_metrics": {
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0,
+        "pr_auc": 0.5676,
+        "base_rate": 0.1351
+      },
+      "match_level_bootstrap_95_ci": {
+        "log_loss_95_ci": [
+          1.4481,
+          1.4621
+        ],
+        "brier_sum_95_ci": [
+          0.7058,
+          0.7113
+        ],
+        "brier_mean_95_ci": [
+          0.1008,
+          0.1016
+        ],
+        "wicket_recall_95_ci": [
+          0.0,
+          0.0
+        ],
+        "wicket_precision_95_ci": [
+          0.0,
+          0.0
+        ],
+        "boundary_f1_95_ci": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "historical_prior_baseline": {
+      "sample_count": 121921,
+      "simplex_valid": true,
+      "test_log_loss": 1.4722,
+      "test_brier_score_sum": 0.7133,
+      "test_brier_score_mean": 0.1019,
+      "wicket_brier_score": 0.0542,
+      "boundary_brier_score": 0.116,
+      "classwise_brier": {
+        "dot": 0.24234,
+        "single": 0.22545,
+        "two": 0.06271,
+        "three": 0.0043,
+        "four": 0.08476,
+        "six": 0.03959,
+        "wicket": 0.05416
+      },
+      "expected_calibration_error": 0.059,
+      "wicket_metrics": {
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0,
+        "pr_auc": 0.0728,
+        "base_rate": 0.0572
+      },
+      "boundary_metrics": {
+        "recall": 0.0002,
+        "precision": 0.0938,
+        "f1": 0.0004,
+        "pr_auc": 0.1705,
+        "base_rate": 0.1351
+      }
+    },
+    "multinomial_logistic_regression": {
+      "sample_count": 121921,
+      "simplex_valid": true,
+      "test_log_loss": 1.4282,
+      "test_brier_score_sum": 0.693,
+      "test_brier_score_mean": 0.099,
+      "wicket_brier_score": 0.0549,
+      "boundary_brier_score": 0.1151,
+      "classwise_brier": {
+        "dot": 0.22953,
+        "single": 0.2184,
+        "two": 0.06238,
+        "three": 0.00429,
+        "four": 0.08412,
+        "six": 0.0394,
+        "wicket": 0.0549
+      },
+      "expected_calibration_error": 0.0096,
+      "wicket_metrics": {
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0,
+        "pr_auc": 0.0759,
+        "base_rate": 0.0572
+      },
+      "boundary_metrics": {
+        "recall": 0.0042,
+        "precision": 0.2174,
+        "f1": 0.0083,
+        "pr_auc": 0.1878,
+        "base_rate": 0.1351
+      },
+      "match_level_bootstrap_95_ci": {
+        "log_loss_95_ci": [
+          1.4207,
+          1.4361
+        ],
+        "brier_sum_95_ci": [
+          0.6901,
+          0.6959
+        ],
+        "brier_mean_95_ci": [
+          0.0986,
+          0.0994
+        ],
+        "wicket_recall_95_ci": [
+          0.0,
+          0.0
+        ],
+        "wicket_precision_95_ci": [
+          0.0,
+          0.0
+        ],
+        "boundary_f1_95_ci": [
+          0.0041,
+          0.0136
+        ]
+      }
+    },
+    "calibrated_tree_baseline": {
+      "sample_count": 121921,
+      "simplex_valid": true,
+      "test_log_loss": 2.0669,
+      "test_brier_score_sum": 0.8625,
+      "test_brier_score_mean": 0.1232,
+      "wicket_brier_score": 0.0738,
+      "boundary_brier_score": 0.1333,
+      "classwise_brier": {
+        "dot": 0.28808,
+        "single": 0.29568,
+        "two": 0.06413,
+        "three": 0.00603,
+        "four": 0.09369,
+        "six": 0.04113,
+        "wicket": 0.07379
+      },
+      "expected_calibration_error": 0.2482,
+      "wicket_metrics": {
+        "recall": 0.0449,
+        "precision": 0.0677,
+        "f1": 0.054,
+        "pr_auc": 0.0622,
+        "base_rate": 0.0572
+      },
+      "boundary_metrics": {
+        "recall": 0.0378,
+        "precision": 0.1792,
+        "f1": 0.0624,
+        "pr_auc": 0.1493,
+        "base_rate": 0.1351
+      },
+      "match_level_bootstrap_95_ci": {
+        "log_loss_95_ci": [
+          2.0498,
+          2.083
+        ],
+        "brier_sum_95_ci": [
+          0.858,
+          0.8673
+        ],
+        "brier_mean_95_ci": [
+          0.1226,
+          0.1239
+        ],
+        "wicket_recall_95_ci": [
+          0.04,
+          0.0491
+        ],
+        "wicket_precision_95_ci": [
+          0.0609,
+          0.0747
+        ],
+        "boundary_f1_95_ci": [
+          0.0562,
+          0.0694
+        ]
+      }
+    },
+    "candidate_xgb_model": {
+      "sample_count": 121921,
+      "simplex_valid": true,
+      "test_log_loss": 1.4518,
+      "test_brier_score_sum": 0.7067,
+      "test_brier_score_mean": 0.101,
+      "wicket_brier_score": 0.0544,
+      "boundary_brier_score": 0.1166,
+      "classwise_brier": {
+        "dot": 0.23895,
+        "single": 0.22194,
+        "two": 0.06267,
+        "three": 0.00429,
+        "four": 0.0847,
+        "six": 0.0397,
+        "wicket": 0.05444
+      },
+      "expected_calibration_error": 0.0182,
+      "wicket_metrics": {
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0,
+        "pr_auc": 0.0643,
+        "base_rate": 0.0572
+      },
+      "boundary_metrics": {
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0,
+        "pr_auc": 0.1539,
+        "base_rate": 0.1351
+      },
+      "match_level_bootstrap_95_ci": {
+        "log_loss_95_ci": [
+          1.4446,
+          1.4588
+        ],
+        "brier_sum_95_ci": [
+          0.7042,
+          0.7092
+        ],
+        "brier_mean_95_ci": [
+          0.1006,
+          0.1013
+        ],
+        "wicket_recall_95_ci": [
+          0.0,
+          0.0
+        ],
+        "wicket_precision_95_ci": [
+          0.0,
+          0.0
+        ],
+        "boundary_f1_95_ci": [
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "governance_promotion_decisions": {
+    "active_production_model": {
+      "model_id": "fieldiq_xgb_baseline_v1",
+      "model_version": "1.0.0",
+      "status": "active_production_model",
+      "reason": "Retained as active production baseline; candidate models failed wicket precision, boundary F1, and log loss gates."
+    },
+    "candidate_xgb_model": {
+      "model_id": "cricsheet_t20_xgb_candidate_v2",
+      "model_version": "2.0.0-candidate",
+      "status": "rejected",
+      "rejection_reasons": [
+        "gate_1_wicket_recall_min",
+        "gate_2_wicket_precision_min",
+        "gate_3_boundary_f1_min",
+        "gate_4_max_log_loss",
+        "gate_5_max_brier_sum"
+      ]
+    },
+    "candidate_logistic_model": {
+      "model_id": "cricsheet_t20_logistic_candidate_v1",
+      "model_version": "1.0.0-candidate",
+      "status": "rejected",
+      "rejection_reasons": [
+        "gate_1_wicket_recall_min",
+        "gate_2_wicket_precision_min",
+        "gate_3_boundary_f1_min",
+        "gate_4_max_log_loss"
+      ]
+    }
+  }
+}

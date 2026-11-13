@@ -1,0 +1,10 @@
+{
+  "dataset_id": "cricsheet_t20_intl",
+  "adapter_version": "1.0.0",
+  "sample_size_matches": 50,
+  "run1_sha256": "5093fcb50aeaf98d00ab53ae87eef49c597ec84d7563e07deb7602d66d9523a0",
+  "run2_sha256": "5093fcb50aeaf98d00ab53ae87eef49c597ec84d7563e07deb7602d66d9523a0",
+  "is_deterministic": true,
+  "full_dataset_sha256": "caf6a91efcfc3fe4140a398d35483e6496cb3f83b9a06dbddfb4b06713795546",
+  "verified_at": "2026-10-31T17:17:21.370863+00:00"
+}
